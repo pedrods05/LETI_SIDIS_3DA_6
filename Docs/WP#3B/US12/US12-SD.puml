@@ -1,0 +1,28 @@
+@startuml
+title US12 - SD - Generate Monthly Reports
+autoactivate on
+ autonumber
+actor "Administrator"
+participant ":controller:ReportController" as ReportController
+participant ":auth:AuthHelper" as AuthHelper
+participant ":service:ReportService" as ReportService
+participant ":repo:AppointmentRepository" as AppointmentRepository
+
+autonumber
+activate "Administrator"
+
+"Administrator" -> ReportController : GET /api/reports/appointments?month=YYYY-MM
+ReportController -> AuthHelper : getCurrentUser()
+AuthHelper --> ReportController : User
+
+
+    ReportController -> ReportService : generateMonthlyReport(month)
+    ReportService -> AppointmentRepository : findByMonth(month)
+    AppointmentRepository --> ReportService : List<Appointment>
+
+    ReportService --> ReportController : MonthlyReportDTO
+    ReportController --> "Administrator" : 200 OK
+alt not an admin
+    ReportController --> "Administrator" : 403 Forbidden
+end
+@enduml

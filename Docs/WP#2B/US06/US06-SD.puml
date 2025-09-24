@@ -1,0 +1,42 @@
+@startuml
+title US06 - SD - Update Contact Details as a Patient
+autoactivate on
+autonumber
+
+actor "Authenticated Patient"
+participant ":controller:PatientController" as PatientController
+participant ":service:PatientService" as PatientService
+participant ":repo:PatientRepository" as PatientRepository
+participant ":repo:PhotoRepository" as PhotoRepository
+participant ":mapper:PatientMapper" as PatientMapper
+
+activate "Authenticated Patient"
+
+"Authenticated Patient" -> PatientController : PATCH /api/patients/me
+
+PatientController -> PatientService : updateContactDetails(dto, token)
+
+PatientService -> PatientRepository : findByToken(token)
+PatientRepository --> PatientService : Patient (from DB)
+
+alt invalid fields provided
+  PatientService --> PatientController : 400 Bad Request ("Invalid data")
+  PatientController --> "Authenticated Patient" : 400 Bad Request
+  deactivate "Authenticated Patient"
+else
+  alt photo is present
+    PatientService -> PhotoRepository : save(photo)
+    PhotoRepository --> PatientService : Photo
+  end
+
+  PatientService -> PatientMapper : updateFields(patient, dto)
+  PatientMapper --> PatientService : Updated Patient
+
+  PatientService -> PatientRepository : save(updated Patient)
+  PatientRepository --> PatientService : Patient
+
+  PatientService --> PatientController : Success message
+  PatientController --> "Authenticated Patient" : 200 OK
+  deactivate "Authenticated Patient"
+end
+@enduml

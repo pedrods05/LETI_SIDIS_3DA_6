@@ -1,0 +1,22 @@
+@startuml
+title US05 - SSD - Search Physicians by Name or Specialty
+
+autoactivate on
+autonumber
+
+actor "Patient"
+participant ":RestAPI" as System
+activate Patient
+
+Patient -> System : GET /api/physicians?name={name}&specialty={specialty}
+System --> Patient : 200 OK (List of physicians)
+alt List is empty
+    System --> Patient : 404 Not Found
+end
+
+deactivate Patient
+note right of System
+- Return a list of physicians matching the search criteria (name or specialty).
+- Include only essential details (name, specialty).
+end note
+@enduml

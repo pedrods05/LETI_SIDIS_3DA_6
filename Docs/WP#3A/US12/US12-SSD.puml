@@ -1,0 +1,18 @@
+@startuml
+title US12 - SSD - View My Appointments
+
+autoactivate on
+autonumber
+
+actor "Patient"
+participant ":RestAPI" as System
+activate Patient
+
+Patient -> System : GET /api/appointments/mine
+System --> Patient : 200 OK
+
+note right of System
+Patient identified via authentication token (JWT)
+end note
+
+@enduml

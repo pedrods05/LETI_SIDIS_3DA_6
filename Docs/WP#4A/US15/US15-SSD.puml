@@ -1,0 +1,14 @@
+@startuml
+title US15 - SSD - View the Appointment Records of a Patient
+
+autoactivate on
+autonumber
+
+actor "Physician"
+participant ":RestAPI" as System
+activate "Physician"
+
+Physician -> System : GET /api/patients/{patientId}/records
+System --> Physician : 200 OK
+
+@enduml

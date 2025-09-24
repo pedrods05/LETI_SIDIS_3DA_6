@@ -1,0 +1,47 @@
+@startuml
+title US06 - SD - Update a Physician´s Data
+autoactivate on
+autonumber
+
+actor "Administrator"
+participant ":controller:PhysicianController" as PhysicianController
+participant ":service:PhysicianService" as PhysicianService
+participant ":repo:DepartmentRepository" as DepartmentRepository
+participant ":repo:SpecialtyRepository" as SpecialtyRepository
+participant ":repo:PhysicianRepository" as PhysicianRepository
+participant ":mapper:PhysicianMapper" as PhysicianMapper
+
+activate Administrator
+
+Administrator -> PhysicianController : PATCH /api/physicians/{id}
+note right: @PreAuthorize("hasAuthority('ADMIN')")
+
+PhysicianController -> PhysicianService : partialUpdate(id, request)
+
+PhysicianService -> PhysicianRepository : findById(id)
+PhysicianRepository --> PhysicianService : Physician
+
+alt request contains departmentId
+  PhysicianService -> DepartmentRepository : findById(departmentId)
+  DepartmentRepository --> PhysicianService : Department
+end
+
+alt request contains specialtyId
+  PhysicianService -> SpecialtyRepository : findById(specialtyId)
+  SpecialtyRepository --> PhysicianService : Specialty
+end
+
+PhysicianService -> PhysicianMapper : applyPatch(entity, request)
+PhysicianMapper --> PhysicianService : updated Physician
+
+PhysicianService -> PhysicianRepository : save(Physician)
+PhysicianRepository --> PhysicianService : Physician (updated)
+
+PhysicianService -> PhysicianMapper : toDTO(Physician)
+PhysicianMapper --> PhysicianService : PhysicianDTO
+
+PhysicianService --> PhysicianController : PhysicianDTO
+PhysicianController --> Administrator : 200 OK
+
+deactivate Administrator
+@enduml

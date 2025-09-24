@@ -1,0 +1,16 @@
+@startuml
+title US17 - SSD - View Appointment Record by Record Number
+
+actor "Administrator or Patient"
+participant "System"
+
+"Administrator or Patient" -> "System" : GET /api/appointment-records/{recordId}\nAuthorization: Bearer <JWT>
+
+alt record not found
+    "System" --> "Administrator or Patient" : 404 Not Found
+else alt user not authorized to view record (Patient only)
+    "System" --> "Administrator or Patient" : 403 Forbidden
+else
+    "System" --> "Administrator or Patient" : 200 OK\nBody: AppointmentRecordDTO
+end
+@enduml

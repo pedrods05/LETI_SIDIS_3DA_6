@@ -1,0 +1,14 @@
+@startuml
+title US16 - SSD - View My Appointment Records
+
+autoactivate on
+autonumber
+
+actor "Patient"
+participant ":RestAPI" as System
+activate "Patient"
+
+Patient -> System : GET /api/appointment-records/patient/mine
+System --> Patient : 200 OK
+
+@enduml

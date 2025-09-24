@@ -1,0 +1,19 @@
+@startuml
+title US14 - SSD - Record Appointment Details
+
+autoactivate on
+autonumber
+
+actor "Physician"
+participant ":RestAPI" as System
+
+activate Physician
+
+Physician -> System : POST /api/appointment-records/{appointmentId}/record\nBody: AppointmentRecordDTO
+ System --> Physician : 201 Created (AppointmentRecord saved)
+alt Not authenticated or not a Physician
+    System --> Physician : 403 Forbidden
+else alt Appointment not found or invalid
+    System --> Physician : 404 Not Found
+end
+@enduml

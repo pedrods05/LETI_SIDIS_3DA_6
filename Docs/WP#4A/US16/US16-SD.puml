@@ -1,0 +1,29 @@
+@startuml
+title US16 - SD - View My Appointment Records
+
+autoactivate on
+autonumber
+
+actor "Patient"
+participant ":controller:AppointmentRecordController" as AppointmentRecordController
+participant ":helper:AuthHelper" as AuthHelper
+participant ":service:AppointmentRecordService" as AppointmentRecordService
+participant ":repo:AppointmentRecordRepository" as AppointmentRecordRepository
+participant ":mapper:AppointmentRecordMapper" as AppointmentRecordMapper
+
+activate Patient
+
+Patient -> AppointmentRecordController : GET /api/appointment-records/patient/mine
+AppointmentRecordController -> AuthHelper : getCurrentUser()
+AuthHelper --> AppointmentRecordController : Patient (authenticated)
+
+AppointmentRecordController -> AppointmentRecordService : listMyRecords(patientId)
+AppointmentRecordService -> AppointmentRecordRepository : findByPatientId(patientId)
+AppointmentRecordRepository --> AppointmentRecordService : List<AppointmentRecord>
+AppointmentRecordService -> AppointmentRecordMapper : toDTO(List<AppointmentRecord>)
+AppointmentRecordMapper --> AppointmentRecordService : List<AppointmentRecordDTO>
+AppointmentRecordService --> AppointmentRecordController : List<AppointmentRecordDTO>
+AppointmentRecordController --> Patient : 200 OK
+
+    @enduml
+

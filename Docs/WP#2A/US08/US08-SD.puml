@@ -1,0 +1,33 @@
+@startuml
+title US08 - SD - View patient´s details
+
+autoactivate on
+autonumber
+
+actor "User"
+participant ":controller:PatientController" as PatientController
+participant ":helper:AuthHelper" as AuthHelper
+participant ":service:PatientService" as PatientService
+participant ":repo:PatientRepository" as PatientRepository
+participant ":mapper:PatientMapper" as PatientMapper
+
+activate User
+
+User -> PatientController : GET /api/patients/{id}
+PatientController -> AuthHelper : getCurrentUser()
+AuthHelper --> PatientController : User (role)
+
+alt  (user.role == ADMIN)
+    PatientController -> PatientService : getPatientDetails(id)
+    PatientService -> PatientRepository : findById(id)
+    PatientRepository --> PatientService : Patient
+
+    PatientService -> PatientMapper : toDTO(Patient)
+    PatientMapper --> PatientService : PatientDTO
+
+    PatientService --> PatientController : PatientDTO
+end
+    PatientController --> User : 200 OK
+
+
+@enduml

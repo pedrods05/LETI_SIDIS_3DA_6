@@ -1,0 +1,49 @@
+@startuml
+title US13 - SD - Update or Cancel an Appointment
+
+autoactivate on
+autonumber
+
+actor "User"
+participant ":controller:AppointmentController" as AppointmentController
+participant ":helper:AuthHelper" as AuthHelper
+participant ":service:AppointmentService" as AppointmentService
+participant ":repo:AppointmentRepository" as AppointmentRepository
+participant ":mapper:AppointmentMapper" as AppointmentMapper
+
+activate User
+
+User -> AppointmentController : PATCH /api/appointments/{id}
+AppointmentController -> AuthHelper : getCurrentUser()
+AuthHelper --> AppointmentController : User (role)
+
+alt if (user.role == ADMIN or PATIENT)
+    AppointmentController -> AppointmentService : updateAppointment(id, updatedData)
+    AppointmentService -> AppointmentRepository : findById(id)
+    AppointmentRepository --> AppointmentService : Appointment
+    AppointmentService -> AppointmentRepository : save(updatedAppointment)
+    AppointmentRepository --> AppointmentService : updatedAppointment
+deactivate AppointmentRepository
+    AppointmentService -> AppointmentMapper : toDTO(updatedAppointment)
+    AppointmentMapper --> AppointmentService : AppointmentDTO
+    AppointmentService --> AppointmentController : AppointmentDTO
+    AppointmentController --> User : 200 OK
+end
+
+User -> AppointmentController : PATCH /api/appointments/{id}/cancel
+AppointmentController -> AuthHelper : getCurrentUser()
+AuthHelper --> AppointmentController : User (role)
+
+alt if (user.role == ADMIN or PATIENT)
+    AppointmentController -> AppointmentService : cancelAppointment(id)
+    AppointmentService -> AppointmentRepository : findById(id)
+    AppointmentRepository --> AppointmentService : Appointment
+    AppointmentService -> AppointmentRepository : save(status = "Cancelled")
+    AppointmentRepository --> AppointmentService : StatusSaved
+    AppointmentService -> AppointmentMapper : toDTO(cancelledAppointment)
+    AppointmentMapper --> AppointmentService : AppointmentDTO
+    AppointmentService --> AppointmentController : AppointmentDTO
+    AppointmentController --> User : 200 OK
+end
+
+@enduml

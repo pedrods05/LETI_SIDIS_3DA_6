@@ -1,0 +1,44 @@
+@startuml
+title US07 - SD - Register a Patient
+autoactivate on
+autonumber
+
+actor "Anonymous User"
+participant ":controller:PatientController" as PatientController
+participant ":service:PatientService" as PatientService
+participant ":repo:PatientRepository" as PatientRepository
+participant ":mapper:PatientMapper" as PatientMapper
+
+activate "Anonymous User"
+
+"Anonymous User" -> PatientController : POST /api/patients/register
+
+' === Validação e lógica no service ===
+
+PatientController -> PatientService : registerPatient(dto)
+
+alt dataConsentGiven == false
+  PatientService --> PatientController : 400 Bad Request ("Data consent is required")
+  PatientController --> "Anonymous User" : 400 Bad Request
+  deactivate "Anonymous User"
+else
+  PatientService -> PatientRepository : existsByEmail(dto.email)
+  PatientRepository --> PatientService : Boolean (emailExists)
+
+  alt email already exists
+    PatientService --> PatientController : 409 Conflict ("Email already in use")
+    PatientController --> "Anonymous User" : 409 Conflict
+    deactivate "Anonymous User"
+  else
+    PatientService -> PatientMapper : toDomain(dto)
+    PatientMapper --> PatientService : Patient
+
+    PatientService -> PatientRepository : save(Patient)
+    PatientRepository --> PatientService : Patient (with ID)
+
+    PatientService --> PatientController : PatientIdResponse
+    PatientController --> "Anonymous User" : 201 Created
+    deactivate "Anonymous User"
+  end
+end
+@enduml

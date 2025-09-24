@@ -1,0 +1,135 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+hide circle
+hide methods
+title Domain Model
+
+class Physician {
+  -physicianId: String
+  -fullName: String
+  -licenseNumber: String
+  -username: String
+  -password: String
+}
+
+class WorkingHours {
+  -start: Time
+  -end: Time
+}
+
+class Patient {
+  -patientId: String
+  -fullName: String
+  -birthDate: Date
+  -phoneNumber: String
+  -email: String
+  -dataConsentGiven: Boolean
+  -dataConsentDate: Date
+}
+
+class HealthConcern {
+  -description: String
+  -diagnosisDate: Date
+  -treatment: String
+  -ongoing: Boolean
+  -resolvedDate: Date
+}
+
+class Administrator {
+  -adminId: String
+  -username: String
+  -password: String
+}
+
+class Appointment {
+  -appointmentId: String
+  -dateTime: Date
+  -consultationType: ConsultationType
+  -status: AppointmentStatus
+}
+
+enum ConsultationType {
+  FIRST_TIME
+  FOLLOW_UP
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CANCELED
+  COMPLETED
+}
+
+class AppointmentRecord {
+  -recordId: String
+  -diagnosis: String
+  -treatmentRecommendations: String
+  -prescriptions: String
+  -duration: Time
+}
+
+class Photo {
+  -photoId: String
+  -url: String
+  -uploadedAt: DateTime
+}
+
+class Department {
+  -departmentId: String
+  -code: String
+  -name: String
+  -description: String
+}
+
+class Specialty {
+  -specialtyId: String
+  -name: String
+}
+
+class InsuranceInfo {
+  -policyNumber: String
+  -companyName: String
+}
+
+class ContactInfo {
+  -emails: List<String>
+  -phoneNumbers: List<String>
+  -addresses: List<Address>
+}
+
+class Address {
+  -street: String
+  -city: String
+  -postalCode: String
+  -country: String
+}
+
+' ========== RELAÇÕES ==========
+
+Physician "1" --> "1" ContactInfo : has
+Physician "1" --> "0..1" Photo : has
+Patient "1" --> "0..1" Photo : has
+Patient "1" --> "1" InsuranceInfo : has
+Patient "1" --> "0..*" HealthConcern : has
+
+
+Physician "1" --> "0..*" Appointment : schedules
+Patient "1" --> "0..*" Appointment : books
+Appointment "1" --> "0..1" AppointmentRecord : generates
+
+Administrator "1" --> "0..*" Appointment : manages
+Administrator "1" --> "0..*" Physician : manages
+Administrator "1" --> "0..*" Patient : views/searches
+Administrator "1" --> "0..*" AppointmentRecord : views
+
+AppointmentRecord "1" --> "1" Physician : createdBy
+Physician "1" --> "1" WorkingHours : has
+Physician "1" --> "1" Department : belongs to
+Physician "1" --> "1" Specialty : has
+Patient "0..*" --> "1" Address : resides at
+
+Appointment ..> ConsultationType
+Appointment ..> AppointmentStatus
+
+@enduml
+

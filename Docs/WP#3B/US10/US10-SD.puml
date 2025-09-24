@@ -1,0 +1,28 @@
+@startuml
+title US10 – SD – List Upcoming Appointments Chronologically
+autoactivate on
+autonumber
+actor "Administrator"
+participant ":controller:AppointmentController" as AppointmentController
+participant ":helper:AuthHelper" as AuthHelper
+participant ":service:AppointmentService" as AppointmentService
+participant ":repo:AppointmentRepository" as AppointmentRepository
+participant ":mapper:AppointmentMapper" as AppointmentMapper
+
+autonumber
+"Administrator" -> AppointmentController : GET /api/appointments/upcoming
+AppointmentController -> AuthHelper : getCurrentUser()
+AuthHelper --> AppointmentController : User
+AppointmentController -> AppointmentService : listUpcomingAppointments()
+AppointmentService -> AppointmentRepository : findByDateTimeAfterOrderByDateTime(now)
+AppointmentRepository --> AppointmentService : List<Appointment>
+AppointmentService -> AppointmentMapper : toListDTO(appointments)
+AppointmentMapper --> AppointmentService : List<AppointmentDTO>
+AppointmentService --> AppointmentController : List<AppointmentDTO>
+AppointmentController --> "Administrator" : 200 OK + List<AppointmentDTO>
+alt not ADMIN
+    AppointmentController --> "Administrator" : 403 Forbidden
+
+
+end
+@enduml

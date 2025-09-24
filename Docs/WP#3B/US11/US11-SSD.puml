@@ -1,0 +1,17 @@
+@startuml
+title US11 - SSD - Calculate Average Appointment Duration per Physician
+autoactivate on
+autonumber
+actor "Administrator" as Admin
+participant ":RestAPI" as System
+
+autonumber
+activate Admin
+
+Admin -> System : GET /api/appointments/average-duration
+System --> Admin : 200 OK
+
+alt not ADMIN
+    System --> Admin : 403 Forbidden
+end
+@enduml

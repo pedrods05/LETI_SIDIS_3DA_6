@@ -1,0 +1,39 @@
+@startuml
+title US17 - SD - View Appointment Record by Record Number
+autoactivate on
+autonumber
+
+actor "Administrator or Patient"
+participant ":controller:AppointmentRecordController" as RecordController
+participant ":helper:AuthHelper" as AuthHelper
+participant ":service:AppointmentRecordService" as RecordService
+participant ":repo:AppointmentRecordRepository" as RecordRepository
+
+activate "Administrator or Patient"
+
+"Administrator or Patient" -> RecordController : GET /api/appointment-records/{recordId}
+
+RecordController -> AuthHelper : getCurrentUser()
+AuthHelper --> RecordController : User (role, id)
+
+RecordController -> RecordService : getAppointmentRecord(recordId, user)
+
+RecordService -> RecordRepository : findById(recordId)
+RecordRepository --> RecordService : Optional<AppointmentRecord>
+
+alt record not found
+    RecordService --> RecordController : 404 Not Found
+    RecordController --> "Administrator or Patient" : 404 Not Found
+    deactivate "Administrator or Patient"
+else
+    alt user is Patient and does not own record
+        RecordService --> RecordController : 403 Forbidden
+        RecordController --> "Administrator or Patient" : 403 Forbidden
+        deactivate "Administrator or Patient"
+    else
+        RecordService --> RecordController : AppointmentRecordDTO
+        RecordController --> "Administrator or Patient" : 200 OK
+        deactivate "Administrator or Patient"
+    end
+end
+@enduml

@@ -1,0 +1,14 @@
+@startuml
+title US9 - SSD - View Appointment Statistics by Age Group
+autoactivate on
+autonumber
+actor "Administrator"
+participant ":RestAPI" as System
+
+autonumber
+"Administrator" -> System : GET /api/reports/age-groups
+System --> "Administrator" : 200 OK
+alt not ADMIN
+    System --> "Administrator" : 403 Forbidden
+    end
+@enduml

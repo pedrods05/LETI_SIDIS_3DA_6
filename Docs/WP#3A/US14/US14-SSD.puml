@@ -1,0 +1,25 @@
+@startuml
+title US14 - SSD - View Appointment Details
+
+autoactivate on
+autonumber
+
+actor "User"
+participant ":RestAPI" as System
+
+activate User
+
+User -> System : GET /api/appointments/{appointmentId}
+System --> User : 200 OK (AppointmentDTO)
+alt Not authenticated or forbidden
+    System --> User : 403 Forbidden
+else Appointment not found
+    System --> User : 404 Not Found
+end
+
+note right of System
+- Administrator: Can view any appointment.
+- Patient: Can only view their own appointments.
+end note
+
+@enduml

@@ -1,0 +1,17 @@
+@startuml
+title US06 - SSD - Update Contact Details as a Patient
+actor "Authenticated Patient"
+participant "System"
+
+"Authenticated Patient" -> "System" : PATCH /api/patients/me\nBody: ContactDetailsDTO
+
+alt invalid fields provided
+  "System" --> "Authenticated Patient" : 400 Bad Request\n"Invalid data"
+else
+  alt photo is present
+    "System" --> "Authenticated Patient" : 200 OK\n"Contact details updated successfully (with photo)"
+  else
+    "System" --> "Authenticated Patient" : 200 OK\n"Contact details updated successfully"
+  end
+end
+@enduml

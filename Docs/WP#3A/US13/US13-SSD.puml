@@ -1,0 +1,17 @@
+@startuml
+title US13 - SSD - Update or Cancel an Appointment
+
+autoactivate on
+autonumber
+
+actor "User"
+participant ":RestAPI" as System
+activate User
+
+User -> System : PATCH /api/appointments/{id} (update)
+System --> User : 200 OK
+
+User -> System : PATCH /api/appointments/{id}/cancel
+System --> User : 200 OK
+
+@enduml

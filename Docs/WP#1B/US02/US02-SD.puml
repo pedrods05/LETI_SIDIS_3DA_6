@@ -1,0 +1,49 @@
+@startuml
+title US02 - SD - Register Physician with Optional Profile Photo
+autoactivate on
+autonumber
+
+actor "Administrator"
+participant ":controller:PhysicianController" as PhysicianController
+participant ":service:PhysicianService" as PhysicianService
+participant ":repo:DepartmentRepository" as DepartmentRepository
+participant ":repo:SpecialtyRepository" as SpecialtyRepository
+participant ":repo:UserRepository" as UserRepository
+participant ":repo:PhysicianRepository" as PhysicianRepository
+participant ":service:PhotoStorageService" as PhotoStorageService
+participant ":mapper:PhysicianMapper" as PhysicianMapper
+
+activate Administrator
+
+Administrator -> PhysicianController : POST /api/physicians
+note right: @PreAuthorize("hasAuthority('ADMIN')")
+
+PhysicianController -> PhysicianService : registerWithPhoto(dto, photo)
+
+PhysicianService -> DepartmentRepository : findById(dto.departmentId)
+DepartmentRepository --> PhysicianService : Department
+
+PhysicianService -> SpecialtyRepository : findById(dto.specialtyId)
+SpecialtyRepository --> PhysicianService : Specialty
+
+PhysicianService -> UserRepository : save(User)
+UserRepository --> PhysicianService : User
+
+PhysicianService -> PhysicianMapper : toEntity(dto, department, specialty)
+PhysicianMapper --> PhysicianService : Physician
+
+alt photo is present
+    PhysicianService -> PhotoStorageService : store(photo)
+    PhotoStorageService --> PhysicianService : photoUrl
+    PhysicianService -> Physician : setPhoto(photoUrl)
+deactivate Physician
+end
+
+PhysicianService -> PhysicianRepository : save(Physician)
+PhysicianRepository --> PhysicianService : Physician (with ID)
+
+PhysicianService --> PhysicianController : PhysicianIdResponse
+PhysicianController --> Administrator : 201 Created
+
+deactivate Administrator
+@enduml

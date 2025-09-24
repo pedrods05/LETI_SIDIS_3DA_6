@@ -1,0 +1,20 @@
+@startuml
+title US04 - SSD - View Physician Details
+
+autoactivate on
+autonumber
+
+actor "User"
+participant ":RestAPI" as System
+activate User
+
+User -> System : GET /api/physicians/{id}
+System --> User : 200 OK
+
+deactivate User
+note right of System
+- Admin: return full details (name, specialty, contact information, and working hours).
+- Patient: return only name and specialty
+end note
+
+@enduml
