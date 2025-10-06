@@ -1,13 +1,15 @@
-package leti_sisdis_6.hapdoctors1;
+package leti_sisdis_6.hapdoctors;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class HapDoctors1Application {
+public class HapDoctorsApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(HapDoctors1Application.class, args);
+        SpringApplication.run(HapDoctorsApplication.class, args);
     }
 
 }
+
+
