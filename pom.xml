@@ -24,6 +24,7 @@
         <module>hap-clients</module>
         <module>hap-consultation</module>
         <module>hap-doctors</module>
+        <module>hap-patients</module>
     </modules>
 
     <dependencyManagement>
