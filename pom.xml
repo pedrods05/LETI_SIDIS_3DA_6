@@ -21,9 +21,8 @@
     </properties>
 
     <modules>
-        <module>hap-clients</module>
-        <module>hap-consultation</module>
-        <module>hap-doctors</module>
+        <module>hap-appointmentrecords</module>
+        <module>hap-physicians</module>
         <module>hap-patients</module>
     </modules>
 

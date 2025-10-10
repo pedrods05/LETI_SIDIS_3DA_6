@@ -7,22 +7,40 @@
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-clients/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-clients/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-consultation/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-consultation/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/.gitattributes" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/.gitattributes" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/compose.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/mvnw" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/mvnw" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/mvnw.cmd" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/mvnw.cmd" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/src/main/java/leti_sisdis_6/hapdoctors1/HapDoctors1Application.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-doctors/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors1/src/test/java/leti_sisdis_6/hapdoctors1/HapDoctors1ApplicationTests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/compose.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/src/main/java/leti_sisdis_6/hapclients/HapClientsApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/HapClientsApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/TestHapClientsApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/TestcontainersConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/compose.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/src/main/java/leti_sidis_6/hapconsultation/HapConsultationApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-consultation/src/test/java/leti_sidis_6/hapconsultation/HapConsultationApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/compose.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/src/main/java/leti_sisdis_6/hapdoctors/HapDoctorsApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/src/main/resources/application.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-doctors/src/test/java/leti_sisdis_6/hapdoctors/HapDoctorsApplicationTests.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,6 +48,11 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="pedro" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -38,12 +61,12 @@
     &quot;assignee&quot;: &quot;pedrocunha4&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/pedrods05/LETI_SIDIS_3DA_6.git&quot;,
-    &quot;accountId&quot;: &quot;eef781e8-c80d-4010-bb95-e17416a1bae9&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/pedrods05/LETI_SIDIS_3DA_6.git",
+    "accountId": "8d59ecb3-d26e-4eef-b16d-368cfb6d257b"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 7
@@ -60,6 +83,7 @@
     "RequestMappingsPanelWidth0": "75",
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.HapClientsApplication.executor": "Run",
     "Spring Boot.HapConsultationApplication.executor": "Run",
     "Spring Boot.HapDoctorsApplication.executor": "Run",
@@ -89,6 +113,14 @@
     </option>
   </component>
   <component name="RunManager" selected="Spring Boot.HapClientsApplication">
+    <configuration name="HapAppointmentrecordsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-appointmentrecords" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapappointmentrecords.HapAppointmentrecordsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="HapClientsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="hap-clients" />
@@ -113,7 +145,26 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="HapPatientsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-patients" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.happatients.HapPatientsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HapPhysiciansApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-physicians" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.happhysicians.HapPhysiciansApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
+      <item itemvalue="Spring Boot.HapAppointmentrecordsApplication" />
+      <item itemvalue="Spring Boot.HapPatientsApplication" />
+      <item itemvalue="Spring Boot.HapPhysiciansApplication" />
       <item itemvalue="Spring Boot.HapConsultationApplication" />
       <item itemvalue="Spring Boot.HapDoctorsApplication" />
       <item itemvalue="Spring Boot.HapClientsApplication" />
@@ -122,8 +173,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.23726.103" />
-        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.23726.103" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.25557.131" />
+        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-IU-252.25557.131" />
       </set>
     </attachedChunks>
   </component>
@@ -136,6 +187,7 @@
       <option name="presentableId" value="Default" />
       <updated>1759774680499</updated>
       <workItem from="1759774683360" duration="616000" />
+      <workItem from="1760109781364" duration="479000" />
     </task>
     <servers />
   </component>
