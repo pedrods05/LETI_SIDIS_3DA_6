@@ -6,7 +6,17 @@
       <list>
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/hap-consultation/pom.xml" />
+        <option value="$PROJECT_DIR$/hap-physicians/pom.xml" />
+        <option value="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" />
+        <option value="$PROJECT_DIR$/hap-auth/pom.xml" />
       </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/hap-clients/pom.xml" />
+        <option value="$PROJECT_DIR$/hap-consultation/pom.xml" />
+        <option value="$PROJECT_DIR$/hap-doctors/pom.xml" />
+      </set>
     </option>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_23" default="true" project-jdk-name="openjdk-23" project-jdk-type="JavaSDK" />
