@@ -3,37 +3,41 @@
   <component name="CompilerConfiguration">
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true" />
-      <profile name="Annotation profile for hap-consultation" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
-        </processorPath>
-        <module name="hap-consultation" />
-      </profile>
       <profile name="Annotation profile for hap-parent" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/springframework/boot/spring-boot-configuration-processor/unknown/spring-boot-configuration-processor-unknown.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/springframework/boot/spring-boot-configuration-processor/3.5.6/spring-boot-configuration-processor-3.5.6.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.40/lombok-1.18.40.jar" />
         </processorPath>
-        <module name="hap-doctors" />
-        <module name="hap-clients" />
+        <module name="hap-patients" />
+        <module name="hap-physicians" />
+        <module name="hap-auth" />
+        <module name="hap-appointmentrecords" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="hap-appointmentrecords (1)" target="17" />
+      <module name="hap-clients" target="17" />
+      <module name="hap-consultation" target="17" />
+      <module name="hap-doctors" target="17" />
       <module name="hap-doctors1" target="17" />
+      <module name="hap-physicians (1)" target="1.8" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="hap-appointmentrecords" options="-parameters" />
+      <module name="hap-appointmentrecords (1)" options="-parameters" />
+      <module name="hap-auth" options="-parameters" />
       <module name="hap-clients" options="-parameters" />
       <module name="hap-consultation" options="-parameters" />
       <module name="hap-doctors" options="-parameters" />
       <module name="hap-doctors1" options="-parameters" />
+      <module name="hap-patients" options="-parameters" />
+      <module name="hap-physicians" options="-parameters" />
+      <module name="hap-physicians (1)" options="-parameters" />
       <module name="pcmclinic-api" options="" />
     </option>
   </component>
