@@ -5,42 +5,34 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientRegistrationController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/ContactDetailsUpdateDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/HealthConcernDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PatientDetailsDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PatientRegistrationDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PatientRegistrationDTOV2.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PhotoDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/Address.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/HealthConcern.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/InsuranceInfo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/Patient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/Photo.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/AddressRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/InsuranceInfoRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/PatientRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/PhotoRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientIdGenerator.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientRegistrationService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/compose.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/main/java/leti_sisdis_6/hapclients/HapClientsApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/HapClientsApplicationTests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/TestHapClientsApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/TestcontainersConfiguration.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/compose.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/src/main/java/leti_sidis_6/hapconsultation/HapConsultationApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/src/test/java/leti_sidis_6/hapconsultation/HapConsultationApplicationTests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/compose.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/src/main/java/leti_sisdis_6/hapdoctors/HapDoctorsApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/src/test/java/leti_sisdis_6/hapdoctors/HapDoctorsApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,12 +53,15 @@
     &quot;assignee&quot;: &quot;pedrocunha4&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/pedrods05/LETI_SIDIS_3DA_6.git",
-    "accountId": "8d59ecb3-d26e-4eef-b16d-368cfb6d257b"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/pedrods05/LETI_SIDIS_3DA_6.git&quot;,
+    &quot;accountId&quot;: &quot;8d59ecb3-d26e-4eef-b16d-368cfb6d257b&quot;
   }
-}]]></component>
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 7
@@ -87,21 +82,29 @@
     "Spring Boot.HapClientsApplication.executor": "Run",
     "Spring Boot.HapConsultationApplication.executor": "Run",
     "Spring Boot.HapDoctorsApplication.executor": "Run",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "pedro",
     "jdk.selected.JAVA_MODULE": "openjdk-23",
     "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.17",
+    "project.structure.side.proportion": "0.2",
     "run.configurations.included.in.services": "true",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\service" />
+      <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\usermanagement" />
+      <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients" />
+    </key>
+  </component>
   <component name="RunDashboard">
     <option name="configurationTypes">
       <set>
@@ -112,7 +115,15 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.HapClientsApplication">
+  <component name="RunManager" selected="Spring Boot.HapAppointmentrecordsApplication">
+    <configuration name="HapAppointmentrecordsApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-appointmentrecords" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapappointmentrecords.HapAppointmentrecordsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="HapAppointmentrecordsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="hap-appointmentrecords" />
@@ -121,26 +132,10 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="HapClientsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <configuration name="HapAuthApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
-      <module name="hap-clients" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapclients.HapClientsApplication" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="HapConsultationApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
-      <module name="hap-consultation" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sidis_6.hapconsultation.HapConsultationApplication" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="HapDoctorsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
-      <module name="hap-doctors" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapdoctors.HapDoctorsApplication" />
+      <module name="hap-auth" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapauth.HapAuthApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -162,12 +157,11 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Spring Boot.HapAppointmentrecordsApplication (1)" />
+      <item itemvalue="Spring Boot.HapAuthApplication" />
       <item itemvalue="Spring Boot.HapAppointmentrecordsApplication" />
       <item itemvalue="Spring Boot.HapPatientsApplication" />
       <item itemvalue="Spring Boot.HapPhysiciansApplication" />
-      <item itemvalue="Spring Boot.HapConsultationApplication" />
-      <item itemvalue="Spring Boot.HapDoctorsApplication" />
-      <item itemvalue="Spring Boot.HapClientsApplication" />
     </list>
   </component>
   <component name="SharedIndexes">
@@ -193,6 +187,10 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="new modules name" />
+    <option name="LAST_COMMIT_MESSAGE" value="new modules name" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

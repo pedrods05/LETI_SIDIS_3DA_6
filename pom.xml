@@ -24,6 +24,7 @@
         <module>hap-appointmentrecords</module>
         <module>hap-physicians</module>
         <module>hap-patients</module>
+        <module>hap-auth</module>
     </modules>
 
     <dependencyManagement>
