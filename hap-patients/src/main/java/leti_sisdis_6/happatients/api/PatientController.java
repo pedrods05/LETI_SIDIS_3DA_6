@@ -6,7 +6,6 @@ import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
 import leti_sisdis_6.happatients.dto.PatientRegistrationDTO;
 import leti_sisdis_6.happatients.dto.ContactDetailsUpdateDTO;
 import leti_sisdis_6.happatients.service.PatientService;
-import leti_sisdis_6.happatients.api.AuthHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -29,7 +30,6 @@ import java.util.Map;
 @Tag(name = "Patient", description = "Patient management endpoints")
 public class PatientController {
     private final PatientService patientService;
-    private final AuthHelper authHelper;
 
     @PostMapping("/register")
     @Operation(
@@ -114,7 +114,8 @@ public class PatientController {
         }
     )
     public ResponseEntity<?> updateContactDetails(@Valid @RequestBody ContactDetailsUpdateDTO dto) {
-        String email = authHelper.getCurrentUser().getUsername();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
         String message = patientService.updateContactDetails(email, dto);
         return ResponseEntity.ok(new UpdateResponse(message));
     }

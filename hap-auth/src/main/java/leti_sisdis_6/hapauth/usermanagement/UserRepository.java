@@ -1,6 +1,5 @@
-package leti_sisdis_6.happatients.usermanagement.repository;
+package leti_sisdis_6.hapauth.usermanagement;
 
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

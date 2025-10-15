@@ -1,10 +1,5 @@
-package leti_sisdis_6.happatients.usermanagement.services;
+package leti_sisdis_6.hapauth.usermanagement;
 
-import com.pcm.psoft.pcmclinic_api.usermanagement.dto.input.RegisterUserRequest;
-import com.pcm.psoft.pcmclinic_api.usermanagement.dto.output.UserIdResponse;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.User;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.Role;
-import com.pcm.psoft.pcmclinic_api.usermanagement.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,4 +30,4 @@ public class UserService {
             .role(savedUser.getRole().name())
             .build();
     }
-} 
+}

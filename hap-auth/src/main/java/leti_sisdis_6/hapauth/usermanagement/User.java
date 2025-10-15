@@ -1,4 +1,4 @@
-package leti_sisdis_6.happatients.usermanagement.model;
+package leti_sisdis_6.hapauth.usermanagement;
 
 import jakarta.persistence.*;
 import lombok.*;
