@@ -49,7 +49,7 @@ public class PatientMapper {
                 .collect(Collectors.toList());
     }
 
-    public PatientDetailsDTO.AddressDTO toAddressDTO(com.pcm.psoft.pcmclinic_api.patient.model.Address address) {
+    public PatientDetailsDTO.AddressDTO toAddressDTO(leti_sisdis_6.happatients.model.Address address) {
         if (address == null) {
             return null;
         }
@@ -62,7 +62,7 @@ public class PatientMapper {
         return dto;
     }
 
-    public PatientDetailsDTO.InsuranceInfoDTO toInsuranceInfoDTO(com.pcm.psoft.pcmclinic_api.patient.model.InsuranceInfo insuranceInfo) {
+    public PatientDetailsDTO.InsuranceInfoDTO toInsuranceInfoDTO(leti_sisdis_6.happatients.model.InsuranceInfo insuranceInfo) {
         if (insuranceInfo == null) {
             return null;
         }

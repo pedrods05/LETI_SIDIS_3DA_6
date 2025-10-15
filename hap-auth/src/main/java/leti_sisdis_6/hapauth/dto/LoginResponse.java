@@ -1,4 +1,4 @@
-package leti_sisdis_6.hapauth.dto.output;
+package leti_sisdis_6.hapauth.dto;
 
 import lombok.Builder;
 import lombok.Data;

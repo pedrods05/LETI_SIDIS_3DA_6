@@ -1,4 +1,4 @@
-package leti_sisdis_6.happatients.usermanagement.dto.output;
+package leti_sisdis_6.hapauth.usermanagement;
 
 import lombok.Builder;
 import lombok.Data;
@@ -9,4 +9,4 @@ public class UserIdResponse {
     private String id;
     private String username;
     private String role;
-} 
+}

@@ -9,7 +9,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.pcm.psoft</groupId>
+    <groupId>LETI_SISDIS_6</groupId>
     <artifactId>hap-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>

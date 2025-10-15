@@ -1,9 +1,8 @@
 package leti_sisdis_6.hapauth.api;
 
-import com.pcm.psoft.pcmclinic_api.exceptions.UserNotFoundException;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.Role;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.User;
-import com.pcm.psoft.pcmclinic_api.usermanagement.repository.UserRepository;
+import leti_sisdis_6.hapauth.exceptions.UserNotFoundException;
+import leti_sisdis_6.hapauth.usermanagement.User;
+import leti_sisdis_6.hapauth.usermanagement.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

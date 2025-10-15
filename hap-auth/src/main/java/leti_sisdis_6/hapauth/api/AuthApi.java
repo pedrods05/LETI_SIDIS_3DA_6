@@ -1,11 +1,11 @@
 package leti_sisdis_6.hapauth.api;
 
-import leti_sisdis_6.hapauth.dto.input.LoginRequest;
-import leti_sisdis_6.hapauth.dto.output.LoginResponse;
+import leti_sisdis_6.hapauth.dto.LoginRequest;
+import leti_sisdis_6.hapauth.dto.LoginResponse;
 import leti_sisdis_6.hapauth.services.AuthService;
-import com.pcm.psoft.pcmclinic_api.usermanagement.dto.input.RegisterUserRequest;
-import com.pcm.psoft.pcmclinic_api.usermanagement.dto.output.UserIdResponse;
-import com.pcm.psoft.pcmclinic_api.usermanagement.services.UserService;
+import leti_sisdis_6.hapauth.usermanagement.RegisterUserRequest;
+import leti_sisdis_6.hapauth.usermanagement.UserIdResponse;
+import leti_sisdis_6.hapauth.usermanagement.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
