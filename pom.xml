@@ -9,7 +9,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.pcm.psoft</groupId>
+    <groupId>LETI_SISDIS_6</groupId>
     <artifactId>hap-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -24,6 +24,7 @@
         <module>hap-appointmentrecords</module>
         <module>hap-physicians</module>
         <module>hap-patients</module>
+        <module>hap-auth</module>
     </modules>
 
     <dependencyManagement>
