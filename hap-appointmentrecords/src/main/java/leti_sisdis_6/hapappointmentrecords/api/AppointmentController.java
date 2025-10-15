@@ -1,9 +1,13 @@
 package leti_sisdis_6.hapappointmentrecords.api;
 
 import leti_sisdis_6.hapappointmentrecords.*;
-import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentListDTO;
-import leti_sisdis_6.hapappointmentrecords.usermanagement.model.*;
-import leti_sisdis_6.hapappointmentrecords.patient.repository.PatientRepository;
+import leti_sisdis_6.hapappointmentrecords.dto.input.ScheduleAppointmentRequest;
+import leti_sisdis_6.hapappointmentrecords.dto.input.UpdateAppointmentRequest;
+import leti_sisdis_6.hapappointmentrecords.dto.output.*;
+import leti_sisdis_6.hapauth.usermanagement.*;
+import leti_sisdis_6.happatients.repository.PatientRepository;
+import leti_sisdis_6.hapauth.api.AuthHelper;
+
 //import com.pcm.psoft.pcmclinic_api.auth.api.AuthHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

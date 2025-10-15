@@ -1,6 +1,5 @@
 package leti_sisdis_6.hapappointmentrecords.model;
-
-import leti_sisdis_6.hapappointmentrecords.patient.model.Patient;
+import leti_sisdis_6.happatients.model.Patient;
 import leti_sisdis_6.hapappointmentrecords.usermanagement.model.Physician;
 import jakarta.persistence.*;
 import lombok.*;
