@@ -13,8 +13,8 @@
         </processorPath>
         <module name="hap-patients" />
         <module name="hap-physicians" />
-        <module name="hap-auth" />
         <module name="hap-appointmentrecords" />
+        <module name="hap-auth" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

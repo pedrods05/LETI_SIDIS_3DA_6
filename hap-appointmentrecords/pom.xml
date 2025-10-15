@@ -6,7 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.6</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/> <!-- lookup parent ssfrom repository -->
     </parent>
     <groupId>LETI_SISDIS_6</groupId>
     <artifactId>hap-appointmentrecords</artifactId>
@@ -177,6 +177,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>
             <scope>test</scope>
@@ -190,6 +194,18 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>LETI_SISDIS_6</groupId>
+            <artifactId>hap-auth</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>LETI_SISDIS_6</groupId>
+            <artifactId>hap-patients</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -261,13 +277,13 @@
                         </configuration>
                     </execution>
                 </executions>
-<!--/*            <dependencies>-->
+
 <!--                    <dependency>-->
 <!--                        <groupId>org.springframework.restdocs</groupId>-->
 <!--                        <artifactId>spring-restdocs-asciidoctor</artifactId>-->
 <!--                        <version>${spring-restdocs.version}</version>-->
 <!--                    </dependency>-->
-<!--                </dependencies>*/-->
+
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
