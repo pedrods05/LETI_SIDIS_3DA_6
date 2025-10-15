@@ -7,40 +7,81 @@
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/compose.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/main/java/leti_sisdis_6/hapclients/HapClientsApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/HapClientsApplicationTests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/TestHapClientsApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-clients/src/test/java/leti_sisdis_6/hapclients/TestcontainersConfiguration.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/compose.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/src/main/java/leti_sidis_6/hapconsultation/HapConsultationApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-consultation/src/test/java/leti_sidis_6/hapconsultation/HapConsultationApplicationTests.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/compose.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/src/main/java/leti_sisdis_6/hapdoctors/HapDoctorsApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-doctors/src/test/java/leti_sisdis_6/hapdoctors/HapDoctorsApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/api/AppointmentController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/api/AppointmentMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/api/AppointmentRecordController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentRecordController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/api/PatientAppointmentController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/PatientAppointmentController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/AppointmentRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/AppointmentRequestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/AppointmentResponseDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/AppointmentResponseDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/input/AppointmentRecordRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/input/AppointmentRecordRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/input/ScheduleAppointmentRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/input/ScheduleAppointmentRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/input/UpdateAppointmentRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/input/UpdateAppointmentRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/AppointmentDetailsDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentDetailsDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/AppointmentHistoryDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentHistoryDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/AppointmentIdResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentIdResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/AppointmentListDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentListDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/AppointmentRecordResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentRecordResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/AppointmentRecordViewDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentRecordViewDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/AppointmentSlotDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentSlotDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/PatientAppointmentDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/PatientAppointmentDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/PhysicianAverageDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/PhysicianAverageDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/dto/output/TopPhysicianDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/TopPhysicianDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/model/Appointment.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/Appointment.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/model/AppointmentRecord.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/AppointmentRecord.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/model/AppointmentStatus.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/AppointmentStatus.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/model/ConsultationType.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/ConsultationType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/repository/AppointmentRecordRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/repository/AppointmentRecordRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/repository/AppointmentRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/repository/AppointmentRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/service/AppointmentRecordService.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentRecordService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/service/AppointmentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/util/AppointmentTimeValidator.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/util/AppointmentTimeValidator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/appointment/util/SlotCalculator.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/util/SlotCalculator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/api/PatientController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/api/PatientMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/api/PatientRegistrationController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/dto/ContactDetailsUpdateDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/dto/HealthConcernDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/dto/PatientDetailsDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/dto/PatientRegistrationDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/dto/PatientRegistrationDTOV2.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/dto/PhotoDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/model/Address.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/model/HealthConcern.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/model/InsuranceInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/model/Patient.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/model/Photo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/repository/AddressRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/repository/InsuranceInfoRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/repository/PatientRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/repository/PhotoRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/service/PatientIdGenerator.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/service/PatientRegistrationService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/patient/service/PatientService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/api/PhysicianController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/api/PhysicianMapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/api/UserView.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/dto/input/RegisterPhysicianRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/dto/input/RegisterUserRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/dto/input/UpdatePhysicianRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/dto/output/PhysicianFullDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/dto/output/PhysicianIdResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/dto/output/PhysicianLimitedDTO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/dto/output/UserIdResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/model/Department.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/model/Physician.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/model/Role.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/model/Specialty.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/model/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/repository/DepartmentRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/repository/PhysicianRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/repository/SpecialtyRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/repository/UserRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/services/JpaUserDetailsService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/services/PhysicianService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/services/UserManagement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/usermanagement/services/UserService.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,12 +102,12 @@
     &quot;assignee&quot;: &quot;pedrocunha4&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/pedrods05/LETI_SIDIS_3DA_6.git",
-    "accountId": "8d59ecb3-d26e-4eef-b16d-368cfb6d257b"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/pedrods05/LET_SIDIS_3DA_6.git&quot;,
+    &quot;accountId&quot;: &quot;7d51d996-4996-4ed9-9c35-f10b71549cea&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 7
@@ -76,32 +117,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.HapClientsApplication.executor": "Run",
-    "Spring Boot.HapConsultationApplication.executor": "Run",
-    "Spring Boot.HapDoctorsApplication.executor": "Run",
-    "git-widget-placeholder": "main",
-    "jdk.selected.JAVA_MODULE": "openjdk-23",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "run.configurations.included.in.services": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.HapClientsApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.HapConsultationApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.HapDoctorsApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;luis&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;openjdk-23&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.35977012&quot;,
+    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.project.maven.repository.indices&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\louis\Documents\GitHub\pcmclinic-api\hap-appointmentrecords\src\main\java\leti_sisdis_6\hapappointmentrecords" />
+      <recent name="C:\Users\louis\Documents\GitHub\pcmclinic-api\hap-patients\src\main\java\leti_sisdis_6\happatients" />
+    </key>
+  </component>
   <component name="RunDashboard">
     <option name="configurationTypes">
       <set>
@@ -163,18 +211,18 @@
     </configuration>
     <list>
       <item itemvalue="Spring Boot.HapAppointmentrecordsApplication" />
-      <item itemvalue="Spring Boot.HapPatientsApplication" />
-      <item itemvalue="Spring Boot.HapPhysiciansApplication" />
+      <item itemvalue="Spring Boot.HapClientsApplication" />
       <item itemvalue="Spring Boot.HapConsultationApplication" />
       <item itemvalue="Spring Boot.HapDoctorsApplication" />
-      <item itemvalue="Spring Boot.HapClientsApplication" />
+      <item itemvalue="Spring Boot.HapPatientsApplication" />
+      <item itemvalue="Spring Boot.HapPhysiciansApplication" />
     </list>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.25557.131" />
-        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-IU-252.25557.131" />
+        <option value="bundled-jdk-9823dce3aa75-84258761d1cc-intellij.indexing.shared.core-IU-243.28141.18" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.28141.18" />
       </set>
     </attachedChunks>
   </component>
@@ -188,6 +236,9 @@
       <updated>1759774680499</updated>
       <workItem from="1759774683360" duration="616000" />
       <workItem from="1760109781364" duration="479000" />
+      <workItem from="1760111876317" duration="43000" />
+      <workItem from="1760111927663" duration="2440000" />
+      <workItem from="1760535541857" duration="1250000" />
     </task>
     <servers />
   </component>
