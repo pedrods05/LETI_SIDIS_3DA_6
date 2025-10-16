@@ -1,18 +1,17 @@
 package leti_sisdis_6.happhysicians.services;
 
-import leti_sisdis_6.happhysicians.auth.api.AuthHelper;
-import leti_sisdis_6.happhysicians.exceptions.NotFoundException;
-import leti_sisdis_6.happhysicians.dto.input.RegisterPhysicianRequest;
-import leti_sisdis_6.happhysicians.dto.input.UpdatePhysicianRequest;
-import leti_sisdis_6.happhysicians.dto.output.PhysicianIdResponse;
+import leti_sisdis_6.happhysicians.RegisterPhysicianRequest;
+import leti_sisdis_6.happhysicians.UpdatePhysicianRequest;
+import leti_sisdis_6.happhysicians.PhysicianIdResponse;
 import leti_sisdis_6.happhysicians.api.PhysicianMapper;
-import leti_sisdis_6.happhysicians.dto.output.PhysicianLimitedDTO;
-import leti_sisdis_6.happhysicians.dto.output.PhysicianFullDTO;
+import leti_sisdis_6.happhysicians.PhysicianLimitedDTO;
+import leti_sisdis_6.happhysicians.PhysicianFullDTO;
+import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
+import leti_sisdis_6.happhysicians.exceptions.NotFoundException;
 import leti_sisdis_6.happhysicians.model.*;
 import leti_sisdis_6.happhysicians.repository.DepartmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.repository.SpecialtyRepository;
-import leti_sisdis_6.happhysicians.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,8 +24,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import leti_sisdis_6.happhysicians.dto.output.TopPhysicianDTO;
-import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
+import leti_sisdis_6.happhysicians.TopPhysicianDTO;
 
 @Service
 @RequiredArgsConstructor
@@ -37,8 +35,6 @@ public class PhysicianService {
     private final SpecialtyRepository specialtyRepository;
     private final PasswordEncoder passwordEncoder;
     private final PhysicianMapper physicianMapper;
-    private final AuthHelper authHelper;
-    private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
 
     @Transactional
@@ -58,13 +54,6 @@ public class PhysicianService {
                 .orElseThrow(() -> new EntityNotFoundException("Specialty not found"));
 
         String physicianId = generatePhysicianId();
-
-        User user = new User();
-        user.setId(physicianId);
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.PHYSICIAN);
-        userRepository.save(user);
 
         Physician physician = physicianMapper.toEntity(request, department, specialty);
         physician.setPhysicianId(physicianId);
@@ -88,12 +77,6 @@ public class PhysicianService {
         Specialty specialty = specialtyRepository.findById(request.getSpecialtyId())
                 .orElseThrow(() -> new EntityNotFoundException("Specialty not found"));
         String physicianId = generatePhysicianId();
-        User user = new User();
-        user.setId(physicianId);
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.PHYSICIAN);
-        userRepository.save(user);
         Physician physician = physicianMapper.toEntity(request, department, specialty);
         physician.setPhysicianId(physicianId);
         physician.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -120,15 +103,11 @@ public class PhysicianService {
     }
 
     @Transactional(readOnly = true)
-    public Object getPhysicianDetails(String id) {
+    public PhysicianFullDTO getPhysicianDetails(String id) {
         Physician physician = physicianRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Physician not found with id: " + id));
 
-        if (authHelper.isAdmin()) {
-            return physicianMapper.toFullDTO(physician);
-        } else {
-            return physicianMapper.toLimitedDTO(physician);
-        }
+        return physicianMapper.toFullDTO(physician);
     }
 
     private String generatePhysicianId() {

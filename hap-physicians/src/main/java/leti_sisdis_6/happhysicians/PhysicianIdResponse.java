@@ -1,20 +1,27 @@
-package leti_sisdis_6.happhysicians.dto.output;
+package leti_sisdis_6.happhysicians;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Getter
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
 @AllArgsConstructor
 public class PhysicianIdResponse {
     private String physicianId;
     private String message;
     private PhotoDTO photo;
 
-    @Getter @Setter @AllArgsConstructor @NoArgsConstructor
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class PhotoDTO {
         private String url;
-        private java.time.LocalDateTime uploadedAt;
+        private LocalDateTime uploadedAt;
     }
 }

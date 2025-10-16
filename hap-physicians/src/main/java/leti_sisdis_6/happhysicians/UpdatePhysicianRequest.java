@@ -1,9 +1,11 @@
-package leti_sisdis_6.happhysicians.dto.input;
+package leti_sisdis_6.happhysicians;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
-@Data
+@Getter @Setter
 public class UpdatePhysicianRequest {
     private String fullName;
     private String licenseNumber;

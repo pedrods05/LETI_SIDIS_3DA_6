@@ -1,17 +1,16 @@
 package leti_sisdis_6.happhysicians.dto.output;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TopPhysicianDTO {
-    private String physicianId;
-    private String fullName;
-    private String specialtyName;
-    private Long appointmentCount;
+public class AppointmentSlotDto {
+    private String date;
+    private String startTime;
+    private String endTime;
 }

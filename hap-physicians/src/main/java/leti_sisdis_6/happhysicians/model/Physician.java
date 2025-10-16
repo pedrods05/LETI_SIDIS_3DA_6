@@ -14,7 +14,7 @@ import java.util.List;
 public class Physician {
 
     @Id
-    @Column(length = 10)
+    @Column(nullable = false, length = 10)
     private String physicianId;
 
     @Column(nullable = false)

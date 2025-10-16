@@ -1,6 +1,6 @@
 package leti_sisdis_6.happhysicians.repository;
 
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.Physician;
+import leti_sisdis_6.happhysicians.model.Physician;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +13,9 @@ import java.util.Optional;
 public interface PhysicianRepository extends JpaRepository<Physician, String> {
     boolean existsByUsername(String username);
     boolean existsByLicenseNumber(String licenseNumber);
+    Optional<Physician> findByUsername(String username);
+    List<Physician> findBySpecialtySpecialtyId(String specialtyId);
+    List<Physician> findByDepartmentDepartmentId(String departmentId);
 
     @Query("SELECT DISTINCT p FROM Physician p WHERE " +
            "(:name IS NULL OR " +
