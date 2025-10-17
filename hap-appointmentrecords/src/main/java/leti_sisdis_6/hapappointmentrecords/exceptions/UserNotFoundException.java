@@ -1,4 +1,4 @@
-package com.pcm.psoft.pcmclinic_api.exceptions;
+package leti_sisdis_6.hapappointmentrecords.exceptions;
 
 public class UserNotFoundException extends RuntimeException {
     public UserNotFoundException(String email) {

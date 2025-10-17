@@ -1,6 +1,7 @@
 package leti_sisdis_6.hapappointmentrecords.model;
 
 import jakarta.persistence.*;
+import leti_sisdis_6.happhysicians.model.Appointment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

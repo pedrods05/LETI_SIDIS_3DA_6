@@ -1,10 +1,10 @@
 package leti_sisdis_6.hapappointmentrecords.api;
 
-import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentDetailsDTO;
-import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentListDTO;
 import leti_sisdis_6.hapappointmentrecords.dto.output.PatientAppointmentDTO;
-import leti_sisdis_6.hapappointmentrecords.dto.output.PhysicianAverageDTO;
-import leti_sisdis_6.hapappointmentrecords.model.Appointment;
+import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.dto.output.AppointmentListDTO;
+import leti_sisdis_6.happhysicians.dto.output.PhysicianAverageDTO;
+import leti_sisdis_6.happhysicians.model.Appointment;
 import org.springframework.stereotype.Component;
 
 
@@ -23,7 +23,7 @@ public class AppointmentMapper {
         return AppointmentListDTO.builder()
                 .date(appointment.getDateTime().toLocalDate())
                 .time(appointment.getDateTime().toLocalTime())
-                .patientName(appointment.getPatient().getFullName())
+                .patientName(appointment.getPatientId())
                 .physicianName(appointment.getPhysician().getFullName())
                 .build();
     }
@@ -31,8 +31,8 @@ public class AppointmentMapper {
     public AppointmentDetailsDTO toDetailsDTO(Appointment appointment) {
         return AppointmentDetailsDTO.builder()
                 .appointmentId(appointment.getAppointmentId())
-                .patientId(appointment.getPatient().getPatientId())
-                .patientName(appointment.getPatient().getFullName())
+                .patientId(appointment.getPatientId())
+                .patientName(appointment.getPatientId())
                 .physicianId(appointment.getPhysician().getPhysicianId())
                 .physicianName(appointment.getPhysician().getFullName())
                 .dateTime(appointment.getDateTime())

@@ -1,49 +1,37 @@
-package com.pcm.psoft.pcmclinic_api.exceptions;
+package leti_sisdis_6.hapappointmentrecords.exceptions;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import java.util.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ValidationException;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@ControllerAdvice
+@RestControllerAdvice(basePackages = "leti_sisdis_6.hapappointmentrecords") // <— escopo só deste módulo
+@Order(Ordered.HIGHEST_PRECEDENCE)                                         // <— opcional, dá prioridade
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private final Logger logger = LogManager.getLogger();
 
-    @ExceptionHandler(value = { org.hibernate.StaleObjectStateException.class, ConflictException.class })
+    @ExceptionHandler({ org.hibernate.StaleObjectStateException.class, ConflictException.class })
     @ResponseStatus(HttpStatus.CONFLICT)
     protected ResponseEntity<Object> handleConflict(final HttpServletRequest request, final Exception ex) {
         logger.error("ConflictException {}\n", request.getRequestURI(), ex);
-
         final Map<String, String> details = new HashMap<>();
         details.put("message", "Object was updated by another user");
         details.put("error", ex.getMessage());
-
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiCallError<>("Conflict", details.entrySet()));
     }
 
@@ -52,13 +40,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleConstraintViolation(final HttpServletRequest request,
                                                                final ConstraintViolationException ex) {
         logger.error("ConstraintViolationException {}\n", request.getRequestURI(), ex);
-
         final Map<String, String> details = new HashMap<>();
         details.put("message", "The identity of the object you tried to create is already in use");
         details.put("error", ex.getMessage());
         details.put("constraint", ex.getConstraintName());
         details.put("state", ex.getSQLState());
-
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiCallError<>("Conflict", details.entrySet()));
     }
 
@@ -67,11 +53,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleDataIntegrityViolation(final HttpServletRequest request,
                                                                   final DataIntegrityViolationException ex) {
         logger.error("DataIntegrityViolationException {}\n", request.getRequestURI(), ex);
-
         final Map<String, String> details = new HashMap<>();
         details.put("message", "The identity of the object you tried to create is already in use");
         details.put("error", ex.getMessage());
-
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiCallError<>("Conflict", details.entrySet()));
     }
 
@@ -80,7 +64,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleIllegalArgument(final HttpServletRequest request,
                                                            final IllegalArgumentException ex) {
         logger.error("BadRequestException {}\n", request.getRequestURI(), ex);
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiCallError<>("Bad Request", List.of(ex.getMessage())));
     }
@@ -90,7 +73,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiCallError<String>> handleNotFoundException(final HttpServletRequest request,
                                                                         final NotFoundException ex) {
         logger.error("NotFoundException {}\n", request.getRequestURI(), ex);
-
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiCallError<>("Not found", List.of(ex.getMessage())));
     }
@@ -100,7 +82,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiCallError<String>> handleValidationException(final HttpServletRequest request,
                                                                           final ValidationException ex) {
         logger.error("ValidationException {}\n", request.getRequestURI(), ex);
-
         return ResponseEntity.badRequest()
                 .body(new ApiCallError<>("Bad Request: Validation Failed", List.of(ex.getMessage())));
     }
@@ -110,12 +91,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiCallError<Map.Entry<String, String>>> handleMethodArgumentTypeMismatchException(
             final HttpServletRequest request, final MethodArgumentTypeMismatchException ex) {
         logger.error("handleMethodArgumentTypeMismatchException {}\n", request.getRequestURI(), ex);
-
         final Map<String, String> details = new HashMap<>();
         details.put("paramName", ex.getName());
         details.put("paramValue", Optional.ofNullable(ex.getValue()).map(Object::toString).orElse(""));
         details.put("errorMessage", ex.getMessage());
-
         return ResponseEntity.badRequest()
                 .body(new ApiCallError<>("Method argument type mismatch", details.entrySet()));
     }
@@ -124,7 +103,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
                                                                   HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         logger.error("handleMethodArgumentNotValidException\n", ex);
-
         final List<Map<String, String>> details = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(fieldError -> {
             final Map<String, String> detail = new HashMap<>();
@@ -134,7 +112,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             detail.put("errorMessage", fieldError.getDefaultMessage());
             details.add(detail);
         });
-
         return ResponseEntity.badRequest().body(new ApiCallError<>("Method argument validation failed", details));
     }
 
@@ -143,7 +120,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiCallError<String>> handleAccessDeniedException(final HttpServletRequest request,
                                                                             final AccessDeniedException ex) {
         logger.error("handleAccessDeniedException {}\n", request.getRequestURI(), ex);
-
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ApiCallError<>("Access denied!", List.of(ex.getMessage())));
     }
@@ -151,9 +127,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<ApiCallError<String>> handleUserNotFoundException(final HttpServletRequest request,
-                                                                          final UserNotFoundException ex) {
+                                                                            final UserNotFoundException ex) {
         logger.error("handleUserNotFoundException {}\n", request.getRequestURI(), ex);
-
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ApiCallError<>("User not found", List.of(ex.getMessage())));
     }
@@ -162,9 +137,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ApiCallError<T> {
-
         private String message;
         private Collection<T> details;
     }
 }
-
