@@ -1,7 +1,7 @@
 package leti_sisdis_6.hapappointmentrecords.dto.output;
 
-import com.pcm.psoft.pcmclinic_api.appointment.model.AppointmentStatus;
-import com.pcm.psoft.pcmclinic_api.appointment.model.ConsultationType;
+import leti_sisdis_6.happhysicians.model.AppointmentStatus;
+import leti_sisdis_6.happhysicians.model.ConsultationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

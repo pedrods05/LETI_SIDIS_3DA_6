@@ -24,8 +24,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import leti_sisdis_6.happatients.dto.PatientProfileDTO;
+
 @RestController
-@RequestMapping("/api/patients")
+@RequestMapping("/patients")
 @RequiredArgsConstructor
 @Tag(name = "Patient", description = "Patient management endpoints")
 public class PatientController {
@@ -57,6 +59,21 @@ public class PatientController {
         }
     }
 
+    @GetMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(
+        summary = "List all patients",
+        description = "Retrieves all patients (admin only)",
+        security = @SecurityRequirement(name = "bearerAuth"),
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved patient list"),
+            @ApiResponse(responseCode = "403", description = "Access forbidden")
+        }
+    )
+    public ResponseEntity<List<PatientDetailsDTO>> listAllPatients() {
+        return ResponseEntity.ok(patientService.listAllPatients());
+    }
+
     @GetMapping("/{id}")
     @Operation(
         summary = "Get patient details",
@@ -73,6 +90,29 @@ public class PatientController {
         try {
             PatientDetailsDTO patient = patientService.getPatientDetails(id);
             return ResponseEntity.ok(patient);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Alias to match required path: /patients/search
+    @GetMapping("/search")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(
+        summary = "Search patients by name",
+        description = "Allows administrators to search for patients using part of the full name.",
+        security = @SecurityRequirement(name = "bearerAuth"),
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved patient list"),
+            @ApiResponse(responseCode = "404", description = "No patients found"),
+            @ApiResponse(responseCode = "403", description = "Access forbidden")
+        }
+    )
+    public ResponseEntity<?> searchPatients(@RequestParam String name) {
+        try {
+            List<PatientDetailsDTO> result = patientService.searchPatientsByName(name);
+            return ResponseEntity.ok(result);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
@@ -99,6 +139,48 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/{id}/profile")
+    @PreAuthorize("hasAuthority('PHYSICIAN')")
+    @Operation(
+        summary = "Get patient profile",
+        description = "Returns a patient's profile enriched with appointment records. Accessible to physicians.",
+        security = @SecurityRequirement(name = "bearerAuth"),
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Profile retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Patient not found"),
+            @ApiResponse(responseCode = "403", description = "Access forbidden")
+        }
+    )
+    public ResponseEntity<?> getPatientProfile(
+            @PathVariable String id,
+            @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
+        try {
+            PatientProfileDTO profile = patientService.getPatientProfile(id, authorizationHeader);
+            return ResponseEntity.ok(profile);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me/profile")
+    @PreAuthorize("hasAuthority('PATIENT')")
+    @Operation(
+        summary = "Get my profile",
+        description = "Returns the authenticated patient's profile with appointment records.",
+        security = @SecurityRequirement(name = "bearerAuth"),
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Profile retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+        }
+    )
+    public ResponseEntity<PatientProfileDTO> getMyProfile(
+            @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return ResponseEntity.ok(patientService.getMyProfile(email, authorizationHeader));
     }
 
     @PatchMapping("/me")
@@ -149,4 +231,4 @@ public class PatientController {
 
     private record UpdateResponse(String message) {}
     private record ErrorResponse(String error, String message, String status) {}
-} 
+}

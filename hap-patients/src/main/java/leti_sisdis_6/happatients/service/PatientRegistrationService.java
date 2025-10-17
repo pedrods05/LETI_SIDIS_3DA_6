@@ -8,7 +8,6 @@ import leti_sisdis_6.happatients.repository.PatientRepository;
 import leti_sisdis_6.happatients.repository.PhotoRepository;
 import leti_sisdis_6.happatients.repository.AddressRepository;
 import leti_sisdis_6.happatients.repository.InsuranceInfoRepository;
- 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,7 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +28,19 @@ public class PatientRegistrationService {
     private final PhotoRepository photoRepository;
     private final AddressRepository addressRepository;
     private final InsuranceInfoRepository insuranceInfoRepository;
-    private final PatientIdGenerator patientIdGenerator;
-    private final AuthClient authClient;
+    private final PasswordEncoder passwordEncoder;
+
+    @Autowired(required = false)
+    private RestTemplate restTemplate;
+
+    private static final String AUTH_SERVICE_BASE_URL = "http://localhost:8084";
+
+    private RestTemplate getRestTemplate() {
+        if (this.restTemplate == null) {
+            this.restTemplate = new RestTemplate();
+        }
+        return this.restTemplate;
+    }
 
     @Transactional
     public String registerPatient(PatientRegistrationDTOV2 dto) {
@@ -42,8 +56,18 @@ public class PatientRegistrationService {
             validateHealthConcerns(dto.getHealthConcerns());
         }
 
-        // Register user remotely and use returned id as patient id
-        String patientId = authClient.registerUser(dto.getEmail(), dto.getPassword(), "PATIENT").getId();
+        String patientId = generatePatientId();
+
+        // Register auth user via hap-auth API
+        Map<String, String> req = new HashMap<>();
+        req.put("username", dto.getEmail());
+        req.put("password", dto.getPassword());
+        req.put("role", "PATIENT");
+        getRestTemplate().postForEntity(
+            AUTH_SERVICE_BASE_URL + "/api/public/register",
+            req,
+            Object.class
+        );
 
         // Create photo
         Photo photo = Photo.builder()
@@ -114,7 +138,17 @@ public class PatientRegistrationService {
     }
 
     private String generatePatientId() {
-        return patientIdGenerator.generateNextPatientId();
+        List<String> existingIds = patientRepository.findAll().stream()
+                .map(Patient::getPatientId)
+                .filter(id -> id != null && id.startsWith("PAT"))
+                .toList();
+        int max = existingIds.stream()
+                .map(id -> id.substring(3))
+                .filter(s -> s.matches("\\d+"))
+                .mapToInt(Integer::parseInt)
+                .max()
+                .orElse(0);
+        return String.format("PAT%02d", max + 1);
     }
 
     private String generateAddressId() {

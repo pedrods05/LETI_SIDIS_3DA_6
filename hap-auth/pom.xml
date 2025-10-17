@@ -30,6 +30,8 @@
         <java.version>17</java.version>
         <spring-ai.version>1.0.3</spring-ai.version>
         <spring-modulith.version>1.4.1</spring-modulith.version>
+        <!-- Align springdoc with Spring Boot 3.5.x / Spring Framework 6.3 -->
+        <springdoc.version>2.7.0</springdoc.version>
     </properties>
     <dependencies>
         <!-- Web, JPA, Security -->
@@ -87,7 +89,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.2.0</version>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <!-- Database H2 (dev only) -->
