@@ -133,12 +133,7 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>LETI_SISDIS_6</groupId>
-            <artifactId>hap-auth</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
+        <!-- Removed compile-time coupling to hap-auth; communicate via HTTP only -->
     </dependencies>
 
     <build>
