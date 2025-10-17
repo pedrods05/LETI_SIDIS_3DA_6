@@ -1,16 +1,17 @@
 package leti_sisdis_6.hapappointmentrecords.service;
 
-import com.pcm.psoft.pcmclinic_api.appointment.dto.input.AppointmentRecordRequest;
-import com.pcm.psoft.pcmclinic_api.appointment.dto.output.AppointmentRecordResponse;
-import com.pcm.psoft.pcmclinic_api.appointment.dto.output.AppointmentRecordViewDTO;
-import com.pcm.psoft.pcmclinic_api.appointment.model.Appointment;
-import com.pcm.psoft.pcmclinic_api.appointment.model.AppointmentRecord;
-import com.pcm.psoft.pcmclinic_api.appointment.repository.AppointmentRecordRepository;
-import com.pcm.psoft.pcmclinic_api.appointment.repository.AppointmentRepository;
-import com.pcm.psoft.pcmclinic_api.exceptions.NotFoundException;
-import com.pcm.psoft.pcmclinic_api.exceptions.UnauthorizedException;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.Role;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.User;
+import leti_sisdis_6.hapappointmentrecords.dto.input.AppointmentRecordRequest;
+import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentRecordResponse;
+import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentRecordViewDTO;
+import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecord;
+import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
+import leti_sisdis_6.hapappointmentrecords.exceptions.NotFoundException;
+import leti_sisdis_6.hapappointmentrecords.exceptions.UnauthorizedException;
+import leti_sisdis_6.hapauth.usermanagement.User;
+import leti_sisdis_6.hapauth.usermanagement.Role;
+
+import leti_sisdis_6.happhysicians.model.Appointment;
+import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +70,7 @@ public class AppointmentRecordService {
 
 
         if (currentUser.getRole() == Role.PATIENT) {
-            if (!record.getAppointment().getPatient().getPatientId().equals(currentUser.getId())) {
+            if (!record.getAppointment().getPatientId().equals(currentUser.getId())) {
                 throw new UnauthorizedException("You are not authorized to view this appointment record");
             }
         }
@@ -87,7 +88,7 @@ public class AppointmentRecordService {
 
     @Transactional(readOnly = true)
     public List<AppointmentRecordViewDTO> getPatientRecords(String patientId) {
-        List<Appointment> appointments = appointmentRepository.findByPatient_PatientIdOrderByDateTimeDesc(patientId);
+        List<Appointment> appointments = appointmentRepository.findByPatientIdOrderByDateTimeDesc(patientId);
 
         return appointments.stream()
             .flatMap(appointment -> recordRepository.findByAppointment_AppointmentId(appointment.getAppointmentId()).stream())

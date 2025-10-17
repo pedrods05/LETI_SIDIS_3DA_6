@@ -1,8 +1,8 @@
 package leti_sisdis_6.hapappointmentrecords.dto.input;
 
-import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import leti_sisdis_6.happhysicians.model.ConsultationType;
 import lombok.Getter;
 import lombok.Setter;
 
