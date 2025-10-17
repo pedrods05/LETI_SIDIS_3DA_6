@@ -6,15 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentRecordController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentRecordController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/PatientAppointmentController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/PatientAppointmentController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/Appointment.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/Appointment.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-auth/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-auth/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/PatientRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/PatientRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientRegistrationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientRegistrationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientService.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,7 +20,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="pedro" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -35,12 +31,12 @@
     &quot;assignee&quot;: &quot;pedrocunha4&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/pedrods05/LET_SIDIS_3DA_6.git",
-    "accountId": "7d51d996-4996-4ed9-9c35-f10b71549cea"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/pedrods05/LET_SIDIS_3DA_6.git&quot;,
+    &quot;accountId&quot;: &quot;7d51d996-4996-4ed9-9c35-f10b71549cea&quot;
   }
-}]]></component>
+}</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -53,37 +49,38 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;Spring Boot.HapAppointmentrecordsApplication (1).executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapAuthApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapClientsApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapConsultationApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapDoctorsApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapPatientsApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;luis&quot;,
-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;openjdk-23&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.HapAppointmentrecordsApplication (1).executor": "Run",
+    "Spring Boot.HapAppointmentrecordsApplication.executor": "Run",
+    "Spring Boot.HapAuthApplication.executor": "Run",
+    "Spring Boot.HapClientsApplication.executor": "Run",
+    "Spring Boot.HapConsultationApplication.executor": "Run",
+    "Spring Boot.HapDoctorsApplication.executor": "Run",
+    "Spring Boot.HapPatientsApplication.executor": "Run",
+    "git-widget-placeholder": "Zé",
+    "jdk.selected.JAVA_MODULE": "openjdk-23",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.17",
+    "project.structure.side.proportion": "0.2",
+    "run.configurations.included.in.services": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\service" />

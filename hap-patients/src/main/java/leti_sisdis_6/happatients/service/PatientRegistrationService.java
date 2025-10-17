@@ -8,9 +8,7 @@ import leti_sisdis_6.happatients.repository.PatientRepository;
 import leti_sisdis_6.happatients.repository.PhotoRepository;
 import leti_sisdis_6.happatients.repository.AddressRepository;
 import leti_sisdis_6.happatients.repository.InsuranceInfoRepository;
-import leti_sisdis_6.hapauth.usermanagement.Role;
-import leti_sisdis_6.hapauth.usermanagement.User;
-import leti_sisdis_6.hapauth.usermanagement.UserRepository;
+ 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,8 +25,8 @@ public class PatientRegistrationService {
     private final PhotoRepository photoRepository;
     private final AddressRepository addressRepository;
     private final InsuranceInfoRepository insuranceInfoRepository;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PatientIdGenerator patientIdGenerator;
+    private final AuthClient authClient;
 
     @Transactional
     public String registerPatient(PatientRegistrationDTOV2 dto) {
@@ -44,15 +42,8 @@ public class PatientRegistrationService {
             validateHealthConcerns(dto.getHealthConcerns());
         }
 
-        String patientId = generatePatientId();
-
-        // Create user
-        User user = new User();
-        user.setId(patientId);
-        user.setUsername(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(Role.PATIENT);
-        userRepository.save(user);
+        // Register user remotely and use returned id as patient id
+        String patientId = authClient.registerUser(dto.getEmail(), dto.getPassword(), "PATIENT").getId();
 
         // Create photo
         Photo photo = Photo.builder()
@@ -123,18 +114,7 @@ public class PatientRegistrationService {
     }
 
     private String generatePatientId() {
-        List<String> existingIds = userRepository.findAll().stream()
-                .map(User::getId)
-                .filter(id -> id.startsWith("PAT"))
-                .toList();
-
-        int max = existingIds.stream()
-                .map(id -> id.substring(3))
-                .mapToInt(Integer::parseInt)
-                .max()
-                .orElse(0);
-
-        return String.format("PAT%02d", max + 1);
+        return patientIdGenerator.generateNextPatientId();
     }
 
     private String generateAddressId() {
