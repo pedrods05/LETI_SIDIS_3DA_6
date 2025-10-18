@@ -21,13 +21,13 @@ public class UserService {
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.valueOf(request.getRole()));
-        
+
         User savedUser = userRepository.save(user);
-        
+
         return UserIdResponse.builder()
-            .id(savedUser.getId())
-            .username(savedUser.getUsername())
-            .role(savedUser.getRole().name())
-            .build();
+                .id(savedUser.getId())
+                .username(savedUser.getUsername())
+                .role(savedUser.getRole().name())
+                .build();
     }
 }
