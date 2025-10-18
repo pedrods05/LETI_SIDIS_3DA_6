@@ -1,19 +1,24 @@
 package leti_sisdis_6.happhysicians.services;
 
-import leti_sisdis_6.happhysicians.dto.external.AppointmentRecordDTO;
-import leti_sisdis_6.happhysicians.dto.external.PatientDTO;
-import leti_sisdis_6.happhysicians.dto.external.UserDTO;
+import leti_sisdis_6.happhysicians.exceptions.AppointmentRecordNotFoundException;
+import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException;
+import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ExternalServiceClient {
 
-    @Autowired(required = false)
+    @Autowired
     private RestTemplate restTemplate;
 
     @Value("${hap.patients.base-url:http://localhost:8082}")
@@ -25,67 +30,110 @@ public class ExternalServiceClient {
     @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
     private String appointmentRecordsServiceUrl;
 
-    private RestTemplate getRestTemplate() {
-        if (this.restTemplate == null) {
-            this.restTemplate = new RestTemplate();
-        }
-        return this.restTemplate;
-    }
-
     // Patient Service calls
-    public PatientDTO getPatientById(String patientId) {
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> getPatientById(String patientId) {
         String url = patientsServiceUrl + "/patients/" + patientId;
         try {
-            return getRestTemplate().getForObject(url, PatientDTO.class);
+            return restTemplate.getForObject(url, Map.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new PatientNotFoundException("Patient not found with id: " + patientId, e);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw new MicroserviceCommunicationException("Patients", "getPatientById", "Unauthorized to access patient data", e);
+        } catch (HttpClientErrorException.Forbidden e) {
+            throw new MicroserviceCommunicationException("Patients", "getPatientById", "Forbidden to access patient data", e);
         } catch (Exception e) {
-            throw new RuntimeException("Error calling Patients service during getPatientById: " + e.getMessage(), e);
+            throw new MicroserviceCommunicationException("Patients", "getPatientById", e.getMessage(), e);
         }
     }
 
-    public List<PatientDTO> getPatientsByIds(List<String> patientIds) {
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getPatientsByIds(List<String> patientIds) {
         String url = patientsServiceUrl + "/patients/batch";
         try {
-            return getRestTemplate().postForObject(url, patientIds, List.class);
+            return restTemplate.postForObject(url, patientIds, List.class);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw new MicroserviceCommunicationException("Patients", "getPatientsByIds", "Unauthorized to access patient data", e);
+        } catch (HttpClientErrorException.Forbidden e) {
+            throw new MicroserviceCommunicationException("Patients", "getPatientsByIds", "Forbidden to access patient data", e);
         } catch (Exception e) {
-            throw new RuntimeException("Error calling Patients service during getPatientsByIds: " + e.getMessage(), e);
+            throw new MicroserviceCommunicationException("Patients", "getPatientsByIds", e.getMessage(), e);
         }
     }
 
     // Auth Service calls
-    public UserDTO getUserById(String userId) {
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> getUserById(String userId) {
         String url = authServiceUrl + "/users/" + userId;
         try {
-            return getRestTemplate().getForObject(url, UserDTO.class);
+            return restTemplate.getForObject(url, Map.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new MicroserviceCommunicationException("Auth", "getUserById", "User not found with id: " + userId, e);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw new MicroserviceCommunicationException("Auth", "getUserById", "Unauthorized to access user data", e);
         } catch (Exception e) {
-            throw new RuntimeException("Error calling Auth service during getUserById: " + e.getMessage(), e);
+            throw new MicroserviceCommunicationException("Auth", "getUserById", e.getMessage(), e);
         }
     }
 
-    public UserDTO validateToken(String token) {
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> validateToken(String token) {
         String url = authServiceUrl + "/auth/validate";
         try {
-            return getRestTemplate().postForObject(url, token, UserDTO.class);
+            return restTemplate.postForObject(url, token, Map.class);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw new MicroserviceCommunicationException("Auth", "validateToken", "Invalid or expired token", e);
         } catch (Exception e) {
-            throw new RuntimeException("Error calling Auth service during validateToken: " + e.getMessage(), e);
+            throw new MicroserviceCommunicationException("Auth", "validateToken", e.getMessage(), e);
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> registerUser(String username, String password, String role) {
+        String url = authServiceUrl + "/api/public/register";
+
+        Map<String, String> request = new HashMap<>();
+        request.put("username", username);
+        request.put("password", password);
+        request.put("role", role);
+
+        try {
+            return restTemplate.postForObject(url, request, Map.class);
+        } catch (HttpClientErrorException.Conflict e) {
+            throw new MicroserviceCommunicationException("Auth", "registerUser", "Username already exists", e);
+        } catch (HttpClientErrorException.BadRequest e) {
+            throw new MicroserviceCommunicationException("Auth", "registerUser", "Invalid request data", e);
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("Auth", "registerUser", e.getMessage(), e);
         }
     }
 
     // Appointment Records Service calls
-    public AppointmentRecordDTO getAppointmentRecord(String appointmentId) {
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> getAppointmentRecord(String appointmentId) {
         String url = appointmentRecordsServiceUrl + "/appointment-records/appointment/" + appointmentId;
         try {
-            return getRestTemplate().getForObject(url, AppointmentRecordDTO.class);
+            return restTemplate.getForObject(url, Map.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AppointmentRecordNotFoundException("Appointment record not found for appointment: " + appointmentId, e);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "getAppointmentRecord", "Unauthorized to access appointment record data", e);
         } catch (Exception e) {
-            throw new RuntimeException("Error calling AppointmentRecords service during getAppointmentRecord: " + e.getMessage(), e);
+            throw new MicroserviceCommunicationException("AppointmentRecords", "getAppointmentRecord", e.getMessage(), e);
         }
     }
 
-    public List<AppointmentRecordDTO> getAppointmentRecordsByPhysician(String physicianId) {
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getAppointmentRecordsByPhysician(String physicianId) {
         String url = appointmentRecordsServiceUrl + "/appointment-records/physician/" + physicianId;
         try {
-            return getRestTemplate().getForObject(url, List.class);
+            return restTemplate.getForObject(url, List.class);
+        } catch (HttpClientErrorException.Unauthorized e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "getAppointmentRecordsByPhysician", "Unauthorized to access appointment record data", e);
         } catch (Exception e) {
-            throw new RuntimeException("Error calling AppointmentRecords service during getAppointmentRecordsByPhysician: " + e.getMessage(), e);
+            throw new MicroserviceCommunicationException("AppointmentRecords", "getAppointmentRecordsByPhysician", e.getMessage(), e);
         }
     }
 }

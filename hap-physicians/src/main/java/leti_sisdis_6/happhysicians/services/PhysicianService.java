@@ -1,17 +1,19 @@
 package leti_sisdis_6.happhysicians.services;
 
-import leti_sisdis_6.happhysicians.RegisterPhysicianRequest;
-import leti_sisdis_6.happhysicians.UpdatePhysicianRequest;
-import leti_sisdis_6.happhysicians.PhysicianIdResponse;
+import leti_sisdis_6.happhysicians.dto.request.RegisterPhysicianRequest;
+import leti_sisdis_6.happhysicians.dto.request.UpdatePhysicianRequest;
+import leti_sisdis_6.happhysicians.dto.response.PhysicianIdResponse;
 import leti_sisdis_6.happhysicians.api.PhysicianMapper;
-import leti_sisdis_6.happhysicians.PhysicianLimitedDTO;
-import leti_sisdis_6.happhysicians.PhysicianFullDTO;
+import leti_sisdis_6.happhysicians.dto.response.PhysicianLimitedDTO;
+import leti_sisdis_6.happhysicians.dto.response.PhysicianFullDTO;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.exceptions.NotFoundException;
+import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException;
 import leti_sisdis_6.happhysicians.model.*;
 import leti_sisdis_6.happhysicians.repository.DepartmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.repository.SpecialtyRepository;
+import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +26,11 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import leti_sisdis_6.happhysicians.TopPhysicianDTO;
+import java.util.Map;
+import java.util.HashMap;
+import leti_sisdis_6.happhysicians.dto.response.TopPhysicianDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.HttpClientErrorException;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +42,9 @@ public class PhysicianService {
     private final PasswordEncoder passwordEncoder;
     private final PhysicianMapper physicianMapper;
     private final AppointmentRepository appointmentRepository;
+
+    @Autowired
+    private ExternalServiceClient externalServiceClient;
 
     @Transactional
     public PhysicianIdResponse register(RegisterPhysicianRequest request) {
@@ -54,6 +63,21 @@ public class PhysicianService {
                 .orElseThrow(() -> new EntityNotFoundException("Specialty not found"));
 
         String physicianId = generatePhysicianId();
+
+        // Create auth user via hap-auth API
+        Map<String, String> authRequest = new HashMap<>();
+        authRequest.put("username", request.getUsername());
+        authRequest.put("password", request.getPassword());
+        authRequest.put("role", "PHYSICIAN");
+        
+        try {
+            // Register user in hap-auth service
+            externalServiceClient.registerUser(request.getUsername(), request.getPassword(), "PHYSICIAN");
+            System.out.println("Successfully registered physician in auth service: " + request.getUsername());
+        } catch (Exception e) {
+            // Log warning but continue with local registration
+            System.out.println("Warning: Could not register physician in auth service: " + e.getMessage());
+        }
 
         Physician physician = physicianMapper.toEntity(request, department, specialty);
         physician.setPhysicianId(physicianId);
@@ -218,5 +242,54 @@ public class PhysicianService {
                 .appointmentCount((Long) obj[3])
                 .build()
         ).toList();
+    }
+
+    // ===== MÉTODOS DE COMUNICAÇÃO INTER-MICROSERVIÇOS =====
+
+    /**
+     * Get physician details with patient statistics from other microservices
+     */
+    @Transactional(readOnly = true)
+    public PhysicianFullDTO getPhysicianWithStats(String id) {
+        Physician physician = physicianRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Physician not found with id: " + id));
+
+        PhysicianFullDTO physicianDTO = physicianMapper.toFullDTO(physician);
+
+        // Get appointment records from hap-appointmentrecords
+        try {
+            List<Map<String, Object>> appointmentRecords = externalServiceClient.getAppointmentRecordsByPhysician(id);
+            // Add statistics to the DTO if needed
+            // physicianDTO.setAppointmentRecordsCount(appointmentRecords.size());
+        } catch (Exception e) {
+            // Log warning but continue without external data
+            System.out.println("Warning: Could not fetch appointment records for physician " + id + ": " + e.getMessage());
+        }
+
+        return physicianDTO;
+    }
+
+    /**
+     * Validate physician token with hap-auth service
+     */
+    public boolean validatePhysicianToken(String token) {
+        try {
+            externalServiceClient.validateToken(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get physician's patient list from appointments
+     */
+    @Transactional(readOnly = true)
+    public List<String> getPhysicianPatientIds(String physicianId) {
+        List<Appointment> appointments = appointmentRepository.findByPhysicianPhysicianId(physicianId);
+        return appointments.stream()
+                .map(Appointment::getPatientId)
+                .distinct()
+                .toList();
     }
 }

@@ -1,8 +1,8 @@
 package leti_sisdis_6.happhysicians.services;
 
-import leti_sisdis_6.happhysicians.dto.external.AppointmentRecordDTO;
-import leti_sisdis_6.happhysicians.dto.external.PatientDTO;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.exceptions.AppointmentRecordNotFoundException;
+import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
+import java.util.Map;
 @Service
 public class AppointmentService {
 
@@ -33,13 +33,13 @@ public class AppointmentService {
         if (physician.isEmpty()) {
             throw new RuntimeException("Physician not found");
         }
-        
+
         // Set the complete physician object
         appointment.setPhysician(physician.get());
 
         // Check for conflicts
         if (appointmentRepository.existsByPhysicianPhysicianIdAndDateTime(
-                appointment.getPhysician().getPhysicianId(), 
+                appointment.getPhysician().getPhysicianId(),
                 appointment.getDateTime())) {
             throw new RuntimeException("Physician already has an appointment at this time");
         }
@@ -100,10 +100,17 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
         // Call Patient service for patient details
-        PatientDTO patient = externalServiceClient.getPatientById(appointment.getPatientId());
-
-        // Combine data and return
-        return new AppointmentDetailsDTO(appointment, patient);
+        try {
+            Map<String, Object> patientData = externalServiceClient.getPatientById(appointment.getPatientId());
+            // Update appointment with patient data from external service
+            appointment.setPatientName((String) patientData.get("fullName"));
+            appointment.setPatientEmail((String) patientData.get("email"));
+            appointment.setPatientPhone((String) patientData.get("phoneNumber"));
+            return new AppointmentDetailsDTO(appointment);
+        } catch (PatientNotFoundException e) {
+            // Return appointment with local data only
+            return new AppointmentDetailsDTO(appointment);
+        }
     }
 
     public AppointmentDetailsDTO getAppointmentWithPatientAndRecord(String appointmentId) {
@@ -112,16 +119,24 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
         // Call Patient service for patient details
-        PatientDTO patient = externalServiceClient.getPatientById(appointment.getPatientId());
+        try {
+            Map<String, Object> patientData = externalServiceClient.getPatientById(appointment.getPatientId());
+            appointment.setPatientName((String) patientData.get("fullName"));
+            appointment.setPatientEmail((String) patientData.get("email"));
+            appointment.setPatientPhone((String) patientData.get("phoneNumber"));
+        } catch (PatientNotFoundException e) {
+            // Continue without patient data
+        }
 
         // Call Appointment Records service for record details
         try {
-            AppointmentRecordDTO appointmentRecord = externalServiceClient.getAppointmentRecord(appointmentId);
-            return new AppointmentDetailsDTO(appointment, patient, appointmentRecord);
-        } catch (Exception e) {
-            // If no record exists yet, return without it
-            return new AppointmentDetailsDTO(appointment, patient);
+            Map<String, Object> appointmentRecord = externalServiceClient.getAppointmentRecord(appointmentId);
+            // Could store record data in appointment if needed
+        } catch (AppointmentRecordNotFoundException e) {
+            // Continue without record data
         }
+
+        return new AppointmentDetailsDTO(appointment);
     }
 
     public List<AppointmentDetailsDTO> getAppointmentsByPhysicianWithPatients(String physicianId) {
@@ -130,11 +145,14 @@ public class AppointmentService {
         return appointments.stream()
                 .map(appointment -> {
                     try {
-                        PatientDTO patient = externalServiceClient.getPatientById(appointment.getPatientId());
-                        return new AppointmentDetailsDTO(appointment, patient);
-                    } catch (Exception e) {
-                        // Return appointment without patient data if service is unavailable
-                        return new AppointmentDetailsDTO(appointment, null);
+                        Map<String, Object> patientData = externalServiceClient.getPatientById(appointment.getPatientId());
+                        appointment.setPatientName((String) patientData.get("fullName"));
+                        appointment.setPatientEmail((String) patientData.get("email"));
+                        appointment.setPatientPhone((String) patientData.get("phoneNumber"));
+                        return new AppointmentDetailsDTO(appointment);
+                    } catch (PatientNotFoundException e) {
+                        // Return appointment with local data only
+                        return new AppointmentDetailsDTO(appointment);
                     }
                 })
                 .toList();

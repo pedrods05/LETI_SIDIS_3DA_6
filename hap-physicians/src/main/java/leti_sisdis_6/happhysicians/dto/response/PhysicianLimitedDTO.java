@@ -1,4 +1,4 @@
-package leti_sisdis_6.happhysicians;
+package leti_sisdis_6.happhysicians.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
