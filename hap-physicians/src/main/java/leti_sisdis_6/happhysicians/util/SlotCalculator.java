@@ -1,6 +1,6 @@
 package leti_sisdis_6.happhysicians.util;
 
-import leti_sisdis_6.happhysicians.AppointmentSlotDto;
+import leti_sisdis_6.happhysicians.dto.response.AppointmentSlotDto;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.model.Physician;
 import org.springframework.stereotype.Component;

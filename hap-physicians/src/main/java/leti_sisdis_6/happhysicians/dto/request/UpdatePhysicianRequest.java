@@ -1,4 +1,4 @@
-package leti_sisdis_6.happhysicians;
+package leti_sisdis_6.happhysicians.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

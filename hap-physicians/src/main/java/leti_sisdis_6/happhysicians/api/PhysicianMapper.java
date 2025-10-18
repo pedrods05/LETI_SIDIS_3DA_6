@@ -1,8 +1,8 @@
 package leti_sisdis_6.happhysicians.api;
 
-import leti_sisdis_6.happhysicians.RegisterPhysicianRequest;
-import leti_sisdis_6.happhysicians.PhysicianFullDTO;
-import leti_sisdis_6.happhysicians.PhysicianLimitedDTO;
+import leti_sisdis_6.happhysicians.dto.request.RegisterPhysicianRequest;
+import leti_sisdis_6.happhysicians.dto.response.PhysicianFullDTO;
+import leti_sisdis_6.happhysicians.dto.response.PhysicianLimitedDTO;
 import leti_sisdis_6.happhysicians.model.Department;
 import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.model.Specialty;

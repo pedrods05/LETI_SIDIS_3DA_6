@@ -3,6 +3,8 @@ package leti_sisdis_6.happhysicians.api;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,12 +15,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/appointments")
+@Tag(name = "Appointment", description = "Appointment management endpoints")
 public class AppointmentController {
 
     @Autowired
     private AppointmentService appointmentService;
 
     @GetMapping("/{appointmentId}")
+    @Operation(summary = "Get appointment by ID")
     public ResponseEntity<Appointment> getAppointment(@PathVariable String appointmentId) {
         return appointmentService.getAppointmentById(appointmentId)
                 .map(ResponseEntity::ok)
@@ -26,6 +30,7 @@ public class AppointmentController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new appointment")
     public ResponseEntity<?> createAppointment(@RequestBody Appointment appointment) {
         try {
             Appointment createdAppointment = appointmentService.createAppointment(appointment);
@@ -36,21 +41,25 @@ public class AppointmentController {
     }
 
     @GetMapping
+    @Operation(summary = "Get all appointments")
     public List<Appointment> getAllAppointments() {
         return appointmentService.getAllAppointments();
     }
 
     @GetMapping("/physician/{physicianId}")
+    @Operation(summary = "Get appointments by physician")
     public List<Appointment> getAppointmentsByPhysician(@PathVariable String physicianId) {
         return appointmentService.getAppointmentsByPhysician(physicianId);
     }
 
     @GetMapping("/patient/{patientId}")
+    @Operation(summary = "Get appointments by patient")
     public List<Appointment> getAppointmentsByPatient(@PathVariable String patientId) {
         return appointmentService.getAppointmentsByPatient(patientId);
     }
 
     @PutMapping("/{appointmentId}")
+    @Operation(summary = "Update appointment by ID")
     public ResponseEntity<Appointment> updateAppointment(@PathVariable String appointmentId, @RequestBody Appointment appointmentDetails) {
         Appointment updatedAppointment = appointmentService.updateAppointment(appointmentId, appointmentDetails);
         if (updatedAppointment != null) {
@@ -61,6 +70,7 @@ public class AppointmentController {
     }
 
     @DeleteMapping("/{appointmentId}")
+    @Operation(summary = "Delete appointment by ID")
     public ResponseEntity<Void> deleteAppointment(@PathVariable String appointmentId) {
         if (appointmentService.deleteAppointment(appointmentId)) {
             return ResponseEntity.noContent().build();
@@ -72,6 +82,7 @@ public class AppointmentController {
     // ===== ENDPOINTS DE COMUNICAÇÃO INTER-MICROSERVIÇOS =====
     
     @GetMapping("/{appointmentId}/details")
+    @Operation(summary = "Get appointment with patient details")
     public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatient(@PathVariable String appointmentId) {
         try {
             AppointmentDetailsDTO details = appointmentService.getAppointmentWithPatient(appointmentId);
@@ -82,6 +93,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/{appointmentId}/full-details")
+    @Operation(summary = "Get appointment with full details")
     public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatientAndRecord(@PathVariable String appointmentId) {
         try {
             AppointmentDetailsDTO details = appointmentService.getAppointmentWithPatientAndRecord(appointmentId);
@@ -92,6 +104,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/physician/{physicianId}/with-patients")
+    @Operation(summary = "Get physician appointments with patients")
     public ResponseEntity<List<AppointmentDetailsDTO>> getAppointmentsByPhysicianWithPatients(@PathVariable String physicianId) {
         try {
             List<AppointmentDetailsDTO> appointments = appointmentService.getAppointmentsByPhysicianWithPatients(physicianId);

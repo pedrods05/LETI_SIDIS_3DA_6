@@ -1,4 +1,4 @@
-package leti_sisdis_6.happhysicians.dto.output;
+package leti_sisdis_6.happhysicians.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

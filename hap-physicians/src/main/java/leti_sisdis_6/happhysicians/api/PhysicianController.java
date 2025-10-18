@@ -2,21 +2,32 @@ package leti_sisdis_6.happhysicians.api;
 
 import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
+import leti_sisdis_6.happhysicians.dto.request.RegisterPhysicianRequest;
+import leti_sisdis_6.happhysicians.dto.response.PhysicianIdResponse;
+import leti_sisdis_6.happhysicians.services.PhysicianService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/physicians")
+@Tag(name = "Physician", description = "Physician management endpoints")
 public class PhysicianController {
 
     @Autowired
     private PhysicianRepository physicianRepository;
 
+    @Autowired
+    private PhysicianService physicianService;
+
     @GetMapping("/{physicianId}")
+    @Operation(summary = "Get physician by ID")
     public ResponseEntity<Physician> getPhysician(@PathVariable String physicianId) {
         return physicianRepository.findById(physicianId)
                 .map(ResponseEntity::ok)
@@ -24,16 +35,32 @@ public class PhysicianController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new physician")
     public Physician createPhysician(@RequestBody Physician physician) {
         return physicianRepository.save(physician);
     }
 
+    @PostMapping("/register")
+    @Operation(summary = "Register a new physician")
+    public ResponseEntity<?> registerPhysician(@RequestBody RegisterPhysicianRequest request) {
+        try {
+            PhysicianIdResponse response = physicianService.register(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping
+    @Operation(summary = "Get all physicians")
     public List<Physician> getAllPhysicians() {
         return physicianRepository.findAll();
     }
 
     @PutMapping("/{physicianId}")
+    @Operation(summary = "Update physician by ID")
     public ResponseEntity<Physician> updatePhysician(@PathVariable String physicianId, @RequestBody Physician physicianDetails) {
         Optional<Physician> optionalPhysician = physicianRepository.findById(physicianId);
         if (optionalPhysician.isPresent()) {
@@ -58,6 +85,7 @@ public class PhysicianController {
     }
 
     @DeleteMapping("/{physicianId}")
+    @Operation(summary = "Delete physician by ID")
     public ResponseEntity<Void> deletePhysician(@PathVariable String physicianId) {
         if (physicianRepository.existsById(physicianId)) {
             physicianRepository.deleteById(physicianId);
@@ -68,11 +96,13 @@ public class PhysicianController {
     }
 
     @GetMapping("/specialty/{specialtyId}")
+    @Operation(summary = "Get physicians by specialty")
     public List<Physician> getPhysiciansBySpecialty(@PathVariable String specialtyId) {
         return physicianRepository.findBySpecialtySpecialtyId(specialtyId);
     }
 
     @GetMapping("/department/{departmentId}")
+    @Operation(summary = "Get physicians by department")
     public List<Physician> getPhysiciansByDepartment(@PathVariable String departmentId) {
         return physicianRepository.findByDepartmentDepartmentId(departmentId);
     }
