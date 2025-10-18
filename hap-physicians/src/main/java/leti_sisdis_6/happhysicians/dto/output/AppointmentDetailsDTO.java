@@ -1,7 +1,6 @@
 package leti_sisdis_6.happhysicians.dto.output;
 
-import leti_sisdis_6.happhysicians.dto.external.AppointmentRecordDTO;
-import leti_sisdis_6.happhysicians.dto.external.PatientDTO;
+
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.model.ConsultationType;
 import leti_sisdis_6.happhysicians.model.AppointmentStatus;
@@ -28,22 +27,20 @@ public class AppointmentDetailsDTO {
     private boolean wasRescheduled;
     
     // Enriched data from other microservices
-    private PatientDTO patient;
-    private AppointmentRecordDTO appointmentRecord;
-    
-    public AppointmentDetailsDTO(Appointment appointment, PatientDTO patient) {
+
+
+    private String patientEmail;
+    private String patientPhone;
+
+    public AppointmentDetailsDTO(Appointment appointment) {
         this.appointmentId = appointment.getAppointmentId();
         this.patientId = appointment.getPatientId();
+        this.patientName = appointment.getPatientName();
+        this.patientEmail = appointment.getPatientEmail();
+        this.patientPhone = appointment.getPatientPhone();
         this.physicianId = appointment.getPhysician().getPhysicianId();
+        this.physicianName = appointment.getPhysician().getFullName();
         this.dateTime = appointment.getDateTime();
         this.consultationType = appointment.getConsultationType();
         this.status = appointment.getStatus();
-        this.wasRescheduled = appointment.isWasRescheduled();
-        this.patient = patient;
-    }
-    
-    public AppointmentDetailsDTO(Appointment appointment, PatientDTO patient, AppointmentRecordDTO appointmentRecord) {
-        this(appointment, patient);
-        this.appointmentRecord = appointmentRecord;
-    }
-}
+        this.wasRescheduled = appointment.isWasRescheduled(); } }
