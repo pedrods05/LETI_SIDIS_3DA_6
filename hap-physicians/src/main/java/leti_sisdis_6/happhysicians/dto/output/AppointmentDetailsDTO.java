@@ -8,16 +8,20 @@ import leti_sisdis_6.happhysicians.model.AppointmentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppointmentDetailsDTO {
     private String appointmentId;
     private String patientId;
+    private String patientName;
     private String physicianId;
+    private String physicianName;
+
     private LocalDateTime dateTime;
     private ConsultationType consultationType;
     private AppointmentStatus status;
