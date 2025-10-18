@@ -1,8 +1,12 @@
 package leti_sisdis_6.happhysicians.config;
 
+import leti_sisdis_6.happhysicians.model.Appointment;
+import leti_sisdis_6.happhysicians.model.AppointmentStatus;
+import leti_sisdis_6.happhysicians.model.ConsultationType;
 import leti_sisdis_6.happhysicians.model.Department;
 import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.model.Specialty;
+import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.repository.DepartmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.repository.SpecialtyRepository;
@@ -10,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 
@@ -24,6 +29,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private PhysicianRepository physicianRepository;
+
+    @Autowired
+    private AppointmentRepository appointmentRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -113,5 +121,40 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
 
         physicianRepository.saveAll(Arrays.asList(dr1, dr2, dr3));
+
+        // Create test appointments with current dates
+        LocalDateTime now = LocalDateTime.now();
+        Appointment appointment1 = Appointment.builder()
+                .appointmentId("APT001")
+                .patientId("PAT001")
+                .physician(dr1)
+                .dateTime(now.plusDays(1).withHour(10).withMinute(0))
+                .consultationType(ConsultationType.FIRST_TIME)
+                .status(AppointmentStatus.SCHEDULED)
+                .wasRescheduled(false)
+                .build();
+
+        Appointment appointment2 = Appointment.builder()
+                .appointmentId("APT002")
+                .patientId("PAT002")
+                .physician(dr2)
+                .dateTime(now.plusDays(2).withHour(11).withMinute(0))
+                .consultationType(ConsultationType.FOLLOW_UP)
+                .status(AppointmentStatus.SCHEDULED)
+                .wasRescheduled(false)
+                .build();
+
+        Appointment appointment3 = Appointment.builder()
+                .appointmentId("APT003")
+                .patientId("PAT003")
+                .physician(dr1)
+                .dateTime(now.plusDays(3).withHour(14).withMinute(0))
+                .consultationType(ConsultationType.FIRST_TIME)
+                .status(AppointmentStatus.COMPLETED)
+                .wasRescheduled(false)
+                .build();
+
+        appointmentRepository.saveAll(Arrays.asList(appointment1, appointment2, appointment3));
+        System.out.println("=== DataInitializer COMPLETED - Created 3 appointments ===");
     }
 }

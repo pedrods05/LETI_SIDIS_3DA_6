@@ -1,5 +1,6 @@
 package leti_sisdis_6.happhysicians.api;
 
+import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/appointments")
@@ -24,21 +26,18 @@ public class AppointmentController {
     }
 
     @PostMapping
-    public ResponseEntity<Appointment> createAppointment(@RequestBody Appointment appointment) {
+    public ResponseEntity<?> createAppointment(@RequestBody Appointment appointment) {
         try {
             Appointment createdAppointment = appointmentService.createAppointment(appointment);
             return ResponseEntity.ok(createdAppointment);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     @GetMapping
     public List<Appointment> getAllAppointments() {
-        return appointmentService.getAppointmentsByDateRange(
-            LocalDateTime.now().minusMonths(1),
-            LocalDateTime.now().plusMonths(1)
-        );
+        return appointmentService.getAllAppointments();
     }
 
     @GetMapping("/physician/{physicianId}")
@@ -67,6 +66,38 @@ public class AppointmentController {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // ===== ENDPOINTS DE COMUNICAÇÃO INTER-MICROSERVIÇOS =====
+    
+    @GetMapping("/{appointmentId}/details")
+    public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatient(@PathVariable String appointmentId) {
+        try {
+            AppointmentDetailsDTO details = appointmentService.getAppointmentWithPatient(appointmentId);
+            return ResponseEntity.ok(details);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{appointmentId}/full-details")
+    public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatientAndRecord(@PathVariable String appointmentId) {
+        try {
+            AppointmentDetailsDTO details = appointmentService.getAppointmentWithPatientAndRecord(appointmentId);
+            return ResponseEntity.ok(details);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/physician/{physicianId}/with-patients")
+    public ResponseEntity<List<AppointmentDetailsDTO>> getAppointmentsByPhysicianWithPatients(@PathVariable String physicianId) {
+        try {
+            List<AppointmentDetailsDTO> appointments = appointmentService.getAppointmentsByPhysicianWithPatients(physicianId);
+            return ResponseEntity.ok(appointments);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 }
