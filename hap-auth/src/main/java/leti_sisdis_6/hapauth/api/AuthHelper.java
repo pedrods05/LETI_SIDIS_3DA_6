@@ -36,11 +36,4 @@ public class AuthHelper {
                authentication.getAuthorities().stream()
                    .anyMatch(a -> a.getAuthority().equals("PATIENT"));
     }
-
-    public boolean isPhysician() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null &&
-               authentication.getAuthorities().stream()
-                   .anyMatch(a -> a.getAuthority().equals("PHYSICIAN"));
-    }
 }
