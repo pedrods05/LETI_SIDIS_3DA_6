@@ -119,28 +119,6 @@ public class PatientController {
         }
     }
 
-    @GetMapping("/search/by-name")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    @Operation(
-        summary = "Search patients by name",
-        description = "Allows administrators to search for patients using part of the full name.",
-        security = @SecurityRequirement(name = "bearerAuth"),
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved patient list"),
-            @ApiResponse(responseCode = "404", description = "No patients found"),
-            @ApiResponse(responseCode = "403", description = "Access forbidden")
-        }
-    )
-    public ResponseEntity<?> searchPatientsByName(@RequestParam String name) {
-        try {
-            List<PatientDetailsDTO> result = patientService.searchPatientsByName(name);
-            return ResponseEntity.ok(result);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
     @GetMapping("/{id}/profile")
     @PreAuthorize("hasAuthority('PHYSICIAN')")
     @Operation(
@@ -163,24 +141,6 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
         }
-    }
-
-    @GetMapping("/me/profile")
-    @PreAuthorize("hasAuthority('PATIENT')")
-    @Operation(
-        summary = "Get my profile",
-        description = "Returns the authenticated patient's profile with appointment records.",
-        security = @SecurityRequirement(name = "bearerAuth"),
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Profile retrieved successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
-        }
-    )
-    public ResponseEntity<PatientProfileDTO> getMyProfile(
-            @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return ResponseEntity.ok(patientService.getMyProfile(email, authorizationHeader));
     }
 
     @PatchMapping("/me")

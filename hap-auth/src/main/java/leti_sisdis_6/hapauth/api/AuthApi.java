@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// added for documenting error payload
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @RestController
 @RequestMapping("/api/public")
 @RequiredArgsConstructor
@@ -30,16 +34,31 @@ public class AuthApi {
     private final AuthService authService;
     private final UserService userService;
 
+    // Minimal error payload for 4xx responses (kept here to avoid extra files)
+    @Schema(name = "ApiError", description = "Standard error response")
+    public static class ApiError {
+        @Schema(example = "Invalid username or password")
+        public String message;
+        public ApiError() {}
+        public ApiError(String message) { this.message = message; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
     @PostMapping("/login")
     @Operation(
         summary = "User login",
         description = "Authenticates a user and returns a JWT token along with their roles",
         responses = {
             @ApiResponse(responseCode = "200", description = "Login successful"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(
+                responseCode = "401",
+                description = "Invalid credentials",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class))
+            )
         }
     )
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         try {
             Authentication authentication = authService.authenticate(request.getUsername(), request.getPassword());
             String token = authService.generateToken(authentication);
@@ -58,7 +77,9 @@ public class AuthApi {
                     .roles(roles)
                     .build());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            // Keep it generic to avoid leaking whether the username exists
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiError("Invalid username or password"));
         }
     }
 
