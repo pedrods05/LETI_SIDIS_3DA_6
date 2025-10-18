@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -33,8 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import leti_sisdis_6.happatients.dto.external.appointments.AppointmentRecordViewDTO;
-import leti_sisdis_6.happatients.dto.external.physicians.PhysicianDTO;
+import com.fasterxml.jackson.databind.JsonNode;
 import leti_sisdis_6.happatients.dto.PatientProfileDTO;
 
 @Service
@@ -49,9 +49,14 @@ public class PatientService {
     @Autowired(required = false)
     private RestTemplate restTemplate;
 
-    private static final String PHYSICIANS_SERVICE_BASE_URL = "http://localhost:8081";
-    private static final String APPOINTMENTS_SERVICE_BASE_URL = "http://localhost:8083";
-    private static final String AUTH_SERVICE_BASE_URL = "http://localhost:8084";
+    @Value("${hap.physicians.base-url:http://localhost:8081}")
+    private String physiciansServiceBaseUrl;
+
+    @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
+    private String appointmentsServiceBaseUrl;
+
+    @Value("${hap.auth.base-url:http://localhost:8084}")
+    private String authServiceBaseUrl;
 
     private RestTemplate getRestTemplate() {
         if (this.restTemplate == null) {
@@ -77,7 +82,7 @@ public class PatientService {
         req.put("role", "PATIENT");
         try {
             getRestTemplate().postForEntity(
-                AUTH_SERVICE_BASE_URL + "/api/public/register",
+                authServiceBaseUrl + "/api/public/register",
                 req,
                 Object.class
             );
@@ -162,43 +167,43 @@ public class PatientService {
     }
 
     @Transactional(readOnly = true)
-    public List<AppointmentRecordViewDTO> getPatientAppointmentHistory(String patientId, String bearerToken) {
-        String url = APPOINTMENTS_SERVICE_BASE_URL + "/api/appointment-records/patient/" + patientId;
+    public List<JsonNode> getPatientAppointmentHistory(String patientId, String bearerToken) {
+        String url = appointmentsServiceBaseUrl + "/api/appointment-records/patient/" + patientId;
         HttpHeaders headers = new HttpHeaders();
         if (bearerToken != null && !bearerToken.isBlank()) {
             headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
         }
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<AppointmentRecordViewDTO[]> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, entity, AppointmentRecordViewDTO[].class);
-        AppointmentRecordViewDTO[] body = response.getBody();
+        ResponseEntity<JsonNode[]> response = getRestTemplate().exchange(
+                url, HttpMethod.GET, entity, JsonNode[].class);
+        JsonNode[] body = response.getBody();
         return body != null ? Arrays.asList(body) : Collections.emptyList();
     }
 
     @Transactional(readOnly = true)
-    public List<AppointmentRecordViewDTO> getMyAppointmentHistory(String bearerToken) {
-        String url = APPOINTMENTS_SERVICE_BASE_URL + "/api/appointment-records/patient/mine";
+    public List<JsonNode> getMyAppointmentHistory(String bearerToken) {
+        String url = appointmentsServiceBaseUrl + "/api/appointment-records/patient/mine";
         HttpHeaders headers = new HttpHeaders();
         if (bearerToken != null && !bearerToken.isBlank()) {
             headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
         }
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<AppointmentRecordViewDTO[]> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, entity, AppointmentRecordViewDTO[].class);
-        AppointmentRecordViewDTO[] body = response.getBody();
+        ResponseEntity<JsonNode[]> response = getRestTemplate().exchange(
+                url, HttpMethod.GET, entity, JsonNode[].class);
+        JsonNode[] body = response.getBody();
         return body != null ? Arrays.asList(body) : Collections.emptyList();
     }
 
     @Transactional(readOnly = true)
-    public PhysicianDTO getPhysicianById(String physicianId) {
-        String url = PHYSICIANS_SERVICE_BASE_URL + "/physicians/" + physicianId;
-        return getRestTemplate().getForObject(url, PhysicianDTO.class);
+    public JsonNode getPhysicianById(String physicianId) {
+        String url = physiciansServiceBaseUrl + "/physicians/" + physicianId;
+        return getRestTemplate().getForObject(url, JsonNode.class);
     }
 
     @Transactional(readOnly = true)
     public PatientProfileDTO getPatientProfile(String patientId, String bearerToken) {
         PatientDetailsDTO details = getPatientDetails(patientId);
-        List<AppointmentRecordViewDTO> history = getPatientAppointmentHistory(patientId, bearerToken);
+        List<JsonNode> history = getPatientAppointmentHistory(patientId, bearerToken);
         return PatientProfileDTO.builder().patient(details).appointmentHistory(history).build();
     }
 
@@ -207,7 +212,7 @@ public class PatientService {
         Patient patient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found with email: " + email));
         PatientDetailsDTO details = patientMapper.toDetailsDTO(patient);
-        List<AppointmentRecordViewDTO> history = getMyAppointmentHistory(bearerToken);
+        List<JsonNode> history = getMyAppointmentHistory(bearerToken);
         return PatientProfileDTO.builder().patient(details).appointmentHistory(history).build();
     }
 

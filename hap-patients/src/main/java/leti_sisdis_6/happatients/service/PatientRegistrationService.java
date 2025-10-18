@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -33,7 +34,8 @@ public class PatientRegistrationService {
     @Autowired(required = false)
     private RestTemplate restTemplate;
 
-    private static final String AUTH_SERVICE_BASE_URL = "http://localhost:8084";
+    @Value("${hap.auth.base-url:http://localhost:8084}")
+    private String authServiceBaseUrl;
 
     private RestTemplate getRestTemplate() {
         if (this.restTemplate == null) {
@@ -64,7 +66,7 @@ public class PatientRegistrationService {
         req.put("password", dto.getPassword());
         req.put("role", "PATIENT");
         getRestTemplate().postForEntity(
-            AUTH_SERVICE_BASE_URL + "/api/public/register",
+            authServiceBaseUrl + "/api/public/register",
             req,
             Object.class
         );
