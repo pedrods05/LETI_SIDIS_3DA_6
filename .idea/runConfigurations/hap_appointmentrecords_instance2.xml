@@ -1,7 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="hap-appointmentrecords-instance2" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <option name="ACTIVE_PROFILES" value="--server.port=8090" />
+  <configuration default="false" name="hap-appointmentrecords-instance2" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false">
+    <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
     <module name="hap-appointmentrecords" />
+    <option name="PROGRAM_PARAMETERS" value="--server.port=8090" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapappointmentrecords.HapAppointmentrecordsApplication" />
     <method v="2">
       <option name="Make" enabled="true" />
