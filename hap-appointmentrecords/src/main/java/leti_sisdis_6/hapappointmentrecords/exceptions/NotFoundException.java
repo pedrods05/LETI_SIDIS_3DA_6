@@ -18,6 +18,10 @@ public class NotFoundException extends RuntimeException {
         super(string, ex);
     }
 
+    public NotFoundException(final String string, final Throwable ex) {
+        super(string, ex);
+    }
+
     public NotFoundException(final Class<?> clazz, final long id) {
         super(String.format("Entity %s with id %d not found", clazz.getSimpleName(), id));
     }
