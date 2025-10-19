@@ -29,7 +29,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
-import leti_sisdis_6.hapauth.usermanagement.UserRepository;
+import leti_sisdis_6.hapauth.usermanagement.UserInMemoryRepository;
 
 @Configuration
 @EnableMethodSecurity
@@ -43,10 +43,10 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Load users from DB for username/password auth
+    // Load users from in-memory repository for username/password auth
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return username -> userRepository.findByUsername(username)
+    public UserDetailsService userDetailsService(UserInMemoryRepository userInMemoryRepository) {
+        return username -> userInMemoryRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
