@@ -1,9 +1,7 @@
 package leti_sisdis_6.happatients.api;
 
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
-import leti_sisdis_6.happatients.exceptions.EmailAlreadyExistsException;
 import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
-import leti_sisdis_6.happatients.dto.PatientRegistrationDTO;
 import leti_sisdis_6.happatients.dto.ContactDetailsUpdateDTO;
 import leti_sisdis_6.happatients.service.PatientService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +18,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,32 +29,6 @@ import leti_sisdis_6.happatients.dto.PatientProfileDTO;
 @Tag(name = "Patient", description = "Patient management endpoints")
 public class PatientController {
     private final PatientService patientService;
-
-    @PostMapping("/register")
-    @Operation(
-        summary = "Register new patient",
-        description = "Creates a new patient account",
-        responses = {
-            @ApiResponse(responseCode = "201", description = "Patient registered successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "409", description = "Email already exists")
-        }
-    )
-    public ResponseEntity<?> registerPatient(@Valid @RequestBody PatientRegistrationDTO dto) {
-        try {
-            String patientId = patientService.registerPatient(dto);
-            Map<String, Object> response = new HashMap<>();
-            response.put("patientId", patientId);
-            response.put("message", "Patient registered successfully.");
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (EmailAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
