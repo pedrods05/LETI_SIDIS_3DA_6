@@ -5,42 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="hap Appointment">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/HapAppointmentrecordsApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/HapAppointmentrecordsApplication.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentRecordController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/AppointmentRecordController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/api/PatientAppointmentController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/AppointmentRequestDTO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/AppointmentResponseDTO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/input/ScheduleAppointmentRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/input/ScheduleAppointmentRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/input/UpdateAppointmentRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/input/UpdateAppointmentRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentDetailsDTO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentHistoryDTO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentIdResponse.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentListDTO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/AppointmentSlotDto.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/PhysicianAverageDTO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/dto/output/TopPhysicianDTO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/Appointment.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/AppointmentRecord.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/AppointmentRecord.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/AppointmentStatus.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/ConsultationType.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/repository/AppointmentRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentRecordService.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentRecordService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/util/AppointmentTimeValidator.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/util/SlotCalculator.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/exceptions/ConflictException.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/exceptions/ConflictException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/exceptions/EmailAlreadyExistsException.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/exceptions/EmailAlreadyExistsException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/exceptions/ForbiddenException.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/exceptions/ForbiddenException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/exceptions/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/exceptions/GlobalExceptionHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/exceptions/NotFoundException.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/exceptions/NotFoundException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/exceptions/UnauthorizedException.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/exceptions/UnauthorizedException.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/pcm/psoft/pcmclinic_api/exceptions/UserNotFoundException.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/exceptions/UserNotFoundException.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,62 +21,59 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
-    &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;pedrocunha4&quot;
-  }
-}</component>
+        &quot;lastFilter&quot;: {
+        &quot;state&quot;: &quot;OPEN&quot;,
+        &quot;assignee&quot;: &quot;pedrocunha4&quot;
+        }
+        }</component>
   <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/pedrods05/LET_SIDIS_3DA_6.git&quot;,
-    &quot;accountId&quot;: &quot;7d51d996-4996-4ed9-9c35-f10b71549cea&quot;
-  }
-}</component>
+        &quot;selectedUrlAndAccountId&quot;: {
+        &quot;url&quot;: &quot;https://github.com/pedrods05/LET_SIDIS_3DA_6.git&quot;,
+        &quot;accountId&quot;: &quot;7d51d996-4996-4ed9-9c35-f10b71549cea&quot;
+        }
+        }</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 7
-}</component>
+        &quot;customColor&quot;: &quot;&quot;,
+        &quot;associatedIndex&quot;: 7
+        }</component>
   <component name="ProjectId" id="33hgN3jV9pHTdHIiAYcHXNXPSKU" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;Spring Boot.HapAppointmentrecordsApplication (1).executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapAppointmentrecordsApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapAuthApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapClientsApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapConsultationApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapDoctorsApplication.executor&quot;: &quot;Run&quot;,
-    &quot;Spring Boot.HapPatientsApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;luis&quot;,
-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;openjdk-23&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
-  }
-}</component>
+        &quot;keyToString&quot;: {
+        &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+        &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+        &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+        &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+        &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+        &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+        &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+        &quot;Spring Boot.HapAppointmentrecordsApplication.executor&quot;: &quot;Run&quot;,
+        &quot;Spring Boot.HapAuthApplication.executor&quot;: &quot;Run&quot;,
+        &quot;Spring Boot.HapPatientsApplication.executor&quot;: &quot;Run&quot;,
+        &quot;Spring Boot.HapPhysiciansApplication.executor&quot;: &quot;Run&quot;,
+        &quot;git-widget-placeholder&quot;: &quot;luis&quot;,
+        &quot;jdk.selected.JAVA_MODULE&quot;: &quot;openjdk-23&quot;,
+        &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+        &quot;last_opened_file_path&quot;: &quot;C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service&quot;,
+        &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+        &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+        &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+        &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+        &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+        &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+        &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
+        &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+        &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+        &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+        &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+        }
+        }</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\service" />
@@ -131,28 +93,8 @@
         <option value="SpringBootApplicationConfigurationType" />
       </set>
     </option>
-    <option name="configurationStatuses">
-      <map>
-        <entry key="SpringBootApplicationConfigurationType">
-          <value>
-            <map>
-              <entry key="HapAppointmentrecordsApplication (1)" value="STOPPED" />
-              <entry key="HapAuthApplication" value="STOPPED" />
-            </map>
-          </value>
-        </entry>
-      </map>
-    </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.HapAppointmentrecordsApplication (1)">
-    <configuration name="HapAppointmentrecordsApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
-      <module name="hap-appointmentrecords" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapappointmentrecords.HapAppointmentrecordsApplication" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Spring Boot.HapAppointmentrecordsApplication">
     <configuration name="HapAppointmentrecordsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="hap-appointmentrecords" />
@@ -186,9 +128,14 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Spring Boot.HapAppointmentrecordsApplication (1)" />
-      <item itemvalue="Spring Boot.HapAuthApplication" />
+      <item itemvalue="Spring Boot.hap-appointmentrecords-instance1" />
+      <item itemvalue="Spring Boot.hap-appointmentrecords-instance2" />
+      <item itemvalue="Spring Boot.hap-auth-instance1" />
+      <item itemvalue="Spring Boot.hap-auth-instance2" />
+      <item itemvalue="Spring Boot.hap-patients-instance1" />
+      <item itemvalue="Spring Boot.hap-patients-instance2" />
       <item itemvalue="Spring Boot.HapAppointmentrecordsApplication" />
+      <item itemvalue="Spring Boot.HapAuthApplication" />
       <item itemvalue="Spring Boot.HapPatientsApplication" />
       <item itemvalue="Spring Boot.HapPhysiciansApplication" />
     </list>
