@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="hap-patients-instance1" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false">
+    <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+    <module name="hap-patients" />
+    <option name="PROGRAM_PARAMETERS" value="--server.port=8082 " />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.happatients.HapPatientsApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
