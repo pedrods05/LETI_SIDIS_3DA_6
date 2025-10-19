@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +23,9 @@ import java.util.List;
 import java.util.Map;
 
 import leti_sisdis_6.happatients.dto.PatientProfileDTO;
+import leti_sisdis_6.happatients.http.ResilientRestTemplate;
+import leti_sisdis_6.happatients.repository.PatientLocalRepository;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/patients")
@@ -29,6 +33,15 @@ import leti_sisdis_6.happatients.dto.PatientProfileDTO;
 @Tag(name = "Patient", description = "Patient management endpoints")
 public class PatientController {
     private final PatientService patientService;
+
+    // Local in-memory cache following the requested structure
+    private final PatientLocalRepository localRepo;
+
+    // Fallback peers and resilient HTTP client
+    private final ResilientRestTemplate resilientRestTemplate;
+
+    @Value("${hap.patients.peers:http://localhost:8082}")
+    private List<String> peers;
 
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -57,13 +70,40 @@ public class PatientController {
         }
     )
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<?> getPatientDetails(@PathVariable String id) {
+    public ResponseEntity<?> getPatientDetails(
+            @PathVariable String id,
+            @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
+        // 1) Try local cache first
+        PatientDetailsDTO cached = localRepo.findById(id).orElse(null);
+        if (cached != null) {
+            return ResponseEntity.ok(cached);
+        }
+        // 2) Try local service (DB)
         try {
             PatientDetailsDTO patient = patientService.getPatientDetails(id);
+            // store in local cache for future quick hits
+            localRepo.save(patient);
             return ResponseEntity.ok(patient);
         } catch (EntityNotFoundException e) {
+            // 3) Fallback to peers with Authorization forwarded
+            HttpHeaders headers = new HttpHeaders();
+            if (authorizationHeader != null && !authorizationHeader.isBlank()) {
+                headers.set(HttpHeaders.AUTHORIZATION, authorizationHeader);
+            }
+            for (String peer : peers) {
+                String url = peer.endsWith("/") ? peer + "patients/" + id : peer + "/patients/" + id;
+                try {
+                    PatientDetailsDTO remote = resilientRestTemplate.getForObjectWithFallback(url, headers, PatientDetailsDTO.class);
+                    if (remote != null) {
+                        localRepo.save(remote);
+                        return ResponseEntity.ok(remote);
+                    }
+                } catch (Exception ignored) {
+                    // ignore and try next peer
+                }
+            }
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "Patient not found"));
         }
     }
 
