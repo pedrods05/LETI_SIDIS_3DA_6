@@ -1,7 +1,6 @@
 package leti_sisdis_6.hapappointmentrecords.model;
 
 import jakarta.persistence.*;
-import leti_sisdis_6.happhysicians.model.Appointment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,9 +19,8 @@ public class AppointmentRecord {
     @Column(length = 10)
     private String recordId;
 
-    @OneToOne
-    @JoinColumn(name = "appointment_id", nullable = false)
-    private Appointment appointment;
+    @Column(name = "appointment_id", nullable = false, length = 20)
+    private String appointmentId;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String diagnosis;
