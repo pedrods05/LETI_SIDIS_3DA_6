@@ -6,6 +6,7 @@ import leti_sisdis_6.hapauth.services.AuthService;
 import leti_sisdis_6.hapauth.usermanagement.RegisterUserRequest;
 import leti_sisdis_6.hapauth.usermanagement.UserIdResponse;
 import leti_sisdis_6.hapauth.usermanagement.UserService;
+import leti_sisdis_6.hapauth.usermanagement.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 // added for documenting error payload
@@ -96,5 +98,31 @@ public class AuthApi {
     public ResponseEntity<UserIdResponse> register(@RequestBody @Valid RegisterUserRequest request) {
         UserIdResponse response = userService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+    
+    // ===== INTERNAL ENDPOINTS FOR PEER COMMUNICATION =====
+    
+    @GetMapping("/internal/users/by-username/{username}")
+    @Operation(summary = "Get user by username (internal)", description = "Internal endpoint for peer user lookup")
+    public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
+        Optional<User> user = userService.findByUsername(username);
+        return user.map(ResponseEntity::ok)
+                  .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/internal/users/{id}")
+    @Operation(summary = "Get user by ID (internal)", description = "Internal endpoint for peer user lookup")
+    public ResponseEntity<User> getUserById(@PathVariable String id) {
+        Optional<User> user = userService.findById(id);
+        return user.map(ResponseEntity::ok)
+                  .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @PostMapping("/internal/auth/authenticate")
+    @Operation(summary = "Authenticate user (internal)", description = "Internal endpoint for peer authentication")
+    public ResponseEntity<User> authenticateUser(@RequestBody AuthService.AuthRequest authRequest) {
+        Optional<User> user = authService.authenticateWithPeers(authRequest.getUsername(), authRequest.getPassword());
+        return user.map(ResponseEntity::ok)
+                  .orElse(ResponseEntity.notFound().build());
     }
 }
