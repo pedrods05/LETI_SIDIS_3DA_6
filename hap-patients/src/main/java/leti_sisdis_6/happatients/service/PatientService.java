@@ -24,18 +24,14 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import leti_sisdis_6.happatients.dto.PatientProfileDTO;
+import leti_sisdis_6.happatients.http.ResilientRestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -45,18 +41,20 @@ public class PatientService {
     private final AddressRepository addressRepository;
     private final InsuranceInfoRepository insuranceInfoRepository;
     private final PatientMapper patientMapper;
+    private final ResilientRestTemplate resilientRestTemplate;
 
     @Autowired(required = false)
     private RestTemplate restTemplate;
 
+    // Each service should only know external services as a single base URL (no peer lists here)
+    @Value("${hap.auth.base-url:http://localhost:8084}")
+    private String authBaseUrl;
+
     @Value("${hap.physicians.base-url:http://localhost:8081}")
-    private String physiciansServiceBaseUrl;
+    private String physiciansBaseUrl;
 
     @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
-    private String appointmentsServiceBaseUrl;
-
-    @Value("${hap.auth.base-url:http://localhost:8084}")
-    private String authServiceBaseUrl;
+    private String appointmentRecordsBaseUrl;
 
     private RestTemplate getRestTemplate() {
         if (this.restTemplate == null) {
@@ -75,17 +73,24 @@ public class PatientService {
         }
         String patientId = generatePatientId();
 
-        // Create auth user via hap-auth API
-        Map<String, String> req = new HashMap<>();
+        // Create auth user via hap-auth API (single base URL)
+        var req = new java.util.HashMap<String, String>();
         req.put("username", dto.getEmail());
         req.put("password", dto.getPassword());
         req.put("role", "PATIENT");
         try {
-            getRestTemplate().postForEntity(
-                authServiceBaseUrl + "/api/public/register",
-                req,
-                Object.class
+            ResponseEntity<Object> resp = getRestTemplate().postForEntity(
+                    authBaseUrl + "/api/public/register",
+                    req,
+                    Object.class
             );
+            if (!(resp.getStatusCode().is2xxSuccessful() || resp.getStatusCode().value() == 201)) {
+                throw new IllegalArgumentException("Auth service responded with status: " + resp.getStatusCode());
+            }
+        } catch (HttpClientErrorException.Conflict e) { // 409
+            throw new IllegalArgumentException("Username already exists");
+        } catch (HttpClientErrorException.Unauthorized e) { // 401
+            throw new IllegalArgumentException("Unauthorized calling auth service (401). Ensure /api/public/register is public.");
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to register user in auth service: " + e.getMessage());
         }
@@ -168,36 +173,27 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public List<JsonNode> getPatientAppointmentHistory(String patientId, String bearerToken) {
-        String url = appointmentsServiceBaseUrl + "/api/appointment-records/patient/" + patientId;
         HttpHeaders headers = new HttpHeaders();
         if (bearerToken != null && !bearerToken.isBlank()) {
             headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
         }
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<JsonNode[]> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, entity, JsonNode[].class);
-        JsonNode[] body = response.getBody();
-        return body != null ? Arrays.asList(body) : Collections.emptyList();
+        JsonNode[] body = tryGet(appointmentRecordsBaseUrl, "/api/appointment-records/patient/" + patientId, headers, JsonNode[].class);
+        return body != null ? java.util.Arrays.asList(body) : java.util.Collections.emptyList();
     }
 
     @Transactional(readOnly = true)
     public List<JsonNode> getMyAppointmentHistory(String bearerToken) {
-        String url = appointmentsServiceBaseUrl + "/api/appointment-records/patient/mine";
         HttpHeaders headers = new HttpHeaders();
         if (bearerToken != null && !bearerToken.isBlank()) {
             headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
         }
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<JsonNode[]> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, entity, JsonNode[].class);
-        JsonNode[] body = response.getBody();
-        return body != null ? Arrays.asList(body) : Collections.emptyList();
+        JsonNode[] body = tryGet(appointmentRecordsBaseUrl, "/api/appointment-records/patient/mine", headers, JsonNode[].class);
+        return body != null ? java.util.Arrays.asList(body) : java.util.Collections.emptyList();
     }
 
     @Transactional(readOnly = true)
     public JsonNode getPhysicianById(String physicianId) {
-        String url = physiciansServiceBaseUrl + "/physicians/" + physicianId;
-        return getRestTemplate().getForObject(url, JsonNode.class);
+        return tryGet(physiciansBaseUrl, "/physicians/" + physicianId, null, JsonNode.class);
     }
 
     @Transactional(readOnly = true)
@@ -244,5 +240,19 @@ public class PatientService {
     private String generateInsuranceId() {
         long count = insuranceInfoRepository.count();
         return String.format("INS%02d", count + 1);
+    }
+
+    // Helper: GET from a single base URL with optional headers using resilient client
+    private <T> T tryGet(String baseUrl, String path, HttpHeaders headers, Class<T> clazz) {
+        String url = baseUrl + (path.startsWith("/") ? path : ("/" + path));
+        try {
+            if (headers != null) {
+                return resilientRestTemplate.getForObjectWithFallback(url, headers, clazz);
+            } else {
+                return resilientRestTemplate.getForObjectWithFallback(url, clazz);
+            }
+        } catch (Exception ignored) {
+            return null; // surface as empty/null to caller
+        }
     }
 }
