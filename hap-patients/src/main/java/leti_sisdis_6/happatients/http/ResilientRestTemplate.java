@@ -74,7 +74,6 @@ public class ResilientRestTemplate {
             if (port != -1) hostPart += ":" + port;
             return hostPart;
         } catch (URISyntaxException e) {
-            // Fallback: use url prefix up to first path segment
             int idx = url.indexOf("/", url.indexOf("://") + 3);
             return idx > 0 ? url.substring(0, idx) : url;
         }

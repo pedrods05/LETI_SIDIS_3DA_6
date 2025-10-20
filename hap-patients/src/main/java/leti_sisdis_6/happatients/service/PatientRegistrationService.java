@@ -60,7 +60,6 @@ public class PatientRegistrationService {
 
         String patientId = generatePatientId();
 
-        // Register auth user via hap-auth API
         Map<String, String> req = new HashMap<>();
         req.put("username", dto.getEmail());
         req.put("password", dto.getPassword());
@@ -71,7 +70,6 @@ public class PatientRegistrationService {
             Object.class
         );
 
-        // Create photo
         Photo photo = Photo.builder()
                 .id(generatePhotoId())
                 .url(dto.getPhoto().getUrl())
@@ -79,7 +77,6 @@ public class PatientRegistrationService {
                 .build();
         photo = photoRepository.save(photo);
 
-        // Create address
         Address address = Address.builder()
                 .id(generateAddressId())
                 .street(dto.getAddress().getStreet())
@@ -88,7 +85,6 @@ public class PatientRegistrationService {
                 .country(dto.getAddress().getCountry())
                 .build();
 
-        // Create insurance info
         InsuranceInfo insuranceInfo = InsuranceInfo.builder()
                 .id(generateInsuranceId())
                 .policyNumber(dto.getInsuranceInfo().getPolicyNumber())
@@ -96,7 +92,6 @@ public class PatientRegistrationService {
                 .coverageType(dto.getInsuranceInfo().getCoverageType())
                 .build();
 
-        // Create health concerns
         List<HealthConcern> healthConcerns = new ArrayList<>();
         if (dto.getHealthConcerns() != null) {
             for (var concern : dto.getHealthConcerns()) {
@@ -112,7 +107,6 @@ public class PatientRegistrationService {
             }
         }
 
-        // Create patient
         Patient patient = Patient.builder()
                 .patientId(patientId)
                 .fullName(dto.getFullName())

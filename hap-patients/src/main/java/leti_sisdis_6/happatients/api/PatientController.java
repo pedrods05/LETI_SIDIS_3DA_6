@@ -12,7 +12,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -98,9 +97,7 @@ public class PatientController {
         }
     )
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<?> getPatientDetails(
-            @PathVariable String id,
-            @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
+    public ResponseEntity<?> getPatientDetails(@PathVariable String id) {
         // 1) Try local cache first
         PatientDetailsDTO cached = localRepo.findById(id).orElse(null);
         if (cached != null) {
@@ -131,7 +128,6 @@ public class PatientController {
         }
     }
 
-    // Alias to match required path: /patients/search
     @GetMapping("/search")
     @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(
