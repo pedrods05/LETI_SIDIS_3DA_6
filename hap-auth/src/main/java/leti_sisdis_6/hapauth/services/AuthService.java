@@ -26,9 +26,9 @@ public class AuthService {
     private final RestTemplate restTemplate;
     
     // Hardcoded peer list - simple approach
+    // Each instance knows only the other peers
     private final List<String> peers = Arrays.asList(
-        "http://localhost:8085", // instance2
-        "http://localhost:8086"  // instance3
+        "http://localhost:8089"  // instance2
     );
 
     public AuthService(AuthenticationManager authenticationManager, JwtEncoder jwtEncoder, RestTemplate restTemplate) {
@@ -43,9 +43,7 @@ public class AuthService {
         );
     }
     
-    /**
-     * Authenticate with peer forwarding - tries local first, then peers
-     */
+
     public Optional<User> authenticateWithPeers(String username, String password) {
         try {
             // Try local authentication first
@@ -90,6 +88,29 @@ public class AuthService {
             .issuedAt(now)
             .expiresAt(now.plusSeconds(expiry))
             .subject(authentication.getName())
+            .claim("roles", scope)
+            .build();
+
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+
+        return jwtEncoder.encode(
+            JwtEncoderParameters.from(header, claims)
+        ).getTokenValue();
+    }
+    
+    public String generateTokenForUser(User user) {
+        Instant now = Instant.now();
+        long expiry = 3600L;
+
+        String scope = user.getAuthorities().stream()
+            .map(authority -> authority.getAuthority())
+            .collect(java.util.stream.Collectors.joining(" "));
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+            .issuer("pcmclinic-api")
+            .issuedAt(now)
+            .expiresAt(now.plusSeconds(expiry))
+            .subject(user.getUsername())
             .claim("roles", scope)
             .build();
 

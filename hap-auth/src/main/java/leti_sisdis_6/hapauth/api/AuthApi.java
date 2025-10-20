@@ -12,13 +12,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,6 +38,12 @@ public class AuthApi {
 
     private final AuthService authService;
     private final UserService userService;
+    
+    @Autowired
+    private UserService localUserService;
+    
+    private final RestTemplate restTemplate = new RestTemplate();
+    private List<String> peers = Arrays.asList("http://localhost:8089");  // instance2
 
     // Minimal error payload for 4xx responses (kept here to avoid extra files)
     @Schema(name = "ApiError", description = "Standard error response")
@@ -62,6 +71,7 @@ public class AuthApi {
     )
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         try {
+            // Check local store first
             Authentication authentication = authService.authenticate(request.getUsername(), request.getPassword());
             String token = authService.generateToken(authentication);
             
@@ -79,6 +89,37 @@ public class AuthApi {
                     .roles(roles)
                     .build());
         } catch (Exception e) {
+            // Query peers if not found locally
+            for (String peer : peers) {
+                try {
+                    String url = peer + "/api/internal/auth/authenticate";
+                    AuthService.AuthRequest authRequest = new AuthService.AuthRequest(request.getUsername(), request.getPassword());
+                    
+                    User remoteUser = restTemplate.postForObject(url, authRequest, User.class);
+                    if (remoteUser != null) {
+                        // Generate token for remote user
+                        String token = authService.generateTokenForUser(remoteUser);
+                        
+                        List<String> roles = remoteUser.getAuthorities().stream()
+                            .map(GrantedAuthority::getAuthority)
+                            .collect(Collectors.toList());
+                        
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("Authorization", "Bearer " + token);
+                        
+                        return ResponseEntity.ok()
+                            .headers(headers)
+                            .body(LoginResponse.builder()
+                                .token(token)
+                                .roles(roles)
+                                .build());
+                    }
+                } catch (Exception ex) {
+                    // Log error and continue to next peer
+                    System.out.println("Failed to query peer " + peer + ": " + ex.getMessage());
+                }
+            }
+            
             // Keep it generic to avoid leaking whether the username exists
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiError("Invalid username or password"));
@@ -98,31 +139,5 @@ public class AuthApi {
     public ResponseEntity<UserIdResponse> register(@RequestBody @Valid RegisterUserRequest request) {
         UserIdResponse response = userService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-    
-    // ===== INTERNAL ENDPOINTS FOR PEER COMMUNICATION =====
-    
-    @GetMapping("/internal/users/by-username/{username}")
-    @Operation(summary = "Get user by username (internal)", description = "Internal endpoint for peer user lookup")
-    public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
-        Optional<User> user = userService.findByUsername(username);
-        return user.map(ResponseEntity::ok)
-                  .orElse(ResponseEntity.notFound().build());
-    }
-    
-    @GetMapping("/internal/users/{id}")
-    @Operation(summary = "Get user by ID (internal)", description = "Internal endpoint for peer user lookup")
-    public ResponseEntity<User> getUserById(@PathVariable String id) {
-        Optional<User> user = userService.findById(id);
-        return user.map(ResponseEntity::ok)
-                  .orElse(ResponseEntity.notFound().build());
-    }
-    
-    @PostMapping("/internal/auth/authenticate")
-    @Operation(summary = "Authenticate user (internal)", description = "Internal endpoint for peer authentication")
-    public ResponseEntity<User> authenticateUser(@RequestBody AuthService.AuthRequest authRequest) {
-        Optional<User> user = authService.authenticateWithPeers(authRequest.getUsername(), authRequest.getPassword());
-        return user.map(ResponseEntity::ok)
-                  .orElse(ResponseEntity.notFound().build());
     }
 }

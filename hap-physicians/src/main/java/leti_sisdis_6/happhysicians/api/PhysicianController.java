@@ -5,6 +5,7 @@ import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.dto.request.RegisterPhysicianRequest;
 import leti_sisdis_6.happhysicians.dto.response.PhysicianIdResponse;
 import leti_sisdis_6.happhysicians.services.PhysicianService;
+import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping("/physicians")
@@ -26,12 +28,36 @@ public class PhysicianController {
     @Autowired
     private PhysicianService physicianService;
 
+    @Autowired
+    private ExternalServiceClient externalServiceClient;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
     @GetMapping("/{physicianId}")
     @Operation(summary = "Get physician by ID")
     public ResponseEntity<Physician> getPhysician(@PathVariable String physicianId) {
-        return physicianRepository.findById(physicianId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        // Check local store first
+        Optional<Physician> physician = physicianRepository.findById(physicianId);
+        if (physician.isPresent()) {
+            return ResponseEntity.ok(physician.get());
+        }
+        
+        // Query peers if not found locally
+        List<String> peers = externalServiceClient.getPeerUrls();
+        for (String peer : peers) {
+            try {
+                Physician remotePhysician = restTemplate.getForObject(
+                    peer + "/internal/physicians/" + physicianId, Physician.class);
+                if (remotePhysician != null) {
+                    return ResponseEntity.ok(remotePhysician);
+                }
+            } catch (Exception e) {
+                // Log error and continue to next peer
+                System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
+            }
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping

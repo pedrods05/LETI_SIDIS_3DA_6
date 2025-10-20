@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ExternalServiceClient {
@@ -29,6 +31,15 @@ public class ExternalServiceClient {
 
     @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
     private String appointmentRecordsServiceUrl;
+
+    @Value("${server.port:8081}")
+    private String currentPort;
+
+    // Hardcoded peer lists (Initial Approach) - as per slide
+    private final List<String> peers = Arrays.asList(
+        "http://localhost:8081",
+        "http://localhost:8087"
+    );
 
     // Patient Service calls
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
@@ -135,5 +146,25 @@ public class ExternalServiceClient {
         } catch (Exception e) {
             throw new MicroserviceCommunicationException("AppointmentRecords", "getAppointmentRecordsByPhysician", e.getMessage(), e);
         }
+    }
+
+    // ===== PEER MANAGEMENT =====
+
+    public List<String> getPeerUrls() {
+        return peers.stream()
+                .filter(peerUrl -> !isCurrentInstance(peerUrl))
+                .collect(Collectors.toList());
+    }
+    private boolean isCurrentInstance(String peerUrl) {
+        return peerUrl.contains(":" + currentPort);
+    }
+    public String getCurrentInstanceUrl() {
+        return "http://localhost:" + currentPort;
+    }
+    public boolean hasPeers() {
+        return !getPeerUrls().isEmpty();
+    }
+    public int getPeerCount() {
+        return getPeerUrls().size();
     }
 }
