@@ -3,6 +3,8 @@ package leti_sisdis_6.happhysicians.api;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
+import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
+import org.springframework.web.client.RestTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/appointments")
@@ -21,12 +24,36 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
+    @Autowired
+    private ExternalServiceClient externalServiceClient;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
     @GetMapping("/{appointmentId}")
     @Operation(summary = "Get appointment by ID")
     public ResponseEntity<Appointment> getAppointment(@PathVariable String appointmentId) {
-        return appointmentService.getAppointmentById(appointmentId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        // Check local store first
+        Optional<Appointment> appointment = appointmentService.getAppointmentById(appointmentId);
+        if (appointment.isPresent()) {
+            return ResponseEntity.ok(appointment.get());
+        }
+
+        // Query peers if not found locally
+        List<String> peers = externalServiceClient.getPeerUrls();
+        for (String peer : peers) {
+            try {
+                Appointment remoteAppointment = restTemplate.getForObject(
+                    peer + "/internal/appointments/" + appointmentId, Appointment.class);
+                if (remoteAppointment != null) {
+                    return ResponseEntity.ok(remoteAppointment);
+                }
+            } catch (Exception e) {
+                // Log error and continue to next peer
+                System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
+            }
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping
@@ -80,7 +107,7 @@ public class AppointmentController {
     }
 
     // ===== ENDPOINTS DE COMUNICAÇÃO INTER-MICROSERVIÇOS =====
-    
+
     @GetMapping("/{appointmentId}/details")
     @Operation(summary = "Get appointment with patient details")
     public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatient(@PathVariable String appointmentId) {
@@ -113,4 +140,5 @@ public class AppointmentController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
 }
