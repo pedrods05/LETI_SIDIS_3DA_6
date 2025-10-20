@@ -1,9 +1,13 @@
 package leti_sisdis_6.hapauth.usermanagement;
 
-import leti_sisdis_6.hapauth.services.PeerService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.HttpClientErrorException;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,14 +15,20 @@ import java.util.UUID;
 public class UserService {
     private final UserInMemoryRepository userInMemoryRepository;
     private final PasswordEncoder passwordEncoder;
-    private final PeerService peerService;
+    private final RestTemplate restTemplate;
+    
+    // Hardcoded peer list - simple approach
+    private final List<String> peers = Arrays.asList(
+        "http://localhost:8085", // instance2
+        "http://localhost:8086"  // instance3
+    );
 
     public UserService(UserInMemoryRepository userInMemoryRepository, 
                       PasswordEncoder passwordEncoder,
-                      PeerService peerService) {
+                      RestTemplate restTemplate) {
         this.userInMemoryRepository = userInMemoryRepository;
         this.passwordEncoder = passwordEncoder;
-        this.peerService = peerService;
+        this.restTemplate = restTemplate;
     }
 
     public UserIdResponse register(RegisterUserRequest request) {
@@ -62,7 +72,7 @@ public class UserService {
         }
         
         // If not found locally, check peers
-        return peerService.findUserInPeers(username);
+        return findUserInPeers(username);
     }
     
     /**
@@ -77,7 +87,7 @@ public class UserService {
         }
         
         // If not found locally, check peers
-        return peerService.findUserInPeers(username).isPresent();
+        return findUserInPeers(username).isPresent();
     }
     
     /**
@@ -93,6 +103,44 @@ public class UserService {
         }
         
         // If not found locally, check peers
-        return peerService.findUserInPeersById(id);
+        return findUserInPeersById(id);
+    }
+    
+    /**
+     * Forward user lookup request to peers
+     */
+    private Optional<User> findUserInPeers(String username) {
+        for (String peer : peers) {
+            try {
+                String url = peer + "/api/internal/users/by-username/" + username;
+                User user = restTemplate.getForObject(url, User.class);
+                if (user != null) {
+                    return Optional.of(user);
+                }
+            } catch (Exception e) {
+                // Log and continue to next peer
+                System.out.println("Failed to query peer " + peer + " for user " + username + ": " + e.getMessage());
+            }
+        }
+        return Optional.empty();
+    }
+    
+    /**
+     * Forward user lookup by ID request to peers
+     */
+    private Optional<User> findUserInPeersById(String userId) {
+        for (String peer : peers) {
+            try {
+                String url = peer + "/api/internal/users/" + userId;
+                User user = restTemplate.getForObject(url, User.class);
+                if (user != null) {
+                    return Optional.of(user);
+                }
+            } catch (Exception e) {
+                // Log and continue to next peer
+                System.out.println("Failed to query peer " + peer + " for user ID " + userId + ": " + e.getMessage());
+            }
+        }
+        return Optional.empty();
     }
 }

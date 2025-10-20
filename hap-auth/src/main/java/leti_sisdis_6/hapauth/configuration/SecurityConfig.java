@@ -24,13 +24,13 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestTemplate;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
 import leti_sisdis_6.hapauth.usermanagement.UserInMemoryRepository;
-import leti_sisdis_6.hapauth.services.PeerAwareUserDetailsService;
 
 @Configuration
 @EnableMethodSecurity
@@ -43,11 +43,17 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+    
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
 
     // Load users from in-memory repository for username/password auth
     @Bean
-    public UserDetailsService userDetailsService(PeerAwareUserDetailsService peerAwareUserDetailsService) {
-        return peerAwareUserDetailsService;
+    public UserDetailsService userDetailsService(UserInMemoryRepository userInMemoryRepository) {
+        return username -> userInMemoryRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
     // Use DAO auth provider with our UserDetailsService + encoder
@@ -95,7 +101,7 @@ public class SecurityConfig {
         http
             .securityMatcher(
                 "/api/public/**",
-                "/api/internal/**",
+                "/api/public/internal/**",
                 "/h2-console/**",
                 "/swagger-ui.html",
                 "/swagger-ui/**",
