@@ -30,6 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
 import leti_sisdis_6.hapauth.usermanagement.UserInMemoryRepository;
+import leti_sisdis_6.hapauth.services.PeerAwareUserDetailsService;
 
 @Configuration
 @EnableMethodSecurity
@@ -45,9 +46,8 @@ public class SecurityConfig {
 
     // Load users from in-memory repository for username/password auth
     @Bean
-    public UserDetailsService userDetailsService(UserInMemoryRepository userInMemoryRepository) {
-        return username -> userInMemoryRepository.findByUsername(username)
-            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    public UserDetailsService userDetailsService(PeerAwareUserDetailsService peerAwareUserDetailsService) {
+        return peerAwareUserDetailsService;
     }
 
     // Use DAO auth provider with our UserDetailsService + encoder
@@ -95,6 +95,7 @@ public class SecurityConfig {
         http
             .securityMatcher(
                 "/api/public/**",
+                "/api/internal/**",
                 "/h2-console/**",
                 "/swagger-ui.html",
                 "/swagger-ui/**",
