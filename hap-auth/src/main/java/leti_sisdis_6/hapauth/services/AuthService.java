@@ -58,10 +58,7 @@ public class AuthService {
             return authenticateInPeers(username, password);
         }
     }
-    
-    /**
-     * Forward authentication to peers
-     */
+
     private Optional<User> authenticateInPeers(String username, String password) {
         for (String peer : peers) {
             try {
