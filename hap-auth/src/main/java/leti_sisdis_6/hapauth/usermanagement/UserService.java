@@ -3,8 +3,6 @@ package leti_sisdis_6.hapauth.usermanagement;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,9 +16,9 @@ public class UserService {
     private final RestTemplate restTemplate;
     
     // Hardcoded peer list - simple approach
+    // Each instance knows only the other peers
     private final List<String> peers = Arrays.asList(
-        "http://localhost:8085", // instance2
-        "http://localhost:8086"  // instance3
+        "http://localhost:8089"  // instance2
     );
 
     public UserService(UserInMemoryRepository userInMemoryRepository, 
@@ -52,18 +50,11 @@ public class UserService {
             .build();
     }
     
-    /**
-     * Get repository statistics for debugging
-     */
+
     public Object getRepositoryStats() {
         return userInMemoryRepository.getInstanceInfo();
     }
-    
-    /**
-     * Find user by username, checking local repository first, then peers
-     * @param username the username to search for
-     * @return Optional<User> if found locally or in peers
-     */
+
     public Optional<User> findByUsername(String username) {
         // Check local repository first
         Optional<User> localUser = userInMemoryRepository.findByUsername(username);
@@ -74,12 +65,7 @@ public class UserService {
         // If not found locally, check peers
         return findUserInPeers(username);
     }
-    
-    /**
-     * Check if username exists, checking local repository first, then peers
-     * @param username the username to check
-     * @return true if username exists locally or in peers
-     */
+
     public boolean existsByUsername(String username) {
         // Check local repository first
         if (userInMemoryRepository.existsByUsername(username)) {
@@ -89,12 +75,7 @@ public class UserService {
         // If not found locally, check peers
         return findUserInPeers(username).isPresent();
     }
-    
-    /**
-     * Find user by ID, checking local repository first, then peers
-     * @param id the user ID to search for
-     * @return Optional<User> if found locally or in peers
-     */
+
     public Optional<User> findById(String id) {
         // Check local repository first
         Optional<User> localUser = userInMemoryRepository.findById(id);
@@ -106,9 +87,7 @@ public class UserService {
         return findUserInPeersById(id);
     }
     
-    /**
-     * Forward user lookup request to peers
-     */
+
     private Optional<User> findUserInPeers(String username) {
         for (String peer : peers) {
             try {
@@ -124,10 +103,7 @@ public class UserService {
         }
         return Optional.empty();
     }
-    
-    /**
-     * Forward user lookup by ID request to peers
-     */
+
     private Optional<User> findUserInPeersById(String userId) {
         for (String peer : peers) {
             try {

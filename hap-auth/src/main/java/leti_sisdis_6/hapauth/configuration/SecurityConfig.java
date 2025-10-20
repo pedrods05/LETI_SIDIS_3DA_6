@@ -101,7 +101,7 @@ public class SecurityConfig {
         http
             .securityMatcher(
                 "/api/public/**",
-                "/api/public/internal/**",
+                "/api/internal/**",
                 "/h2-console/**",
                 "/swagger-ui.html",
                 "/swagger-ui/**",
