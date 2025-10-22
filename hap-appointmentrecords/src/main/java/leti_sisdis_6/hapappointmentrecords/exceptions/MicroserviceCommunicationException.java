@@ -24,3 +24,4 @@ public class MicroserviceCommunicationException extends RuntimeException {
         return details;
     }
 }
+
