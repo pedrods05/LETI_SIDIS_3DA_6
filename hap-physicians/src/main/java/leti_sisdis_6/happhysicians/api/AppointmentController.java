@@ -108,16 +108,6 @@ public class AppointmentController {
 
     // ===== ENDPOINTS DE COMUNICAÇÃO INTER-MICROSERVIÇOS =====
 
-    @GetMapping("/{appointmentId}/details")
-    @Operation(summary = "Get appointment with patient details")
-    public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatient(@PathVariable String appointmentId) {
-        try {
-            AppointmentDetailsDTO details = appointmentService.getAppointmentWithPatient(appointmentId);
-            return ResponseEntity.ok(details);
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
 
     @GetMapping("/{appointmentId}/full-details")
     @Operation(summary = "Get appointment with full details")
