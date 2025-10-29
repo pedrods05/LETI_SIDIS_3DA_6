@@ -22,20 +22,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import leti_sisdis_6.happatients.dto.PatientProfileDTO;
+import leti_sisdis_6.happatients.http.ResilientRestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -45,84 +37,10 @@ public class PatientService {
     private final AddressRepository addressRepository;
     private final InsuranceInfoRepository insuranceInfoRepository;
     private final PatientMapper patientMapper;
-
-    @Autowired(required = false)
-    private RestTemplate restTemplate;
-
-    @Value("${hap.physicians.base-url:http://localhost:8081}")
-    private String physiciansServiceBaseUrl;
+    private final ResilientRestTemplate resilientRestTemplate;
 
     @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
-    private String appointmentsServiceBaseUrl;
-
-    @Value("${hap.auth.base-url:http://localhost:8084}")
-    private String authServiceBaseUrl;
-
-    private RestTemplate getRestTemplate() {
-        if (this.restTemplate == null) {
-            this.restTemplate = new RestTemplate();
-        }
-        return this.restTemplate;
-    }
-
-    @Transactional
-    public String registerPatient(PatientRegistrationDTO dto) {
-        if (!dto.getDataConsentGiven()) {
-            throw new IllegalArgumentException("Data consent is required");
-        }
-        if (patientRepository.existsByEmail(dto.getEmail())) {
-            throw new EmailAlreadyExistsException("Email already in use");
-        }
-        String patientId = generatePatientId();
-
-        // Create auth user via hap-auth API
-        Map<String, String> req = new HashMap<>();
-        req.put("username", dto.getEmail());
-        req.put("password", dto.getPassword());
-        req.put("role", "PATIENT");
-        try {
-            getRestTemplate().postForEntity(
-                authServiceBaseUrl + "/api/public/register",
-                req,
-                Object.class
-            );
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to register user in auth service: " + e.getMessage());
-        }
-
-        Address address = Address.builder()
-                .id(generateAddressId())
-                .street(dto.getAddress().getStreet())
-                .city(dto.getAddress().getCity())
-                .postalCode(dto.getAddress().getPostalCode())
-                .country(dto.getAddress().getCountry())
-                .build();
-
-        InsuranceInfo insuranceInfo = null;
-        if (dto.getInsuranceInfo() != null) {
-            insuranceInfo = InsuranceInfo.builder()
-                    .id(generateInsuranceId())
-                    .policyNumber(dto.getInsuranceInfo().getPolicyNumber())
-                    .provider(dto.getInsuranceInfo().getProvider())
-                    .coverageType(dto.getInsuranceInfo().getCoverageType())
-                    .build();
-        }
-
-        Patient patient = Patient.builder()
-                .patientId(patientId)
-                .fullName(dto.getFullName())
-                .email(dto.getEmail())
-                .phoneNumber(dto.getPhoneNumber())
-                .birthDate(dto.getBirthDate())
-                .address(address)
-                .insuranceInfo(insuranceInfo)
-                .dataConsentGiven(true)
-                .dataConsentDate(LocalDate.now())
-                .build();
-
-        Patient savedPatient = patientRepository.save(patient);
-        return savedPatient.getPatientId();
-    }
+    private String appointmentRecordsBaseUrl;
 
     @Transactional(readOnly = true)
     public PatientDetailsDTO getPatientDetails(String patientId) {
@@ -168,51 +86,28 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public List<JsonNode> getPatientAppointmentHistory(String patientId, String bearerToken) {
-        String url = appointmentsServiceBaseUrl + "/api/appointment-records/patient/" + patientId;
         HttpHeaders headers = new HttpHeaders();
         if (bearerToken != null && !bearerToken.isBlank()) {
             headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
         }
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<JsonNode[]> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, entity, JsonNode[].class);
-        JsonNode[] body = response.getBody();
-        return body != null ? Arrays.asList(body) : Collections.emptyList();
+        JsonNode[] body = tryGet(appointmentRecordsBaseUrl, "/api/appointment-records/patient/" + patientId, headers, JsonNode[].class);
+        return body != null ? java.util.Arrays.asList(body) : java.util.Collections.emptyList();
     }
 
     @Transactional(readOnly = true)
     public List<JsonNode> getMyAppointmentHistory(String bearerToken) {
-        String url = appointmentsServiceBaseUrl + "/api/appointment-records/patient/mine";
         HttpHeaders headers = new HttpHeaders();
         if (bearerToken != null && !bearerToken.isBlank()) {
             headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
         }
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<JsonNode[]> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, entity, JsonNode[].class);
-        JsonNode[] body = response.getBody();
-        return body != null ? Arrays.asList(body) : Collections.emptyList();
-    }
-
-    @Transactional(readOnly = true)
-    public JsonNode getPhysicianById(String physicianId) {
-        String url = physiciansServiceBaseUrl + "/physicians/" + physicianId;
-        return getRestTemplate().getForObject(url, JsonNode.class);
+        JsonNode[] body = tryGet(appointmentRecordsBaseUrl, "/api/appointment-records/patient/mine", headers, JsonNode[].class);
+        return body != null ? java.util.Arrays.asList(body) : java.util.Collections.emptyList();
     }
 
     @Transactional(readOnly = true)
     public PatientProfileDTO getPatientProfile(String patientId, String bearerToken) {
         PatientDetailsDTO details = getPatientDetails(patientId);
         List<JsonNode> history = getPatientAppointmentHistory(patientId, bearerToken);
-        return PatientProfileDTO.builder().patient(details).appointmentHistory(history).build();
-    }
-
-    @Transactional(readOnly = true)
-    public PatientProfileDTO getMyProfile(String email, String bearerToken) {
-        Patient patient = patientRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with email: " + email));
-        PatientDetailsDTO details = patientMapper.toDetailsDTO(patient);
-        List<JsonNode> history = getMyAppointmentHistory(bearerToken);
         return PatientProfileDTO.builder().patient(details).appointmentHistory(history).build();
     }
 
@@ -244,5 +139,18 @@ public class PatientService {
     private String generateInsuranceId() {
         long count = insuranceInfoRepository.count();
         return String.format("INS%02d", count + 1);
+    }
+
+    private <T> T tryGet(String baseUrl, String path, HttpHeaders headers, Class<T> clazz) {
+        String url = baseUrl + (path.startsWith("/") ? path : ("/" + path));
+        try {
+            if (headers != null) {
+                return resilientRestTemplate.getForObjectWithFallback(url, headers, clazz);
+            } else {
+                return resilientRestTemplate.getForObjectWithFallback(url, clazz);
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }

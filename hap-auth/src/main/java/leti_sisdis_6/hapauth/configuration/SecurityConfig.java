@@ -24,12 +24,13 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestTemplate;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
-import leti_sisdis_6.hapauth.usermanagement.UserRepository;
+import leti_sisdis_6.hapauth.usermanagement.UserInMemoryRepository;
 
 @Configuration
 @EnableMethodSecurity
@@ -42,11 +43,16 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-    // Load users from DB for username/password auth
+    
     @Bean
-    public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return username -> userRepository.findByUsername(username)
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    // Load users from in-memory repository for username/password auth
+    @Bean
+    public UserDetailsService userDetailsService(UserInMemoryRepository userInMemoryRepository) {
+        return username -> userInMemoryRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
@@ -95,6 +101,7 @@ public class SecurityConfig {
         http
             .securityMatcher(
                 "/api/public/**",
+                "/api/internal/**",
                 "/h2-console/**",
                 "/swagger-ui.html",
                 "/swagger-ui/**",

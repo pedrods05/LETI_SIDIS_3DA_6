@@ -56,7 +56,6 @@ public class SecurityConfig {
         return converter;
     }
 
-    // Ensure Swagger/OpenAPI endpoints are never forced to authenticate even if an Authorization header is present
     @Bean
     public BearerTokenResolver bearerTokenResolver() {
         DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
@@ -70,7 +69,7 @@ public class SecurityConfig {
                 || path.startsWith("/swagger-resources")
                 || path.startsWith("/webjars/")
                 || path.startsWith("/h2-console")) {
-                return null; // skip token resolution for these paths
+                return null;
             }
             return delegate.resolve(request);
         };
@@ -85,6 +84,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/",
                     "/api/v2/patients/register",
+                    "/internal/**",
                     "/h2-console/**",
                     "/swagger-ui.html",
                     "/swagger-ui/**",

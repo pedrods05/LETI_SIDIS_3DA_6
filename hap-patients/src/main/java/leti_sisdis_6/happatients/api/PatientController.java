@@ -8,10 +8,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,8 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import leti_sisdis_6.happatients.dto.PatientProfileDTO;
 import leti_sisdis_6.happatients.http.ResilientRestTemplate;
@@ -40,8 +39,36 @@ public class PatientController {
     // Fallback peers and resilient HTTP client
     private final ResilientRestTemplate resilientRestTemplate;
 
-    @Value("${hap.patients.peers:http://localhost:8082}")
-    private List<String> peers;
+    // Hardcoded patient peers; we'll remove self based on server.port, but allow property override
+    private List<String> peers = new ArrayList<>(Arrays.asList(
+            "http://localhost:8082",
+            "http://localhost:8088"
+    ));
+
+    @Value("${server.port:0}")
+    private int serverPort;
+
+    @Value("${hap.patients.peers:}")
+    private String patientPeersProp;
+
+    @PostConstruct
+    void initPeers() {
+        if (patientPeersProp != null && !patientPeersProp.isBlank()) {
+            peers = parsePeers(patientPeersProp);
+        }
+        if (serverPort > 0) {
+            peers.remove("http://localhost:" + serverPort);
+        }
+    }
+
+    private List<String> parsePeers(String prop) {
+        List<String> list = new ArrayList<>();
+        for (String s : prop.split(",")) {
+            String v = s.trim();
+            if (!v.isEmpty()) list.add(v);
+        }
+        return list;
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -70,9 +97,7 @@ public class PatientController {
         }
     )
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<?> getPatientDetails(
-            @PathVariable String id,
-            @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
+    public ResponseEntity<?> getPatientDetails(@PathVariable String id) {
         // 1) Try local cache first
         PatientDetailsDTO cached = localRepo.findById(id).orElse(null);
         if (cached != null) {
@@ -85,15 +110,11 @@ public class PatientController {
             localRepo.save(patient);
             return ResponseEntity.ok(patient);
         } catch (EntityNotFoundException e) {
-            // 3) Fallback to peers with Authorization forwarded
-            HttpHeaders headers = new HttpHeaders();
-            if (authorizationHeader != null && !authorizationHeader.isBlank()) {
-                headers.set(HttpHeaders.AUTHORIZATION, authorizationHeader);
-            }
+            // 3) Fallback to peers hitting INTERNAL endpoint (no auth required)
             for (String peer : peers) {
-                String url = peer.endsWith("/") ? peer + "patients/" + id : peer + "/patients/" + id;
+                String url = (peer.endsWith("/")) ? (peer + "internal/patients/" + id) : (peer + "/internal/patients/" + id);
                 try {
-                    PatientDetailsDTO remote = resilientRestTemplate.getForObjectWithFallback(url, headers, PatientDetailsDTO.class);
+                    PatientDetailsDTO remote = resilientRestTemplate.getForObjectWithFallback(url, PatientDetailsDTO.class);
                     if (remote != null) {
                         localRepo.save(remote);
                         return ResponseEntity.ok(remote);
@@ -107,7 +128,6 @@ public class PatientController {
         }
     }
 
-    // Alias to match required path: /patients/search
     @GetMapping("/search")
     @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(

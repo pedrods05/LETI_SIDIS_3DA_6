@@ -12,6 +12,5 @@ import org.springframework.context.annotation.Configuration;
     bearerFormat = "JWT"
 )
 public class OpenApiConfig {
-    // No code needed; annotations configure Swagger UI security
 }
 
