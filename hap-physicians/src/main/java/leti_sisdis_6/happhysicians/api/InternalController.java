@@ -5,6 +5,8 @@ import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
+import leti_sisdis_6.happhysicians.services.AppointmentService;
+import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,9 @@ public class InternalController {
 
     @Autowired
     private ExternalServiceClient externalServiceClient;
+
+    @Autowired
+    private AppointmentService appointmentService;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -74,6 +79,27 @@ public class InternalController {
     @GetMapping("/appointments")
     public List<Appointment> getAllAppointmentsInternal() {
         return appointmentRepository.findAll();
+    }
+
+    /**
+     * Internal endpoint to create physician (for peer communication)
+     */
+    @PostMapping("/physicians")
+    public Physician createPhysicianInternal(@RequestBody Physician physician) {
+        return physicianRepository.save(physician);
+    }
+
+    /**
+     * Internal endpoint to get appointment with patient details (for peer communication)
+     */
+    @GetMapping("/appointments/{appointmentId}/details")
+    public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatientInternal(@PathVariable String appointmentId) {
+        try {
+            AppointmentDetailsDTO details = appointmentService.getAppointmentWithPatient(appointmentId);
+            return ResponseEntity.ok(details);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // ===== PEER MANAGEMENT ENDPOINTS =====

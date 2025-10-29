@@ -60,11 +60,6 @@ public class PhysicianController {
         return ResponseEntity.notFound().build();
     }
 
-    @PostMapping
-    @Operation(summary = "Create a new physician")
-    public Physician createPhysician(@RequestBody Physician physician) {
-        return physicianRepository.save(physician);
-    }
 
     @PostMapping("/register")
     @Operation(summary = "Register a new physician")

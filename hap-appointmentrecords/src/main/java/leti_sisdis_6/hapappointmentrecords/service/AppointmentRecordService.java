@@ -13,11 +13,13 @@ import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepositor
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -29,6 +31,19 @@ public class AppointmentRecordService {
     private final AppointmentRepository appointmentRepository;
     private final ExternalServiceClient externalServiceClient;
 
+    // ========= HARD-CODED PEERS (apenas appointmentrecords) =========
+    // Instâncias conhecidas do MESMO módulo (appointmentsrecords):
+    // instance1: 8083, instance2: 8090
+    private final List<String> peers = Arrays.asList(
+            "http://localhost:8083",
+            "http://localhost:8090"
+    );
+
+    // porta desta instância (para excluir-se a si própria ao “broadcastar”)
+    @Value("${server.port}")
+    private String currentPort;
+    // ================================================================
+
     @Transactional
     public AppointmentRecordResponse createRecord(String appointmentId,
                                                   AppointmentRecordRequest request,
@@ -36,6 +51,7 @@ public class AppointmentRecordService {
 
         // 1) Detalhes da consulta (serviço externo hap-physicians)
         Map<String, Object> appointmentData = externalServiceClient.getAppointmentById(appointmentId);
+
         String appointmentPhysicianId = (String) appointmentData.get("physicianId");
         if (appointmentPhysicianId == null) {
             throw new NotFoundException("Appointment data is incomplete");
@@ -46,7 +62,7 @@ public class AppointmentRecordService {
             throw new UnauthorizedException("You are not authorized to record details for this appointment");
         }
 
-        // 3) Evitar duplicado (agora via propriedade aninhada)
+        // 3) Evitar duplicado (via propriedade aninhada)
         if (recordRepository.findByAppointment_AppointmentId(appointmentId).isPresent()) {
             throw new IllegalStateException("Record already exists for appointment " + appointmentId);
         }
@@ -60,7 +76,7 @@ public class AppointmentRecordService {
 
         AppointmentRecord record = AppointmentRecord.builder()
                 .recordId(recordId)
-                .appointment(appointment) // <- relação 1–1
+                .appointment(appointment) // relação 1–1
                 .diagnosis(request.getDiagnosis())
                 .treatmentRecommendations(request.getTreatmentRecommendations())
                 .prescriptions(request.getPrescriptions())
@@ -164,4 +180,22 @@ public class AppointmentRecordService {
         // usa UUID para evitar colisão quando há deletes
         return "REC" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
     }
+
+    // ===== Helpers (opcional): filtrar peers e “broadcast” =====
+    private List<String> filteredPeers() {
+        // exclui a própria instância com base na porta atual
+        return peers.stream()
+                .filter(p -> currentPort == null || !p.endsWith(":" + currentPort))
+                .toList();
+    }
+
+    // Exemplo de uso se quiseres notificar os outros nós (usa o teu ExternalServiceClient/RestTemplate)
+    // private void notifyPeers(String relativePath, Object payload) {
+    //     for (String peer : filteredPeers()) {
+    //         try {
+    //             externalServiceClient.getRestTemplate()
+    //                 .postForLocation(peer + (relativePath.startsWith("/") ? relativePath : "/" + relativePath), payload);
+    //         } catch (Exception ignored) {}
+    //     }
+    // }
 }
