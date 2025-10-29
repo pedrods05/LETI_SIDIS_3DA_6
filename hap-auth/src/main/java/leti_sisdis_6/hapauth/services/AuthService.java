@@ -1,6 +1,6 @@
 package leti_sisdis_6.hapauth.services;
 
-import leti_sisdis_6.hapauth.usermanagement.User;
+import leti_sisdis_6.hapauth.usermanagement.model.User;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

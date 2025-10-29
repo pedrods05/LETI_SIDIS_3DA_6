@@ -2,17 +2,22 @@ package leti_sisdis_6.hapauth.api;
 
 import leti_sisdis_6.hapauth.dto.LoginRequest;
 import leti_sisdis_6.hapauth.dto.LoginResponse;
+import leti_sisdis_6.hapauth.dto.RegisterUserRequest;
+import leti_sisdis_6.hapauth.dto.UserIdResponse;
+
 import leti_sisdis_6.hapauth.services.AuthService;
-import leti_sisdis_6.hapauth.usermanagement.RegisterUserRequest;
-import leti_sisdis_6.hapauth.usermanagement.UserIdResponse;
+import leti_sisdis_6.hapauth.usermanagement.model.User;
 import leti_sisdis_6.hapauth.usermanagement.UserService;
-import leti_sisdis_6.hapauth.usermanagement.User;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
-
-// added for documenting error payload
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/public")
@@ -38,14 +38,12 @@ public class AuthApi {
 
     private final AuthService authService;
     private final UserService userService;
-    
-    @Autowired
-    private UserService localUserService;
-    
-    private final RestTemplate restTemplate = new RestTemplate();
-    private List<String> peers = Arrays.asList("http://localhost:8089");  // instance2
+    private final RestTemplate restTemplate;            // injeta via @Bean
 
-    // Minimal error payload for 4xx responses (kept here to avoid extra files)
+    // pode ir para application.properties; mantido simples aqui
+    private final List<String> peers = Arrays.asList("http://localhost:8089");
+
+    // Minimal error payload for 4xx responses
     @Schema(name = "ApiError", description = "Standard error response")
     public static class ApiError {
         @Schema(example = "Invalid username or password")
@@ -58,83 +56,70 @@ public class AuthApi {
 
     @PostMapping("/login")
     @Operation(
-        summary = "User login",
-        description = "Authenticates a user and returns a JWT token along with their roles",
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Login successful"),
-            @ApiResponse(
-                responseCode = "401",
-                description = "Invalid credentials",
-                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class))
-            )
-        }
+            summary = "User login",
+            description = "Authenticates a user and returns a JWT token along with roles",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Login successful"),
+                    @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
+            }
     )
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         try {
-            // Check local store first
             Authentication authentication = authService.authenticate(request.getUsername(), request.getPassword());
             String token = authService.generateToken(authentication);
-            
+
             List<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-            
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + token);
-            
+
             return ResponseEntity.ok()
-                .headers(headers)
-                .body(LoginResponse.builder()
-                    .token(token)
-                    .roles(roles)
-                    .build());
+                    .headers(headers)
+                    .body(LoginResponse.builder().token(token).roles(roles).build());
+
         } catch (Exception e) {
-            // Query peers if not found locally
+            // tentar peers
             for (String peer : peers) {
                 try {
                     String url = peer + "/api/internal/auth/authenticate";
-                    AuthService.AuthRequest authRequest = new AuthService.AuthRequest(request.getUsername(), request.getPassword());
-                    
+                    AuthService.AuthRequest authRequest =
+                            new AuthService.AuthRequest(request.getUsername(), request.getPassword());
+
                     User remoteUser = restTemplate.postForObject(url, authRequest, User.class);
                     if (remoteUser != null) {
-                        // Generate token for remote user
                         String token = authService.generateTokenForUser(remoteUser);
-                        
+
                         List<String> roles = remoteUser.getAuthorities().stream()
-                            .map(GrantedAuthority::getAuthority)
-                            .collect(Collectors.toList());
-                        
+                                .map(GrantedAuthority::getAuthority)
+                                .collect(Collectors.toList());
+
                         HttpHeaders headers = new HttpHeaders();
                         headers.set("Authorization", "Bearer " + token);
-                        
+
                         return ResponseEntity.ok()
-                            .headers(headers)
-                            .body(LoginResponse.builder()
-                                .token(token)
-                                .roles(roles)
-                                .build());
+                                .headers(headers)
+                                .body(LoginResponse.builder().token(token).roles(roles).build());
                     }
                 } catch (Exception ex) {
-                    // Log error and continue to next peer
                     System.out.println("Failed to query peer " + peer + ": " + ex.getMessage());
                 }
             }
-            
-            // Keep it generic to avoid leaking whether the username exists
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiError("Invalid username or password"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Invalid username or password"));
         }
     }
 
     @PostMapping("/register")
     @Operation(
-        summary = "Register new user",
-        description = "Creates a new user account with the specified role",
-        responses = {
-            @ApiResponse(responseCode = "201", description = "User registered successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "409", description = "Username already exists")
-        }
+            summary = "Register new user",
+            description = "Creates a new user account with the specified role",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "User registered successfully"),
+                    @ApiResponse(responseCode = "400", description = "Invalid request data"),
+                    @ApiResponse(responseCode = "409", description = "Username already exists")
+            }
     )
     public ResponseEntity<UserIdResponse> register(@RequestBody @Valid RegisterUserRequest request) {
         UserIdResponse response = userService.register(request);

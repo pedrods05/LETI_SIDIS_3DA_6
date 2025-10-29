@@ -1,8 +1,8 @@
 package leti_sisdis_6.hapauth.api;
 
 import leti_sisdis_6.hapauth.exceptions.UserNotFoundException;
-import leti_sisdis_6.hapauth.usermanagement.User;
-import leti_sisdis_6.hapauth.usermanagement.UserInMemoryRepository;
+import leti_sisdis_6.hapauth.usermanagement.model.User;
+import leti_sisdis_6.hapauth.usermanagement.repository.UserInMemoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

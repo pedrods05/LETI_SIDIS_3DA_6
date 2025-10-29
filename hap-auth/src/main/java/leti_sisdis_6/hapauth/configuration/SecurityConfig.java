@@ -30,7 +30,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
-import leti_sisdis_6.hapauth.usermanagement.UserInMemoryRepository;
+import leti_sisdis_6.hapauth.usermanagement.repository.UserInMemoryRepository;
 
 @Configuration
 @EnableMethodSecurity

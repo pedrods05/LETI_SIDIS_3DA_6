@@ -1,8 +1,9 @@
-package com.pcm.psoft.pcmclinic_api.setup;
+package leti_sisdis_6.hapauth.setup;
 
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.Role;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.User;
-import com.pcm.psoft.pcmclinic_api.usermanagement.repository.UserRepository;
+import leti_sisdis_6.hapauth.usermanagement.model.Role;
+import leti_sisdis_6.hapauth.usermanagement.model.User;
+import leti_sisdis_6.hapauth.usermanagement.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,21 +15,20 @@ public class AdminBootstrap implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
     private int adminCounter = 1;
 
     @Override
     public void run(String... args) {
-        createAdminIfNotExists("PedroSousa@clinic.pt", "1230773");
-        createAdminIfNotExists("PedroCunha@clinic.pt", "1231690");
-        createAdminIfNotExists("MartimFerreira@clinic.pt", "1230850");
+        createAdminIfNotExists("pedrinho@clinic.pt", "12345678");
+        createAdminIfNotExists("pedrao@clinic.pt", "12345678");
+        createAdminIfNotExists("lulu@clinic.pt", "12345678");
+        createAdminIfNotExists("zelao@clinic.pt", "12345678");
     }
 
     private void createAdminIfNotExists(String email, String rawPassword) {
         userRepository.findByUsername(email).orElseGet(() -> {
             User user = new User();
-            String adminId = generateNextAdminId();
-            user.setId(adminId);
+            user.setId(generateNextAdminId());
             user.setUsername(email);
             user.setPassword(passwordEncoder.encode(rawPassword));
             user.setRole(Role.ADMIN);
@@ -37,8 +37,6 @@ public class AdminBootstrap implements CommandLineRunner {
     }
 
     private String generateNextAdminId() {
-        String id = String.format("ADM%02d", adminCounter);
-        adminCounter++;
-        return id;
+        return String.format("ADM%02d", adminCounter++);
     }
 }
