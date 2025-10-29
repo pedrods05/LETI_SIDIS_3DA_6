@@ -1,9 +1,10 @@
-package com.pcm.psoft.pcmclinic_api.setup;
+package leti_sisdis_6.happhysicians.setup;
 
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.Department;
-import com.pcm.psoft.pcmclinic_api.usermanagement.model.Specialty;
-import com.pcm.psoft.pcmclinic_api.usermanagement.repository.DepartmentRepository;
-import com.pcm.psoft.pcmclinic_api.usermanagement.repository.SpecialtyRepository;
+import leti_sisdis_6.happhysicians.model.Department;
+import leti_sisdis_6.happhysicians.model.Specialty;
+import leti_sisdis_6.happhysicians.repository.DepartmentRepository;
+import leti_sisdis_6.happhysicians.repository.SpecialtyRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
@@ -30,7 +31,6 @@ public class MedicalDataBootstrap implements CommandLineRunner {
         createDepartment("DEP04", "GAST", "Gastroenterologia", "Cuidados com o sistema digestivo e gastrointestinal");
     }
 
-
     private void preloadSpecialties() {
         createSpecialty("SPC01", "Cardiologia");
         createSpecialty("SPC02", "Neurologia");
@@ -43,14 +43,22 @@ public class MedicalDataBootstrap implements CommandLineRunner {
 
     private void createDepartment(String id, String code, String name, String description) {
         if (!departmentRepository.existsByCode(code)) {
-            Department department = new Department(id, code, name, description);
+            Department department = Department.builder()
+                    .departmentId(id)
+                    .code(code)
+                    .name(name)
+                    .description(description)
+                    .build();
             departmentRepository.save(department);
         }
     }
 
     private void createSpecialty(String id, String name) {
         if (!specialtyRepository.existsByName(name)) {
-            Specialty specialty = new Specialty(id, name);
+            Specialty specialty = Specialty.builder()
+                    .specialtyId(id)
+                    .name(name)
+                    .build();
             specialtyRepository.save(specialty);
         }
     }

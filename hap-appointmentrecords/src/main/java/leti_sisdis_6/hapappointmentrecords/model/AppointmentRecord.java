@@ -1,36 +1,34 @@
 package leti_sisdis_6.hapappointmentrecords.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalTime;
 
 @Entity
 @Table(name = "appointment_records")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class AppointmentRecord {
+
     @Id
-    @Column(length = 10)
+    @Column(name = "record_id", length = 32, nullable = false, updatable = false)
     private String recordId;
 
-    @Column(name = "appointment_id", nullable = false, length = 20)
-    private String appointmentId;
+    // Relação 1–1 com Appointment (mesmo serviço)
+    @OneToOne(optional = false)
+    @JoinColumn(name = "appointment_id", referencedColumnName = "appointment_id")
+    private Appointment appointment;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 255)
     private String diagnosis;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 500)
     private String treatmentRecommendations;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 500)
     private String prescriptions;
 
     @Column(nullable = false)
     private LocalTime duration;
-} 
+}

@@ -1,7 +1,7 @@
 package leti_sisdis_6.hapauth.api;
 
 import leti_sisdis_6.hapauth.services.AuthService;
-import leti_sisdis_6.hapauth.usermanagement.User;
+import leti_sisdis_6.hapauth.usermanagement.model.User;
 import leti_sisdis_6.hapauth.usermanagement.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
