@@ -5,7 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="hap Appointment">
+      <change afterPath="$PROJECT_DIR$/.idea/copilotDiffState.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-auth/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-auth/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-physicians/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-physicians/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,36 +48,41 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-        &quot;keyToString&quot;: {
-        &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-        &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-        &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-        &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-        &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-        &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-        &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-        &quot;Spring Boot.HapAppointmentrecordsApplication.executor&quot;: &quot;Run&quot;,
-        &quot;Spring Boot.HapAuthApplication.executor&quot;: &quot;Run&quot;,
-        &quot;Spring Boot.HapPatientsApplication.executor&quot;: &quot;Run&quot;,
-        &quot;Spring Boot.HapPhysiciansApplication.executor&quot;: &quot;Run&quot;,
-        &quot;git-widget-placeholder&quot;: &quot;luis&quot;,
-        &quot;jdk.selected.JAVA_MODULE&quot;: &quot;openjdk-23&quot;,
-        &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-        &quot;last_opened_file_path&quot;: &quot;C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service&quot;,
-        &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-        &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-        &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-        &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-        &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-        &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-        &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
-        &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-        &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
-        &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-        &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
-        }
-        }</component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Spring Boot.HapAppointmentrecordsApplication.executor": "Run",
+    "Spring Boot.HapAuthApplication.executor": "Run",
+    "Spring Boot.HapPatientsApplication.executor": "Run",
+    "Spring Boot.HapPhysiciansApplication.executor": "Run",
+    "Spring Boot.hap-appointmentrecords-instance1.executor": "Run",
+    "Spring Boot.hap-appointmentrecords-instance2.executor": "Run",
+    "Spring Boot.hap-auth-instance1.executor": "Run",
+    "Spring Boot.hap-patients-instance1.executor": "Run",
+    "git-widget-placeholder": "luis",
+    "jdk.selected.JAVA_MODULE": "openjdk-23",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.17",
+    "project.structure.side.proportion": "0.2",
+    "run.configurations.included.in.services": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\service" />
@@ -93,8 +102,23 @@
         <option value="SpringBootApplicationConfigurationType" />
       </set>
     </option>
+    <option name="configurationStatuses">
+      <map>
+        <entry key="SpringBootApplicationConfigurationType">
+          <value>
+            <map>
+              <entry key="HapAppointmentrecordsApplication" value="STOPPED" />
+              <entry key="hap-appointmentrecords-instance1" value="STOPPED" />
+              <entry key="hap-appointmentrecords-instance2" value="STOPPED" />
+              <entry key="hap-auth-instance1" value="STOPPED" />
+              <entry key="hap-patients-instance1" value="FAILED" />
+            </map>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.HapAppointmentrecordsApplication">
+  <component name="RunManager" selected="Spring Boot.hap-appointmentrecords-instance1">
     <configuration name="HapAppointmentrecordsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="hap-appointmentrecords" />
@@ -128,6 +152,8 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Spring Boot.hap-physicians-instance1" />
+      <item itemvalue="Spring Boot.hap-physicians-instance2" />
       <item itemvalue="Spring Boot.hap-appointmentrecords-instance1" />
       <item itemvalue="Spring Boot.hap-appointmentrecords-instance2" />
       <item itemvalue="Spring Boot.hap-auth-instance1" />
