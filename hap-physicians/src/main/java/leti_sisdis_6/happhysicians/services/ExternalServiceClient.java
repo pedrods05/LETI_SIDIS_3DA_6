@@ -16,6 +16,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,12 @@ public class ExternalServiceClient {
         "http://localhost:8081",
         "http://localhost:8087"
     );
+
+    @PostConstruct
+    void init() {
+        System.out.println("Physicians peers configured for port " + currentPort + ": " + peers);
+        System.out.println("Active peers (excluding self): " + getPeerUrls());
+    }
 
     // Helper: forward caller identity to downstream services
     private HttpHeaders buildForwardHeaders() {

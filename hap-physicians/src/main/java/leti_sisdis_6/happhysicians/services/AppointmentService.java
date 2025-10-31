@@ -54,18 +54,28 @@ public class AppointmentService {
             // Create in appointment-records service (will validate conflicts there)
             externalServiceClient.createAppointmentInRecords(appointmentData);
 
-            // Build and save locally
-            Appointment appointment = Appointment.builder()
+            // Fetch patient data from patients service
+            Appointment.AppointmentBuilder appointmentBuilder = Appointment.builder()
                     .appointmentId(dto.getAppointmentId())
                     .patientId(dto.getPatientId())
                     .physician(physician.get())
                     .dateTime(dto.getDateTime())
                     .consultationType(dto.getConsultationType())
                     .status(dto.getStatus())
-                    .wasRescheduled(dto.getWasRescheduled() != null ? dto.getWasRescheduled() : false)
-                    .build();
+                    .wasRescheduled(dto.getWasRescheduled() != null ? dto.getWasRescheduled() : false);
 
-            return appointmentRepository.save(appointment);
+            // Try to fetch patient details from patients service
+            try {
+                Map<String, Object> patientData = externalServiceClient.getPatientById(dto.getPatientId());
+                appointmentBuilder.patientName((String) patientData.get("fullName"));
+                appointmentBuilder.patientEmail((String) patientData.get("email"));
+                appointmentBuilder.patientPhone((String) patientData.get("phoneNumber"));
+            } catch (Exception e) {
+                // If patient fetch fails, continue without patient data
+                System.out.println("Warning: Could not fetch patient data for ID " + dto.getPatientId() + ": " + e.getMessage());
+            }
+
+            return appointmentRepository.save(appointmentBuilder.build());
         } catch (MicroserviceCommunicationException e) {
             String msg = e.getMessage();
             throw new RuntimeException(msg.contains("conflict") || msg.contains("exists")
@@ -253,14 +263,25 @@ public class AppointmentService {
 
         Physician physician = physicianRepository.findById(physicianId).orElse(null);
 
-        return Appointment.builder()
+        Appointment.AppointmentBuilder builder = Appointment.builder()
                 .appointmentId(appointmentId)
                 .patientId(patientId)
                 .physician(physician)
                 .dateTime(dateTime)
                 .consultationType(consultationType)
                 .status(status)
-                .wasRescheduled(false)
-                .build();
+                .wasRescheduled(false);
+
+        // Try to fetch patient data from patients service
+        try {
+            Map<String, Object> patientData = externalServiceClient.getPatientById(patientId);
+            builder.patientName((String) patientData.get("fullName"));
+            builder.patientEmail((String) patientData.get("email"));
+            builder.patientPhone((String) patientData.get("phoneNumber"));
+        } catch (Exception e) {
+            // If patient fetch fails, continue without patient data
+        }
+
+        return builder.build();
     }
 }

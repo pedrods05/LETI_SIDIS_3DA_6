@@ -39,19 +39,23 @@ public class AppointmentController {
         }
 
         // Query peers if not found locally
+        System.out.println("Appointment not found locally, querying peers");
         List<String> peers = externalServiceClient.getPeerUrls();
         for (String peer : peers) {
+            String url = peer + "/internal/appointments/" + appointmentId;
+            System.out.println("Querying peer: " + url);
             try {
-                Appointment remoteAppointment = restTemplate.getForObject(
-                    peer + "/internal/appointments/" + appointmentId, Appointment.class);
+                Appointment remoteAppointment = restTemplate.getForObject(url, Appointment.class);
                 if (remoteAppointment != null) {
+                    System.out.println("Found appointment in peer: " + url);
                     return ResponseEntity.ok(remoteAppointment);
                 }
             } catch (Exception e) {
-                // Log error and continue to next peer
                 System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
+                // continue to next peer
             }
         }
+        System.out.println("Appointment not found in any peer");
         return ResponseEntity.notFound().build();
     }
 
