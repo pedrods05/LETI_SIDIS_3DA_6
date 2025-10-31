@@ -79,8 +79,12 @@ public class AuthService {
         Instant now = Instant.now();
         long expiry = 3600L;
 
+        // Remove ROLE_ prefix from authorities to match the expected format
         String scope = authentication.getAuthorities().stream()
-            .map(authority -> authority.getAuthority())
+            .map(authority -> {
+                String auth = authority.getAuthority();
+                return auth.startsWith("ROLE_") ? auth.substring(5) : auth;
+            })
             .collect(java.util.stream.Collectors.joining(" "));
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -102,8 +106,12 @@ public class AuthService {
         Instant now = Instant.now();
         long expiry = 3600L;
 
+        // Remove ROLE_ prefix from authorities to match the expected format
         String scope = user.getAuthorities().stream()
-            .map(authority -> authority.getAuthority())
+            .map(authority -> {
+                String auth = authority.getAuthority();
+                return auth.startsWith("ROLE_") ? auth.substring(5) : auth;
+            })
             .collect(java.util.stream.Collectors.joining(" "));
 
         JwtClaimsSet claims = JwtClaimsSet.builder()

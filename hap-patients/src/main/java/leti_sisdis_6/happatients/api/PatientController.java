@@ -59,6 +59,7 @@ public class PatientController {
         if (serverPort > 0) {
             peers.remove("http://localhost:" + serverPort);
         }
+        System.out.println("Patient peers initialized for port " + serverPort + ": " + peers);
     }
 
     private List<String> parsePeers(String prop) {
@@ -111,18 +112,23 @@ public class PatientController {
             return ResponseEntity.ok(patient);
         } catch (EntityNotFoundException e) {
             // 3) Fallback to peers hitting INTERNAL endpoint (no auth required)
+            System.out.println("Patient not found locally, querying peers: " + peers);
             for (String peer : peers) {
                 String url = (peer.endsWith("/")) ? (peer + "internal/patients/" + id) : (peer + "/internal/patients/" + id);
+                System.out.println("Querying peer: " + url);
                 try {
                     PatientDetailsDTO remote = resilientRestTemplate.getForObjectWithFallback(url, PatientDetailsDTO.class);
                     if (remote != null) {
+                        System.out.println("Found patient in peer: " + url);
                         localRepo.save(remote);
                         return ResponseEntity.ok(remote);
                     }
-                } catch (Exception ignored) {
+                } catch (Exception ex) {
+                    System.out.println("Failed to query peer " + url + ": " + ex.getMessage());
                     // ignore and try next peer
                 }
             }
+            System.out.println("Patient not found in any peer");
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Patient not found"));
         }
