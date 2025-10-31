@@ -13,11 +13,9 @@ import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepositor
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,19 +28,6 @@ public class AppointmentRecordService {
     private final AppointmentRecordRepository recordRepository;
     private final AppointmentRepository appointmentRepository;
     private final ExternalServiceClient externalServiceClient;
-
-    // ========= HARD-CODED PEERS (apenas appointmentrecords) =========
-    // Instâncias conhecidas do MESMO módulo (appointmentsrecords):
-    // instance1: 8083, instance2: 8090
-    private final List<String> peers = Arrays.asList(
-            "http://localhost:8083",
-            "http://localhost:8090"
-    );
-
-    // porta desta instância (para excluir-se a si própria ao “broadcastar”)
-    @Value("${server.port}")
-    private String currentPort;
-    // ================================================================
 
     @Transactional
     public AppointmentRecordResponse createRecord(String appointmentId,
@@ -180,22 +165,4 @@ public class AppointmentRecordService {
         // usa UUID para evitar colisão quando há deletes
         return "REC" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
     }
-
-    // ===== Helpers (opcional): filtrar peers e “broadcast” =====
-    private List<String> filteredPeers() {
-        // exclui a própria instância com base na porta atual
-        return peers.stream()
-                .filter(p -> currentPort == null || !p.endsWith(":" + currentPort))
-                .toList();
-    }
-
-    // Exemplo de uso se quiseres notificar os outros nós (usa o teu ExternalServiceClient/RestTemplate)
-    // private void notifyPeers(String relativePath, Object payload) {
-    //     for (String peer : filteredPeers()) {
-    //         try {
-    //             externalServiceClient.getRestTemplate()
-    //                 .postForLocation(peer + (relativePath.startsWith("/") ? relativePath : "/" + relativePath), payload);
-    //         } catch (Exception ignored) {}
-    //     }
-    // }
 }

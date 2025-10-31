@@ -10,7 +10,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import jakarta.annotation.PostConstruct;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ExternalServiceClient {
@@ -26,6 +30,21 @@ public class ExternalServiceClient {
 
     @Value("${hap.auth.base-url:http://localhost:8084}")
     private String authServiceUrl;
+
+    @Value("${server.port:8083}")
+    private String currentPort;
+
+    // Hardcoded peer list for appointmentrecords instances
+    private final List<String> peers = Arrays.asList(
+        "http://localhost:8083",
+        "http://localhost:8090"
+    );
+
+    @PostConstruct
+    void init() {
+        System.out.println("AppointmentRecords peers configured for port " + currentPort + ": " + peers);
+        System.out.println("Active peers (excluding self): " + getPeerUrls());
+    }
 
     // Physician Service calls
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
@@ -88,5 +107,16 @@ public class ExternalServiceClient {
         } catch (Exception e) {
             throw new MicroserviceCommunicationException("Auth", "validateToken", e.getMessage(), e);
         }
+    }
+
+    // Peer communication methods
+    public List<String> getPeerUrls() {
+        return peers.stream()
+                .filter(peerUrl -> !isCurrentInstance(peerUrl))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isCurrentInstance(String peerUrl) {
+        return peerUrl.contains(":" + currentPort);
     }
 }
