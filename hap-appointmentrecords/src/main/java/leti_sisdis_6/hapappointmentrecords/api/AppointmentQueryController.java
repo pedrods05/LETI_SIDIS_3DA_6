@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
 
 import java.util.List;
 import java.util.Map;
@@ -116,12 +117,15 @@ public class AppointmentQueryController {
         }
     }
 
-    @DeleteMapping("/{appointmentId}")
-    public ResponseEntity<?> deleteAppointment(@PathVariable String appointmentId) {
-        if (appointmentRepository.existsById(appointmentId)) {
-            appointmentRepository.deleteById(appointmentId);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+    @PutMapping("/{appointmentId}/cancel")
+    public ResponseEntity<?> cancelAppointment(@PathVariable String appointmentId) {
+        // ... (A mesma lógica de findById, setStatus("CANCELADO") e save)
+        return appointmentRepository.findById(appointmentId)
+                .map(existingAppointment -> {
+                    existingAppointment.setStatus(AppointmentStatus.CANCELLED);
+                    Appointment updated = appointmentRepository.save(existingAppointment);
+                    return ResponseEntity.ok(updated); // Retorna 200 OK com o objeto atualizado
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }
