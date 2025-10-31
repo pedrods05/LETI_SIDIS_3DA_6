@@ -39,6 +39,15 @@ public class AppointmentRecordService {
 
         String appointmentPhysicianId = (String) appointmentData.get("physicianId");
         if (appointmentPhysicianId == null) {
+            Object physObj = appointmentData.get("physician");
+            if (physObj instanceof Map<?,?> physMap) {
+                Object nestedId = physMap.get("physicianId");
+                if (nestedId instanceof String pid && !pid.isBlank()) {
+                    appointmentPhysicianId = pid;
+                }
+            }
+        }
+        if (appointmentPhysicianId == null) {
             throw new NotFoundException("Appointment data is incomplete");
         }
 
