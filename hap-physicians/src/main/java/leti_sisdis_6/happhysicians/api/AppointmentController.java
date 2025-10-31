@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,9 +57,9 @@ public class AppointmentController {
 
     @PostMapping
     @Operation(summary = "Create a new appointment")
-    public ResponseEntity<?> createAppointment(@RequestBody Appointment appointment) {
+    public ResponseEntity<?> createAppointment(@RequestBody leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest appointmentDTO) {
         try {
-            Appointment createdAppointment = appointmentService.createAppointment(appointment);
+            Appointment createdAppointment = appointmentService.createAppointment(appointmentDTO);
             return ResponseEntity.ok(createdAppointment);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -87,12 +86,16 @@ public class AppointmentController {
 
     @PutMapping("/{appointmentId}")
     @Operation(summary = "Update appointment by ID")
-    public ResponseEntity<Appointment> updateAppointment(@PathVariable String appointmentId, @RequestBody Appointment appointmentDetails) {
-        Appointment updatedAppointment = appointmentService.updateAppointment(appointmentId, appointmentDetails);
-        if (updatedAppointment != null) {
-            return ResponseEntity.ok(updatedAppointment);
-        } else {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> updateAppointment(@PathVariable String appointmentId, @RequestBody leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest updateDTO) {
+        try {
+            Appointment updatedAppointment = appointmentService.updateAppointment(appointmentId, updateDTO);
+            if (updatedAppointment != null) {
+                return ResponseEntity.ok(updatedAppointment);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 

@@ -54,7 +54,7 @@ public class PhysiciansDataBootstrap implements CommandLineRunner {
                         .workingHourStart(LocalTime.of(9,0))
                         .workingHourEnd(LocalTime.of(17,0))
                         .username("joao.silva@hospital.com")
-                        .password("{noop}Password123!") // ou encoder real
+                        .password("{noop}Password123!")
                         .build(),
 
                 Physician.builder()
@@ -71,7 +71,6 @@ public class PhysiciansDataBootstrap implements CommandLineRunner {
                         .password("{noop}Password123!")
                         .build()
 
-                // …adiciona mais se precisares, sempre com department & specialty
         );
 
         physicianRepository.saveAll(physicians);

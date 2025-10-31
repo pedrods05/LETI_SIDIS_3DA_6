@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
+@Profile("seed-appointments")
 @RequiredArgsConstructor
 @Order(2)
 public class DataBootstrap implements CommandLineRunner {
@@ -29,7 +31,7 @@ public class DataBootstrap implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (appointmentRepository.count() > 0) return; // idempotente
+        if (appointmentRepository.count() > 0) return;
 
         // IDs que já semeaste noutros serviços:
         List<String> patientIds = Arrays.asList("PAT01", "PAT02");
@@ -58,42 +60,66 @@ public class DataBootstrap implements CommandLineRunner {
 
         AtomicInteger counter = new AtomicInteger(1);
 
-        for (String patId : patientIds) {
-            for (int i = 0; i < 5; i++) {
-                String phyId = physicianIds.get(i % physicianIds.size());
+        // Criar 5 appointments passadas (COMPLETED) com records - PAT01
+        String patId1 = patientIds.get(0); // PAT01
+        for (int i = 0; i < 5; i++) {
+            String phyId = physicianIds.get(i % physicianIds.size());
 
-                LocalDateTime dt = LocalDateTime.now()
-                        .minusMonths(5 - i)
-                        .withHour(9 + (i % 4))
-                        .withMinute(0).withSecond(0).withNano(0);
+            LocalDateTime dt = LocalDateTime.now()
+                    .minusMonths(5 - i)
+                    .withHour(9 + (i % 4))
+                    .withMinute(0).withSecond(0).withNano(0);
 
-                int n = counter.getAndIncrement();
+            int n = counter.getAndIncrement();
 
-                Appointment appt = Appointment.builder()
-                        .appointmentId(String.format("APT%02d", n))
-                        .patientId(patId)         // <- referencia por ID, não objeto
-                        .physicianId(phyId)       // <- referencia por ID, não objeto
-                        .dateTime(dt)
-                        .consultationType(i == 0 ? ConsultationType.FIRST_TIME : ConsultationType.FOLLOW_UP)
-                        .status(AppointmentStatus.COMPLETED)
-                        .build();
+            Appointment appt = Appointment.builder()
+                    .appointmentId(String.format("APT%02d", n))
+                    .patientId(patId1)
+                    .physicianId(phyId)
+                    .dateTime(dt)
+                    .consultationType(i == 0 ? ConsultationType.FIRST_TIME : ConsultationType.FOLLOW_UP)
+                    .status(AppointmentStatus.COMPLETED)
+                    .build();
 
-                appt = appointmentRepository.save(appt);
+            appt = appointmentRepository.save(appt);
 
-                int idx = i % diagnoses.length;
+            int idx = i % diagnoses.length;
 
-                AppointmentRecord rec = AppointmentRecord.builder()
-                        .recordId(String.format("REC%02d", n))
-                        .appointment(appt)
-                        // .appointment(appt) // se o teu modelo liga por objeto, usa esta linha e remove a de cima
-                        .diagnosis(diagnoses[idx])
-                        .treatmentRecommendations(recommendations[idx])
-                        .prescriptions(treatments[idx])
-                        .duration(LocalTime.of(0, 20))
-                        .build();
+            AppointmentRecord rec = AppointmentRecord.builder()
+                    .recordId(String.format("REC%02d", n))
+                    .appointment(appt)
+                    .diagnosis(diagnoses[idx])
+                    .treatmentRecommendations(recommendations[idx])
+                    .prescriptions(treatments[idx])
+                    .duration(LocalTime.of(0, 20))
+                    .build();
 
-                appointmentRecordRepository.save(rec);
-            }
+            appointmentRecordRepository.save(rec);
+        }
+
+        // Criar 5 appointments futuras (SCHEDULED) sem records - PAT02
+        String patId2 = patientIds.get(1); // PAT02
+        for (int i = 0; i < 5; i++) {
+            String phyId = physicianIds.get(i % physicianIds.size());
+
+            LocalDateTime dt = LocalDateTime.now()
+                    .plusDays(1 + i * 7)  // 1 semana de intervalo entre cada
+                    .withHour(10 + (i % 6))
+                    .withMinute(0).withSecond(0).withNano(0);
+
+            int n = counter.getAndIncrement();
+
+            Appointment appt = Appointment.builder()
+                    .appointmentId(String.format("APT%02d", n))
+                    .patientId(patId2)
+                    .physicianId(phyId)
+                    .dateTime(dt)
+                    .consultationType(ConsultationType.FOLLOW_UP)
+                    .status(AppointmentStatus.SCHEDULED)
+                    .build();
+
+            appointmentRepository.save(appt);
+            // Não cria record porque a consulta ainda não aconteceu
         }
     }
 }

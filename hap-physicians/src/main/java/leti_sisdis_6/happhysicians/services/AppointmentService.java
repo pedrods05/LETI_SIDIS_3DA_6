@@ -1,20 +1,27 @@
 package leti_sisdis_6.happhysicians.services;
 
+import leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest;
+import leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
 import leti_sisdis_6.happhysicians.exceptions.AppointmentRecordNotFoundException;
 import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
+import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException;
 import leti_sisdis_6.happhysicians.model.Appointment;
+import leti_sisdis_6.happhysicians.model.AppointmentStatus;
+import leti_sisdis_6.happhysicians.model.ConsultationType;
 import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
-import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class AppointmentService {
 
@@ -27,67 +34,139 @@ public class AppointmentService {
     @Autowired
     private ExternalServiceClient externalServiceClient;
 
-    public Appointment createAppointment(Appointment appointment) {
-        // Validate physician exists and set the complete physician object
-        Optional<Physician> physician = physicianRepository.findById(appointment.getPhysician().getPhysicianId());
+    public Appointment createAppointment(ScheduleAppointmentRequest dto) {
+        // Validate physician exists
+        Optional<Physician> physician = physicianRepository.findById(dto.getPhysicianId());
         if (physician.isEmpty()) {
             throw new RuntimeException("Physician not found");
         }
 
-        // Set the complete physician object
-        appointment.setPhysician(physician.get());
+        // Propagate to hap-appointmentrecords (source of truth)
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("appointmentId", dto.getAppointmentId());
+        appointmentData.put("patientId", dto.getPatientId());
+        appointmentData.put("physicianId", dto.getPhysicianId());
+        appointmentData.put("dateTime", dto.getDateTime().toString());
+        appointmentData.put("consultationType", dto.getConsultationType().toString());
+        appointmentData.put("status", dto.getStatus().toString());
 
-        // Check for conflicts
-        if (appointmentRepository.existsByPhysicianPhysicianIdAndDateTime(
-                appointment.getPhysician().getPhysicianId(),
-                appointment.getDateTime())) {
-            throw new RuntimeException("Physician already has an appointment at this time");
+        try {
+            // Create in appointment-records service (will validate conflicts there)
+            externalServiceClient.createAppointmentInRecords(appointmentData);
+
+            // Build and save locally
+            Appointment appointment = Appointment.builder()
+                    .appointmentId(dto.getAppointmentId())
+                    .patientId(dto.getPatientId())
+                    .physician(physician.get())
+                    .dateTime(dto.getDateTime())
+                    .consultationType(dto.getConsultationType())
+                    .status(dto.getStatus())
+                    .wasRescheduled(dto.getWasRescheduled() != null ? dto.getWasRescheduled() : false)
+                    .build();
+
+            return appointmentRepository.save(appointment);
+        } catch (MicroserviceCommunicationException e) {
+            String msg = e.getMessage();
+            throw new RuntimeException(msg.contains("conflict") || msg.contains("exists")
+                ? "Physician already has an appointment at this time or appointment ID already exists"
+                : "Failed to create appointment: " + msg);
         }
-
-        return appointmentRepository.save(appointment);
     }
 
     public List<Appointment> getAllAppointments() {
-        return appointmentRepository.findAll();
+        // Read through appointment-records service to avoid data duplication
+        return externalServiceClient.listAppointments().stream()
+                .map(this::mapRemoteAppointment)
+                .collect(Collectors.toList());
     }
 
     public List<Appointment> getAppointmentsByPhysician(String physicianId) {
-        return appointmentRepository.findByPhysicianPhysicianId(physicianId);
+        return externalServiceClient.listAppointmentsByPhysician(physicianId).stream()
+                .map(this::mapRemoteAppointment)
+                .collect(Collectors.toList());
     }
 
     public List<Appointment> getAppointmentsByPatient(String patientId) {
-        return appointmentRepository.findByPatientId(patientId);
+        return externalServiceClient.listAppointmentsByPatient(patientId).stream()
+                .map(this::mapRemoteAppointment)
+                .collect(Collectors.toList());
     }
 
     public Optional<Appointment> getAppointmentById(String appointmentId) {
-        return appointmentRepository.findById(appointmentId);
+        try {
+            Map<String, Object> m = externalServiceClient.getAppointment(appointmentId);
+            return Optional.of(mapRemoteAppointment(m));
+        } catch (Exception e) {
+            return appointmentRepository.findById(appointmentId);
+        }
     }
 
     public List<Appointment> getAppointmentsByDateRange(LocalDateTime start, LocalDateTime end) {
         return appointmentRepository.findByDateTimeBetween(start, end);
     }
 
-    public Appointment updateAppointment(String appointmentId, Appointment appointmentDetails) {
+    public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto) {
         Optional<Appointment> optionalAppointment = appointmentRepository.findById(appointmentId);
-        if (optionalAppointment.isPresent()) {
-            Appointment appointment = optionalAppointment.get();
-            // appointmentId não pode ser alterado pois é a chave primária
-            appointment.setPatientId(appointmentDetails.getPatientId());
-            appointment.setPhysician(appointmentDetails.getPhysician());
-            appointment.setDateTime(appointmentDetails.getDateTime());
-            appointment.setConsultationType(appointmentDetails.getConsultationType());
-            appointment.setStatus(appointmentDetails.getStatus());
-            appointment.setWasRescheduled(appointmentDetails.isWasRescheduled());
+        if (optionalAppointment.isEmpty()) {
+            return null;
+        }
+
+        Appointment appointment = optionalAppointment.get();
+
+        // Get physician if provided
+        final String physicianIdToUse;
+        final Physician physicianToSet;
+
+        if (dto.getPhysicianId() != null) {
+            physicianIdToUse = dto.getPhysicianId();
+            physicianToSet = physicianRepository.findById(physicianIdToUse)
+                    .orElseThrow(() -> new RuntimeException("Physician not found: " + physicianIdToUse));
+        } else {
+            // Use existing physician
+            physicianToSet = appointment.getPhysician();
+            physicianIdToUse = physicianToSet.getPhysicianId();
+        }
+
+        // Propagate update to hap-appointmentrecords
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("patientId", dto.getPatientId() != null ? dto.getPatientId() : appointment.getPatientId());
+        appointmentData.put("physicianId", physicianIdToUse);
+        appointmentData.put("dateTime", (dto.getDateTime() != null ? dto.getDateTime() : appointment.getDateTime()).toString());
+        appointmentData.put("consultationType", (dto.getConsultationType() != null ? dto.getConsultationType() : appointment.getConsultationType()).toString());
+        appointmentData.put("status", (dto.getStatus() != null ? dto.getStatus() : appointment.getStatus()).toString());
+
+        try {
+            externalServiceClient.updateAppointmentInRecords(appointmentId, appointmentData);
+
+            // Update locally
+            if (dto.getPatientId() != null) appointment.setPatientId(dto.getPatientId());
+            appointment.setPhysician(physicianToSet);
+            if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
+            if (dto.getConsultationType() != null) appointment.setConsultationType(dto.getConsultationType());
+            if (dto.getStatus() != null) appointment.setStatus(dto.getStatus());
+            if (dto.getWasRescheduled() != null) appointment.setWasRescheduled(dto.getWasRescheduled());
 
             return appointmentRepository.save(appointment);
+        } catch (MicroserviceCommunicationException e) {
+            throw new RuntimeException("Failed to update appointment: " + e.getMessage());
         }
-        return null;
     }
 
     public boolean deleteAppointment(String appointmentId) {
         if (appointmentRepository.existsById(appointmentId)) {
-            appointmentRepository.deleteById(appointmentId);
-            return true;
+            try {
+                // Delete from appointment-records first
+                externalServiceClient.deleteAppointmentInRecords(appointmentId);
+
+                // Then delete locally
+                appointmentRepository.deleteById(appointmentId);
+                return true;
+            } catch (MicroserviceCommunicationException e) {
+                // If not found in records, still delete locally
+                appointmentRepository.deleteById(appointmentId);
+                return true;
+            }
         }
         return false;
     }
@@ -156,5 +235,32 @@ public class AppointmentService {
                     }
                 })
                 .toList();
+    }
+
+    private Appointment mapRemoteAppointment(Map<String, Object> m) {
+        // Remote shape from hap-appointmentrecords.model.Appointment
+        // { appointmentId, patientId, physicianId, dateTime, consultationType, status }
+        String appointmentId = (String) m.get("appointmentId");
+        String patientId = (String) m.get("patientId");
+        String physicianId = (String) m.get("physicianId");
+        String dateTimeStr = String.valueOf(m.get("dateTime"));
+        String consultationTypeStr = String.valueOf(m.get("consultationType"));
+        String statusStr = String.valueOf(m.get("status"));
+
+        LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr);
+        ConsultationType consultationType = ConsultationType.valueOf(consultationTypeStr);
+        AppointmentStatus status = AppointmentStatus.valueOf(statusStr);
+
+        Physician physician = physicianRepository.findById(physicianId).orElse(null);
+
+        return Appointment.builder()
+                .appointmentId(appointmentId)
+                .patientId(patientId)
+                .physician(physician)
+                .dateTime(dateTime)
+                .consultationType(consultationType)
+                .status(status)
+                .wasRescheduled(false)
+                .build();
     }
 }

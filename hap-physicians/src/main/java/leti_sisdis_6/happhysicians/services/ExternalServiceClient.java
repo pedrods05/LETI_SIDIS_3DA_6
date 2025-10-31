@@ -5,12 +5,17 @@ import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException
 import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -41,12 +46,32 @@ public class ExternalServiceClient {
         "http://localhost:8087"
     );
 
+    // Helper: forward caller identity to downstream services
+    private HttpHeaders buildForwardHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            HttpServletRequest req = attrs.getRequest();
+            String auth = req.getHeader("Authorization");
+            String userId = req.getHeader("X-User-Id");
+            String userRole = req.getHeader("X-User-Role");
+            if (auth != null && !auth.isBlank()) headers.add("Authorization", auth);
+            if (userId != null && !userId.isBlank()) headers.add("X-User-Id", userId);
+            if (userRole != null && !userRole.isBlank()) headers.add("X-User-Role", userRole);
+        }
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        return headers;
+    }
+
     // Patient Service calls
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     public Map<String, Object> getPatientById(String patientId) {
         String url = patientsServiceUrl + "/patients/" + patientId;
         try {
-            return restTemplate.getForObject(url, Map.class);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
         } catch (HttpClientErrorException.NotFound e) {
             throw new PatientNotFoundException("Patient not found with id: " + patientId, e);
         } catch (HttpClientErrorException.Unauthorized e) {
@@ -63,7 +88,12 @@ public class ExternalServiceClient {
     public List<Map<String, Object>> getPatientsByIds(List<String> patientIds) {
         String url = patientsServiceUrl + "/patients/batch";
         try {
-            return restTemplate.postForObject(url, patientIds, List.class);
+            HttpHeaders headers = buildForwardHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<List<Map<String, Object>>> resp = restTemplate.exchange(
+                    url, HttpMethod.POST, new HttpEntity<>(patientIds, headers),
+                    new ParameterizedTypeReference<List<Map<String, Object>>>(){});
+            return resp.getBody();
         } catch (HttpClientErrorException.Unauthorized e) {
             throw new MicroserviceCommunicationException("Patients", "getPatientsByIds", "Unauthorized to access patient data", e);
         } catch (HttpClientErrorException.Forbidden e) {
@@ -78,7 +108,10 @@ public class ExternalServiceClient {
     public Map<String, Object> getUserById(String userId) {
         String url = authServiceUrl + "/users/" + userId;
         try {
-            return restTemplate.getForObject(url, Map.class);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
         } catch (HttpClientErrorException.NotFound e) {
             throw new MicroserviceCommunicationException("Auth", "getUserById", "User not found with id: " + userId, e);
         } catch (HttpClientErrorException.Unauthorized e) {
@@ -92,7 +125,12 @@ public class ExternalServiceClient {
     public Map<String, Object> validateToken(String token) {
         String url = authServiceUrl + "/auth/validate";
         try {
-            return restTemplate.postForObject(url, token, Map.class);
+            HttpHeaders headers = buildForwardHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.POST, new HttpEntity<>(token, headers),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
         } catch (HttpClientErrorException.Unauthorized e) {
             throw new MicroserviceCommunicationException("Auth", "validateToken", "Invalid or expired token", e);
         } catch (Exception e) {
@@ -110,7 +148,12 @@ public class ExternalServiceClient {
         request.put("role", role);
 
         try {
-            return restTemplate.postForObject(url, request, Map.class);
+            HttpHeaders headers = buildForwardHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.POST, new HttpEntity<>(request, headers),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
         } catch (HttpClientErrorException.Conflict e) {
             throw new MicroserviceCommunicationException("Auth", "registerUser", "Username already exists", e);
         } catch (HttpClientErrorException.BadRequest e) {
@@ -125,7 +168,10 @@ public class ExternalServiceClient {
     public Map<String, Object> getAppointmentRecord(String appointmentId) {
         String url = appointmentRecordsServiceUrl + "/appointment-records/appointment/" + appointmentId;
         try {
-            return restTemplate.getForObject(url, Map.class);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
         } catch (HttpClientErrorException.NotFound e) {
             throw new AppointmentRecordNotFoundException("Appointment record not found for appointment: " + appointmentId, e);
         } catch (HttpClientErrorException.Unauthorized e) {
@@ -140,7 +186,10 @@ public class ExternalServiceClient {
     public List<Map<String, Object>> getAppointmentRecordsByPhysician(String physicianId) {
         String url = appointmentRecordsServiceUrl + "/appointment-records/physician/" + physicianId;
         try {
-            return restTemplate.getForObject(url, List.class);
+            ResponseEntity<List<Map<String, Object>>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<List<Map<String, Object>>>(){});
+            return resp.getBody();
         } catch (HttpClientErrorException.Unauthorized e) {
             throw new MicroserviceCommunicationException("AppointmentRecords", "getAppointmentRecordsByPhysician", "Unauthorized to access appointment record data", e);
         } catch (Exception e) {
@@ -166,5 +215,113 @@ public class ExternalServiceClient {
     }
     public int getPeerCount() {
         return getPeerUrls().size();
+    }
+
+    // ===== Appointment Records: read appointments owned by that service =====
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> listAppointments() {
+        String url = appointmentRecordsServiceUrl + "/api/appointments";
+        try {
+            ResponseEntity<List<Map<String, Object>>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<List<Map<String, Object>>>(){});
+            return resp.getBody();
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "listAppointments", e.getMessage(), e);
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> getAppointment(String appointmentId) {
+        String url = appointmentRecordsServiceUrl + "/api/appointments/" + appointmentId;
+        try {
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AppointmentRecordNotFoundException("Appointment not found: " + appointmentId, e);
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "getAppointment", e.getMessage(), e);
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> listAppointmentsByPhysician(String physicianId) {
+        String url = appointmentRecordsServiceUrl + "/api/appointments/physician/" + physicianId;
+        try {
+            ResponseEntity<List<Map<String, Object>>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<List<Map<String, Object>>>(){});
+            return resp.getBody();
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "listAppointmentsByPhysician", e.getMessage(), e);
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> listAppointmentsByPatient(String patientId) {
+        String url = appointmentRecordsServiceUrl + "/api/appointments/patient/" + patientId;
+        try {
+            ResponseEntity<List<Map<String, Object>>> resp = restTemplate.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<List<Map<String, Object>>>(){});
+            return resp.getBody();
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "listAppointmentsByPatient", e.getMessage(), e);
+        }
+    }
+
+    // ===== Write operations: create, update, delete appointments =====
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> createAppointmentInRecords(Map<String, Object> appointmentData) {
+        String url = appointmentRecordsServiceUrl + "/api/appointments";
+        try {
+            HttpHeaders headers = buildForwardHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.POST, new HttpEntity<>(appointmentData, headers),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
+        } catch (HttpClientErrorException.Conflict e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "createAppointment", "Appointment already exists or time conflict", e);
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "createAppointment", e.getMessage(), e);
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> updateAppointmentInRecords(String appointmentId, Map<String, Object> appointmentData) {
+        String url = appointmentRecordsServiceUrl + "/api/appointments/" + appointmentId;
+        try {
+            HttpHeaders headers = buildForwardHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.PUT, new HttpEntity<>(appointmentData, headers),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AppointmentRecordNotFoundException("Appointment not found: " + appointmentId, e);
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "updateAppointment", e.getMessage(), e);
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public void deleteAppointmentInRecords(String appointmentId) {
+        String url = appointmentRecordsServiceUrl + "/api/appointments/" + appointmentId;
+        try {
+            HttpHeaders headers = buildForwardHeaders();
+            restTemplate.exchange(
+                    url, HttpMethod.DELETE, new HttpEntity<>(headers),
+                    Void.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AppointmentRecordNotFoundException("Appointment not found: " + appointmentId, e);
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "deleteAppointment", e.getMessage(), e);
+        }
     }
 }

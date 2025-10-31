@@ -2,6 +2,7 @@ package leti_sisdis_6.happhysicians.dto.input;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import leti_sisdis_6.happhysicians.model.AppointmentStatus;
 import leti_sisdis_6.happhysicians.model.ConsultationType;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +11,9 @@ import java.time.LocalDateTime;
 
 @Getter @Setter
 public class ScheduleAppointmentRequest {
+
+    @NotBlank(message = "Appointment ID is required")
+    private String appointmentId;
 
     @NotBlank(message = "Patient ID is required")
     private String patientId;
@@ -22,4 +26,9 @@ public class ScheduleAppointmentRequest {
 
     @NotNull(message = "Consultation type is required")
     private ConsultationType consultationType;
+
+    @NotNull(message = "Status is required")
+    private AppointmentStatus status;
+
+    private Boolean wasRescheduled;
 }

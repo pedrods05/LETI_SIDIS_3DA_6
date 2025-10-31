@@ -20,6 +20,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/appointment-records/**").permitAll()
+                        .requestMatchers("/api/appointments/**").permitAll()
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())
