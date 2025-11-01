@@ -313,6 +313,7 @@ package "hap-physicians" #LightYellow {
     Appointment ..> AppointmentStatus : uses
 
     PhysicianController --> PhysicianService : uses
+    PhysicianController --> PhysicianRepository : uses
     AppointmentController --> AppointmentService : uses
     AppointmentController --> ExternalServiceClient : uses
     InternalController --> PhysicianRepository : uses
@@ -329,6 +330,10 @@ package "hap-physicians" #LightYellow {
     AppointmentRepository --> Appointment : manages
     DepartmentRepository --> Department : manages
     SpecialtyRepository --> Specialty : manages
+    LocalDataRepository --> Physician : manages
+    LocalDataRepository --> Appointment : manages
+    LocalDataRepository --> Department : manages
+    LocalDataRepository --> Specialty : manages
 }
 
 package "hap-appointmentrecords" #LightCoral {
