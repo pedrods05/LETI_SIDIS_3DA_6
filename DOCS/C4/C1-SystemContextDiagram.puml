@@ -1,0 +1,21 @@
+@startuml System Context Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram
+
+Person(patient, "Patient", "Utilizador final que se regista no sistema, autentica-se, cria e consulta os seus agendamentos, atualiza os seus dados de contacto e consulta os seus registos de consultas")
+Person(physician, "Physician", "Médico que se regista, autentica-se, consulta médicos e especialidades, consulta os seus agendamentos, visualiza perfis de pacientes e cria registos de consultas")
+Person(admin, "Administrator", "Staff administrativo que autentica-se, gere médicos (criar, atualizar, eliminar, listar), gere departamentos e especialidades, pesquisa e consulta todos os pacientes e visualiza todos os registos de consultas")
+
+System(hap, "HAP Platform", "Sistema de gestão de agendamentos hospitalares baseado em arquitetura de microserviços. Fornece funcionalidades para: autenticação (login/registo), gestão de utilizadores, gestão de médicos e especialidades, gestão de pacientes, agendamento de consultas e criação/consulta de registos de consultas.")
+
+Rel(patient, hap, "Regista-se\nAutentica-se\nCria agendamentos\nConsulta seus agendamentos\nAtualiza dados de contacto\nConsulta registos de consultas", "HTTPS/REST\nJWT Token")
+Rel(physician, hap, "Regista-se\nAutentica-se\nConsulta médicos\nConsulta especialidades\nConsulta seus agendamentos\nVisualiza perfis de pacientes\nCria registos de consultas", "HTTPS/REST\nJWT Token")
+Rel(admin, hap, "Autentica-se\nGere médicos\nGere departamentos\nGere especialidades\nPesquisa pacientes\nConsulta todos os pacientes\nVisualiza registos de consultas", "HTTPS/REST\nJWT Token")
+
+SHOW_LEGEND()
+
+@enduml
+
