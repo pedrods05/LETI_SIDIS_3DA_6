@@ -5,43 +5,35 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SpringBootTest
+@Import(JacksonConfig.class)
 class JacksonConfigTest {
 
-    private final JacksonConfig jacksonConfig = new JacksonConfig();
+    @Autowired
+    private ObjectMapper mapper;   // ← injeta aqui
 
     @Test
-    @DisplayName("ObjectMapper bean deve ser criado e configurar JavaTime corretamente")
-    void objectMapper_shouldBeConfiguredForJavaTime() {
-        ObjectMapper mapper = jacksonConfig.objectMapper();
-        assertNotNull(mapper, "ObjectMapper não deve ser nulo");
+    @DisplayName("ObjectMapper deve estar configurado para JavaTime e sem timestamps")
+    void objectMapper_shouldHandleJavaTime() throws JsonProcessingException {
+        assertNotNull(mapper);
 
-        // Datas como strings, não timestamps
-        assertFalse(mapper.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS),
-                "WRITE_DATES_AS_TIMESTAMPS deve estar desativado");
-
-        // Serialização básica de LocalDate/LocalDateTime sem lançar exceções
-        assertDoesNotThrow(() -> mapper.writeValueAsString(LocalDate.of(2025, 1, 10)));
-        assertDoesNotThrow(() -> mapper.writeValueAsString(LocalDateTime.of(2025, 1, 10, 10, 0, 0)));
-    }
-
-    @Test
-    @DisplayName("ObjectMapper deve serializar LocalDate/LocalDateTime como texto (não numérico)")
-    void objectMapper_shouldSerializeDatesAsText() throws JsonProcessingException {
-        ObjectMapper mapper = jacksonConfig.objectMapper();
+        assertFalse(mapper.isEnabled(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
 
         String ld = mapper.writeValueAsString(LocalDate.of(2025, 1, 10));
-        String ldt = mapper.writeValueAsString(LocalDateTime.of(2025, 1, 10, 10, 0, 0));
+        String ldt = mapper.writeValueAsString(LocalDateTime.of(2025, 1, 10, 10, 0));
 
-        // Verificações mínimas (formato textual, com ano e separadores)
-        assertTrue(ld.startsWith("\"2025-"), "LocalDate deveria ser string tipo \"2025-01-10\"");
-        assertTrue(ldt.startsWith("\"2025-"), "LocalDateTime deveria começar por \"2025-...\"");
-        assertFalse(ld.matches("^\\d+$"), "LocalDate não deve ser timestamp numérico");
-        assertFalse(ldt.matches("^\\d+$"), "LocalDateTime não deve ser timestamp numérico");
+        assertTrue(ld.startsWith("\"2025-"));
+        assertTrue(ldt.startsWith("\"2025-"));
+        assertFalse(ld.matches("^\\d+$"));
+        assertFalse(ldt.matches("^\\d+$"));
     }
 }
