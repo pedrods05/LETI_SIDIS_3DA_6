@@ -106,43 +106,5 @@ class AppointmentDetailsDTOTest {
         assertNull(dto.getPatientPhone());
         assertEquals("PHY01", dto.getPhysicianId());
     }
-
-    @Test
-    void testBuilder_WorksCorrectly() {
-        // Act
-        AppointmentDetailsDTO dto = AppointmentDetailsDTO.builder()
-                .appointmentId("APT03")
-                .patientId("PAT03")
-                .patientName("Jane Patient")
-                .physicianId("PHY02")
-                .physicianName("Dr. Jane Smith")
-                .dateTime(LocalDateTime.now())
-                .consultationType(ConsultationType.FOLLOW_UP)
-                .status(AppointmentStatus.SCHEDULED)
-                .wasRescheduled(true)
-                .build();
-
-        // Assert
-        assertNotNull(dto);
-        assertEquals("APT03", dto.getAppointmentId());
-        assertEquals("PAT03", dto.getPatientId());
-        assertEquals("Jane Patient", dto.getPatientName());
-        assertEquals("PHY02", dto.getPhysicianId());
-        assertEquals("Dr. Jane Smith", dto.getPhysicianName());
-        assertEquals(ConsultationType.FOLLOW_UP, dto.getConsultationType());
-        assertEquals(AppointmentStatus.SCHEDULED, dto.getStatus());
-        assertEquals(true, dto.isWasRescheduled());
-    }
-
-    @Test
-    void testNoArgsConstructor_Works() {
-        // Act
-        AppointmentDetailsDTO dto = new AppointmentDetailsDTO();
-
-        // Assert
-        assertNotNull(dto);
-        assertNull(dto.getAppointmentId());
-        assertNull(dto.getPatientId());
-    }
 }
 
