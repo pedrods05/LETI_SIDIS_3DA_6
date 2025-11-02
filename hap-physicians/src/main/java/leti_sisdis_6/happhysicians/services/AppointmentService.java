@@ -43,6 +43,7 @@ public class AppointmentService {
 
     @Autowired
     private ExternalServiceClient externalServiceClient;
+
     @Autowired
     private final AppointmentMapper appointmentMapper;
 
