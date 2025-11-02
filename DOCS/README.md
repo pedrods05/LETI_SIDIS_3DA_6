@@ -37,11 +37,7 @@ Este índice facilita ao docente encontrar rapidamente os artefactos de document
 
 ---
 
-## C4 — Components
-
-| Diagrama | PUML | SVG |
-|---|---|---|
-| (a preencher) | (a preencher) | (a preencher) |
+## C4 — Code
 
 ---
 
