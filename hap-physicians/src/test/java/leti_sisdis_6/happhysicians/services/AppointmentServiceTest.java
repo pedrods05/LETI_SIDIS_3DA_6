@@ -4,6 +4,7 @@ import leti_sisdis_6.happhysicians.api.AppointmentMapper;
 import leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.exceptions.AppointmentRecordNotFoundException;
 import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException;
 import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
 import leti_sisdis_6.happhysicians.model.Appointment;
@@ -49,6 +50,9 @@ class AppointmentServiceTest {
     @Mock
     private AppointmentMapper appointmentMapper;
 
+    @Mock
+    private org.springframework.web.client.RestTemplate restTemplate;
+
     @InjectMocks
     private AppointmentService appointmentService;
 
@@ -62,6 +66,7 @@ class AppointmentServiceTest {
         ReflectionTestUtils.setField(appointmentService, "appointmentRepository", appointmentRepository);
         ReflectionTestUtils.setField(appointmentService, "physicianRepository", physicianRepository);
         ReflectionTestUtils.setField(appointmentService, "externalServiceClient", externalServiceClient);
+        ReflectionTestUtils.setField(appointmentService, "restTemplate", restTemplate);
         
         Department department = Department.builder()
                 .departmentId("DEPT01")
@@ -272,6 +277,9 @@ class AppointmentServiceTest {
         String appointmentId = "APT99";
         UpdateAppointmentRequest updateRequest = new UpdateAppointmentRequest();
         when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.empty());
+        when(externalServiceClient.getAppointment(appointmentId))
+            .thenThrow(new AppointmentRecordNotFoundException("Not found"));
+        when(externalServiceClient.getPeerUrls()).thenReturn(Collections.emptyList());
 
         // Act
         Appointment result = appointmentService.updateAppointment(appointmentId, updateRequest);
