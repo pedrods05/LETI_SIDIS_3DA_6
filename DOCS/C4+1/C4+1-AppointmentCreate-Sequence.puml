@@ -1,0 +1,65 @@
+@startuml
+' C4+1 — Appointment create SD (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Appointment Create (Physicians → AppointmentRecords)
+
+actor Client
+participant "AppointmentController (Physicians)" as Controller
+participant "AppointmentService (Physicians)" as Service
+participant "Appointment Records API" as Records
+participant "Patients Service (hap-patients)" as Patients
+participant "AppointmentRepository (Physicians)" as Repo
+
+autonumber
+Client -> Controller : POST /appointments { appointmentDTO }
+activate Controller
+alt Missing/invalid payload
+  Controller --> Client : 400 Bad Request
+  deactivate Controller
+else Valid payload
+  Controller -> Service : createAppointment(dto)
+  activate Service
+  ' Create in source-of-truth first
+  Service -> Records : POST /api/appointments\n(forward Authorization, X-User-Id)
+  activate Records
+  alt Created (201)
+    Records --> Service : 201 Created { appointment }
+    deactivate Records
+    ' Optional enrichment from Patients (best-effort)
+    alt Enrichment needed
+      Service -> Patients : GET /patients/{patientId}
+      activate Patients
+      Patients --> Service : { fullName, email, phone }
+      deactivate Patients
+    else Skip enrichment
+    end
+    ' Persist local mirror
+    Service -> Repo : save(appointment [+patient fields])
+    activate Repo
+    Repo --> Service : persisted
+    deactivate Repo
+    Service --> Controller : 201 Created { appointment }
+    deactivate Service
+    Controller --> Client : 201 Created { appointment }
+    deactivate Controller
+  else Conflict (409)
+    Records --> Service : 409 Conflict (exists/time clash)
+    deactivate Records
+    Service --> Controller : 409 Conflict
+    deactivate Service
+    Controller --> Client : 409 Conflict
+    deactivate Controller
+  else Records error (5xx/timeout)
+    Records --> Service : error
+    deactivate Records
+    Service --> Controller : 502 Bad Gateway
+    deactivate Service
+    Controller --> Client : 502 Bad Gateway
+    deactivate Controller
+  end
+end
+
+@enduml

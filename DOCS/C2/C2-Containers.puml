@@ -1,0 +1,86 @@
+@startuml
+' C2 - Containers diagram for HAP
+skinparam dpi 150
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.2
+skinparam RectangleBorderColor #2E3440
+skinparam RectangleBackgroundColor #ECEFF4
+skinparam DefaultFontName Arial
+skinparam DefaultFontSize 12
+left to right direction
+
+title C2 — Containers (HAP)
+
+rectangle "Physicians Service\n(hap-physicians)\nPorts: 8081, 8087" as Physicians #A3BE8C
+rectangle "Patients Service\n(hap-patients)\nPorts: 8082, 8088" as Patients #88C0D0
+rectangle "Auth Service\n(hap-auth)\nPorts: 8084, 8089" as Auth #EBCB8B
+rectangle "Appointment Records Service\n(hap-appointmentrecords)\nPorts: 8083, 8090" as Records #D08770
+
+' Stabilize a 2x2 grid layout (hidden links to avoid layout overlaps)
+Physicians -[hidden]-> Patients
+Physicians -[hidden]-> Records
+Patients   -[hidden]-> Auth
+Records    -[hidden]-> Auth
+
+' HTTP/REST communication between containers
+Physicians --> Patients : HTTP/REST
+Physicians --> Auth : HTTP/REST
+Physicians --> Records : HTTP/REST
+Patients --> Auth : HTTP/REST
+Records --> Physicians : HTTP/REST
+Records --> Patients : HTTP/REST
+Records --> Auth : HTTP/REST
+
+' Replace single legend with two separate legends for better layout
+legend top left
+Protocol: HTTP/REST (JSON)
+Endpoints por container (expostos)
+- Auth (hap-auth):
+  • POST /api/public/login
+  • POST /api/public/register
+- Physicians (hap-physicians):
+  • POST /physicians/register
+  • POST /appointments
+  • GET  /physicians/{id}
+  • GET  /appointments
+  • PUT  /appointments/{id}
+  • PUT  /appointments/{id}/cancel
+  • GET  /appointments/upcoming
+- Appointment Records (hap-appointmentrecords):
+  • POST /api/appointment-records/{id}/record
+  • GET  /api/appointment-records/{id}
+- Patients (hap-patients):
+  • GET  /patients/{id}
+  • POST /api/v2/patients/register
+endlegend
+
+legend right
+Chamadas entre containers
+- Physicians → Auth: login, register
+- Physicians → Patients: get patient by id, register patient
+- Physicians → AppointmentRecords: create/get appointment record; update/cancel appointment (internal)
+- Patients → Auth: register user
+- AppointmentRecords → Physicians: get physician by id, get appointment by id
+- AppointmentRecords → Patients: get patient by id
+- AppointmentRecords → Auth: validate token
+endlegend
+
+' Peer-to-peer notes for all services
+note right of Physicians
+Peers (8081 ↔ 8087)
+end note
+
+note right of Patients
+Peers (8082 ↔ 8088)
+end note
+
+note right of Auth
+Peers (8084 ↔ 8089)
+end note
+
+note right of Records
+Peers (8083 ↔ 8090)
+end note
+
+@enduml

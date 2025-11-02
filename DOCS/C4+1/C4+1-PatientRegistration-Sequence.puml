@@ -1,0 +1,66 @@
+@startuml
+' C4+1 — Patient registration SD (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Patient Registration (Public)
+
+actor User
+participant "PatientsController" as Controller
+participant "PatientService" as Service
+participant "PatientRepository" as Repo
+participant "PatientLocalRepository" as LocalCache
+participant "Auth Service (hap-auth)" as AUTH
+participant "Peer Instance (Patients)" as Peer
+
+User -> Controller : POST /api/v2/patients/register { patient data }
+activate Controller
+alt Wrong Port
+  Controller --> User : 400 Bad Request
+  deactivate Controller
+else Valid Port
+Controller -> LocalCache : existsByEmail(email)
+  activate LocalCache
+  alt Already exists in cache
+    LocalCache --> Controller : true
+    deactivate LocalCache
+    Controller --> User : 409 Conflict (email in use)
+    deactivate Controller
+  else Not in cache
+    LocalCache --> Controller : false
+    deactivate LocalCache
+    Controller -> Service : registerPatient(dto)
+    activate Service
+    Service -> Repo : existsByEmail(email)
+    activate Repo
+    alt Exists in DB
+      Repo --> Service : true
+      deactivate Repo
+      Service --> Controller : Conflict
+      deactivate Service
+      Controller --> User : 409 Conflict
+      deactivate Controller
+    else Not in DB
+      Repo --> Service : false
+      deactivate Repo
+      Service -> AUTH : POST /api/public/register { username, password, role }
+      activate AUTH
+      alt Auth accepted
+        AUTH --> Service : 201 Created { userId }
+        deactivate AUTH
+        Service -> Repo : save(new Patient)
+        activate Repo
+        Repo --> Service : Patient Entity { patientId }
+        deactivate Repo
+        Service --> Controller : 201 Created { patientId }
+        deactivate Service
+        Controller --> User : 201 Created { patientId }
+        deactivate Controller
+
+      end
+    end
+  end
+end
+
+@enduml
