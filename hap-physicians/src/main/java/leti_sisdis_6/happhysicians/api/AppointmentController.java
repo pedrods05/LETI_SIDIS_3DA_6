@@ -66,7 +66,6 @@ public class AppointmentController {
                 }
             } catch (Exception e) {
                 System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
-                // continue to next peer
             }
         }
         System.out.println("Appointment not found in any peer");
@@ -127,7 +126,6 @@ public class AppointmentController {
         }
     }
 
-    // ===== ENDPOINTS DE COMUNICAÇÃO INTER-MICROSERVIÇOS =====
 
 
     @GetMapping("/{appointmentId}/full-details")

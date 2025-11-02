@@ -42,7 +42,6 @@ public class InternalController {
     @Autowired
     private RestTemplate restTemplate;
 
-    // ===== INTERNAL PHYSICIAN ENDPOINTS =====
 
     /**
      * Internal endpoint to get physician by ID (for peer communication)
@@ -62,7 +61,6 @@ public class InternalController {
         return physicianRepository.findAll();
     }
 
-    // ===== INTERNAL APPOINTMENT ENDPOINTS =====
 
     /**
      * Internal endpoint to get appointment by ID (for peer communication)
@@ -114,7 +112,6 @@ public class InternalController {
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 
-    // ===== PEER MANAGEMENT ENDPOINTS =====
 
     /**
      * Get list of peer instances (internal)

@@ -181,10 +181,8 @@ public class AppointmentService {
     public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto) {
         Optional<Appointment> optionalAppointment = appointmentRepository.findById(appointmentId);
         if (optionalAppointment.isEmpty()) {
-            // Handle remote-only appointments: merge with remote and update records
             try {
                 Map<String, Object> current = externalServiceClient.getAppointment(appointmentId);
-                // Merge fields: prefer DTO values when provided
                 String patientId = Objects.requireNonNullElse(dto.getPatientId(), (String) current.get("patientId"));
                 String physicianId = Objects.requireNonNullElse(dto.getPhysicianId(), (String) current.get("physicianId"));
                 String dateTime = (dto.getDateTime() != null ? dto.getDateTime() : LocalDateTime.parse(String.valueOf(current.get("dateTime")))).toString();
@@ -199,11 +197,9 @@ public class AppointmentService {
                 payload.put("status", status);
 
                 Map<String, Object> updated = externalServiceClient.updateAppointmentInRecords(appointmentId, payload);
-                // Map to local entity and upsert locally for consistency
                 Appointment mapped = mapRemoteAppointment(updated);
                 return appointmentRepository.save(mapped);
             } catch (AppointmentRecordNotFoundException ex) {
-                // Not present in records either: try peer-forwarding to owning physicians instance
                 for (String peer : externalServiceClient.getPeerUrls()) {
                     String url = peer + "/internal/appointments/" + appointmentId;
                     try {
@@ -244,12 +240,9 @@ public class AppointmentService {
         try {
             externalServiceClient.updateAppointmentInRecords(appointmentId, appointmentData);
         } catch (AppointmentRecordNotFoundException e) {
-            // For appointments seeded only in Physicians (e.g., futures), proceed with local update
         } catch (MicroserviceCommunicationException e) {
-            // If records service is unavailable or other error occurs, proceed with local update as fallback
         }
 
-        // Apply local changes
         if (dto.getPatientId() != null) appointment.setPatientId(dto.getPatientId());
         appointment.setPhysician(physicianToSet);
         if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
@@ -330,13 +323,10 @@ public class AppointmentService {
     }
 
     public Appointment cancelAppointment(String appointmentId) {
-        // propagate to appointment-records first
         try {
             externalServiceClient.cancelAppointmentInRecords(appointmentId);
         } catch (Exception e) {
-            // if remote says not found or other error, continue updating local state
         }
-        // update local if exists
         Optional<Appointment> opt = appointmentRepository.findById(appointmentId);
         if (opt.isPresent()) {
             Appointment a = opt.get();
