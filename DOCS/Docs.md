@@ -1,6 +1,6 @@
 # Documentação do Projeto HAP
 
-Este índice facilita ao docente encontrar rapidamente os artefactos de documentação (diagramas C4), apontando diretamente para os ficheiros PUML (e para SVG quando existir).
+Este índice facilita ao docente encontrar rapidamente os artefactos de documentação (diagramas C4), apontando diretamente para os ficheiros PUML e SVG.
 
 - [C1 — System Context](#c1--system-context)
 - [C2 — Containers](#c2--containers)
@@ -39,6 +39,8 @@ Este índice facilita ao docente encontrar rapidamente os artefactos de document
 
 ## C4 — Code
 
+- Visão por módulo: [DOCS/C4/Modules.md](./C4/Modules.md)
+
 ---
 
 ## C4+1 — Sequence Diagrams (SD)
@@ -54,17 +56,17 @@ Este índice facilita ao docente encontrar rapidamente os artefactos de document
 | Appointment update — PUT /appointments/{id} | [PUML](./C4+1/C4+1-AppointmentUpdate-Sequence.puml) | [SVG](./C4+1/C4+1-AppointmentUpdate-Sequence.svg) |
 | Appointment cancel — PUT /appointments/{id}/cancel | [PUML](./C4+1/C4+1-AppointmentCancel-Sequence.puml) | [SVG](./C4+1/C4+1-AppointmentCancel-Sequence.svg) |
 | Get Patient Details (Admin) — GET /patients/{id} | [PUML](./C4+1/C4+1-GetPatientDetails-Sequence.puml) | [SVG](./C4+1/C4+1-GetPatientDetails-Sequence.svg) |
+| Create Appointment Record — POST /api/appointment-records/{id}/record | [PUML](./C4+1/C4+1-CreateAppointmentRecord-Sequence.puml) | [SVG](./C4+1/C4+1-CreateAppointmentRecord-Sequence.svg) |
+| Get Appointment Record — GET /api/appointment-records/{id} | [PUML](./C4+1/C4+1-GetAppointmentRecord-Sequence.puml) | [SVG](./C4+1/C4+1-GetAppointmentRecord-Sequence.svg) |
+| Physician peer forwarding — GET /physicians/{id} | [PUML](./C4+1/C4+1-PhysicianPeerForwarding-Sequence.puml) | [SVG](./C4+1/C4+1-PhysicianPeerForwarding-Sequence.svg) |
+| View Future Appointments — GET /appointments/upcoming | [PUML](./C4+1/C4+1-ViewFutureAppointments.puml) | [SVG](./C4+1/C4+1-ViewFutureAppointments.svg) |
+
+## Physical Deployment
+
+| Diagrama            | PUML | SVG                                               |
+|---------------------|---|---------------------------------------------------|
+| Physical Deployment | [Abrir PUML](./DEPLOYMENT/Physical-Deployment.puml) | [Abrir SVG](./DEPLOYMENT/Physical-Deployment.svg) |
+
 
 ---
 
-## Como visualizar os diagramas
-
-- No IDE (JetBrains):
-  - Abra o ficheiro `.puml` e utilize a opção de Pré‑visualização PlantUML (plugin "PlantUML Integration" ou equivalente).
-  - Em modo preview, o diagrama é renderizado automaticamente a partir do texto PUML.
-- Exportação para imagem (opcional):
-  - A partir do preview, poderá exportar para PNG/SVG conforme as opções do plugin. Se exportar os SVG para as mesmas pastas dos PUML, os links acima poderão ser atualizados para apontar também para os SVG.
-
----
-
-Pasta base da documentação: [DOCS](./)

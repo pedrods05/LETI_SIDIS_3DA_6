@@ -41,17 +41,14 @@ public class AppointmentRecordService {
     private ExternalServiceClient externalServiceClient;
 
     public AppointmentRecordResponse createRecord(String appointmentId, AppointmentRecordRequest request, String physicianId) {
-        // Obter dados da consulta do serviço hap-physicians via HTTP
         Map<String, Object> appointmentData = externalServiceClient.getAppointmentById(appointmentId);
         
-        // Verificar autorização
         String appointmentPhysicianId = (String) appointmentData.get("physicianId");
         if (!appointmentPhysicianId.equals(physicianId)) {
             throw new UnauthorizedException("Not authorized");
         }
         
-        // Criar registo local
-        // ...
+     
     }
 }
 ```
@@ -71,9 +68,6 @@ O módulo **NÃO** importa classes de outros módulos diretamente. Toda comunica
 
 #### hap-patients
 - `GET /patients/{patientId}` - Obter dados do paciente
-
-#### hap-auth
-- `GET /api/auth/validate?token={token}` - Validar token
 
 ## Estrutura do Projeto
 
@@ -143,11 +137,6 @@ server.port=8083
 - **Autorização**: ADMIN, PATIENT
 - **Funcionalidade**: Visualiza registo com dados do médico obtidos via HTTP
 
-### 3. Listar Registos do Paciente
-- **Endpoint**: `GET /api/appointment-records/patient/{patientId}`
-- **Autorização**: PHYSICIAN
-- **Funcionalidade**: Lista todos os registos de um paciente
-
 ## Tratamento de Erros
 
 O módulo implementa tratamento robusto de erros de comunicação:
@@ -173,4 +162,4 @@ mvn test -Dtest=AppointmentRecordIntegrationTest
 mvn spring-boot:run
 ```
 
-3. Acesse a documentação Swagger em: `http://localhost:8083/swagger-ui.html`
+3. Aceda à documentação Swagger em: `http://localhost:8083/swagger-ui.html`

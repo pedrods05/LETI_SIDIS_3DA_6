@@ -66,10 +66,39 @@ Notas de integração
 - O Physicians agrega dados remotos (records) e locais (futuros) e faz forward entre peers quando necessário.
 
 Documentação (C4)
-- Índice: DOCS/README.md (ou DOCS/Documentação.md se preferir versão PT)
-- C1 — System Context: [PUML](./DOCS/C1/C1-SystemContextDiagram.puml) · [SVG](./DOCS/C1/C1-SystemContextDiagram.svg)
-- C2 — Containers: [PUML](./DOCS/C2/C2-Containers.puml) · [SVG](./DOCS/C2/C2-Containers.svg)
-- C3 — Logical View: [PUML](./DOCS/C3/C3-LogicalView.puml) · [SVG](./DOCS/C3/C3-LogicalView.svg)
-- C4 — Components (placeholder): [PUML](./DOCS/C4/C4-Components.puml)
+- Índice: [DOCS/Docs.md](./DOCS/Docs.md)
 
+
+## Architecture overview & decisions
+- Containers (C2): quatro serviços independentes (Physicians, Patients, Auth, AppointmentRecords) comunicam por HTTP/REST. Cada um pode correr em 2 instâncias (peers) para redundância e distribuição de carga.
+- Ownership de dados:
+  - Patients: guarda e serve pacientes. Fonte única para dados de paciente.
+  - Physicians: cria/gera consultas futuras e faz operações de update/cancel; agrega dados de pacientes e de records quando necessário.
+  - AppointmentRecords: guarda registos de consultas concluídas (diagnóstico, prescrições, duração).
+  - Auth: autenticação e registo público (sem dependência direta dos outros dados clínicos).
+- Colaboração entre serviços:
+  - RestTemplate para chamadas HTTP síncronas entre containers; headers de autorização e identidade são propagados.
+  - Peer forwarding: quando uma instância não tem o recurso localmente, tenta peers do mesmo serviço usando os endpoints públicos (não “/internal”).
+- Segurança:
+  - Endpoints públicos em Auth para login/register; serviços propagam Authorization/X-User-Id/X-User-Role nas chamadas a outros serviços quando aplicável.
+- Resiliência e consistência:
+  - Estratégia de fallback simples (tenta primeiro local, depois peers). Consistência eventual entre instâncias.
+
+## Known limitations
+- Não há service discovery (lista de peers é estática/configurada por profile).
+- RestTemplate (bloqueante) é usado por simplicidade; não há WebClient/Reactor.
+- Sem cache distribuída; apenas caches locais e consultas diretas.
+- Sem migrations de BD formais (Flyway/Liquibase); dados iniciais são semeados via bootstrap.
+- Segurança simplificada; depende de cabeçalhos e validação básica.
+
+## Screenshots (running system)
+- Swagger UI (exemplos):
+  - Physicians: http://localhost:8081/swagger-ui.html
+  - Patients: http://localhost:8082/swagger-ui.html
+  - Appointment Records: http://localhost:8083/swagger-ui.html
+  - Auth: http://localhost:8084/swagger-ui.html
+- Exemplos de capturas de ecrã :
+  - [DOCS/screenshots/criarPaciente.png](./DOCS/screenshots/criarPaciente.png)
+  - [DOCS/screenshots/loginAdmin.png](./DOCS/screenshots/loginAdmin.png)
+  - [DOCS/screenshots/ScheduleAppointment.png](./DOCS/screenshots/ScheduleAppointment.png)
 
