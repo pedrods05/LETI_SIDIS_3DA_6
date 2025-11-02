@@ -8,6 +8,6 @@ class HapAuthApplicationTests {
 
     @Test
     void contextLoads() {
-        // Verifica se o contexto Spring Boot arranca corretamente
+
     }
 }

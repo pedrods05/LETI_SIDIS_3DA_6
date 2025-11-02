@@ -2,132 +2,188 @@ package leti_sisdis_6.hapauth.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import leti_sisdis_6.hapauth.dto.LoginRequest;
-import leti_sisdis_6.hapauth.dto.LoginResponse;
 import leti_sisdis_6.hapauth.dto.RegisterUserRequest;
 import leti_sisdis_6.hapauth.dto.UserIdResponse;
 import leti_sisdis_6.hapauth.services.AuthService;
 import leti_sisdis_6.hapauth.usermanagement.UserService;
 import leti_sisdis_6.hapauth.usermanagement.model.User;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AuthApi.class)
+/**
+ * Paths esperados:
+ *  - POST /api/public/login
+ *  - POST /api/public/register
+ *  - GET  /api/users/{id}
+ * Ajusta se o teu @RequestMapping mudar.
+ */
+@WebMvcTest(
+        controllers = AuthApi.class,
+        excludeAutoConfiguration = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class,
+                OAuth2ResourceServerAutoConfiguration.class
+        }
+)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(AuthApiTest.TestConfig.class)
 class AuthApiTest {
 
-    @TestConfiguration
+    @Autowired private MockMvc mockMvc;
+    @Autowired private ObjectMapper objectMapper;
+
+    @Autowired private AuthService authService;   // mock (bean)
+    @Autowired private UserService userService;   // mock (bean)
+    @Autowired private RestTemplate restTemplate; // mock (bean)
+
+    @Configuration
     static class TestConfig {
         @Bean AuthService authService() { return Mockito.mock(AuthService.class); }
         @Bean UserService userService() { return Mockito.mock(UserService.class); }
+        @Bean RestTemplate restTemplate() { return Mockito.mock(RestTemplate.class); }
     }
 
-    @Autowired
-    private MockMvc mockMvc;
+    private String json(Object o) throws Exception { return objectMapper.writeValueAsString(o); }
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private AuthService authService;
-
-    @Autowired
-    private UserService userService;
+    private LoginRequest loginReq(String u, String p) {
+        var r = new LoginRequest();
+        r.setUsername(u);
+        r.setPassword(p);
+        return r;
+    }
 
     @Test
-    @DisplayName("POST /api/auth/login → 200 com token e role")
-    void login_ok() throws Exception {
-        given(authService.login(any(LoginRequest.class))).willReturn(new LoginResponse("token-123", "USER"));
+    @DisplayName("POST /api/public/login → 200 local")
+    void login_local_ok() throws Exception {
+        var auth = new UsernamePasswordAuthenticationToken(
+                "john@example.com", "secret",
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        given(authService.authenticate(eq("john@example.com"), eq("secret"))).willReturn(auth);
+        given(authService.generateToken(eq(auth))).willReturn("token-123");
 
-        var req = new LoginRequest();
-        req.setUsername("john@example.com");
-        req.setPassword("secret");
-
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/api/public/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .characterEncoding("utf-8")
+                        .content(json(loginReq("john@example.com", "secret"))))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Authorization", containsString("Bearer token-123")))
                 .andExpect(jsonPath("$.token", is("token-123")))
-                .andExpect(jsonPath("$.role", is("USER")));
+                .andExpect(jsonPath("$.roles[0]", is("ROLE_USER")));
     }
 
     @Test
-    @DisplayName("POST /api/users/register → 201 com id do utilizador")
-    void register_ok() throws Exception {
-        given(authService.register(any(RegisterUserRequest.class))).willReturn(new UserIdResponse("abc-123"));
+    @DisplayName("POST /api/public/login → 200 via peer")
+    void login_peer_ok() throws Exception {
+        given(authService.authenticate(eq("peer@example.com"), eq("pw")))
+                .willThrow(new RuntimeException("bad creds"));
 
+        User remoteUser = new User() {
+            @Override public java.util.Collection<org.springframework.security.core.GrantedAuthority> getAuthorities() {
+                return List.of(new SimpleGrantedAuthority("ROLE_PATIENT"));
+            }
+        };
+        remoteUser.setId("u2");
+        remoteUser.setUsername("peer@example.com");
+
+        given(restTemplate.postForObject(anyString(),
+                any(AuthService.AuthRequest.class), eq(User.class)))
+                .willReturn(remoteUser);
+        given(authService.generateTokenForUser(eq(remoteUser))).willReturn("token-remote");
+
+        mockMvc.perform(post("/api/public/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .characterEncoding("utf-8")
+                        .content(json(loginReq("peer@example.com", "pw"))))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Authorization", containsString("Bearer token-remote")))
+                .andExpect(jsonPath("$.token", is("token-remote")))
+                .andExpect(jsonPath("$.roles[0]", is("ROLE_PATIENT")));
+    }
+
+    @Test
+    @DisplayName("POST /api/public/login → 401 quando tudo falha")
+    void login_all_fail() throws Exception {
+        given(authService.authenticate(eq("nope@example.com"), eq("pw")))
+                .willThrow(new RuntimeException("bad"));
+        given(restTemplate.postForObject(anyString(),
+                any(AuthService.AuthRequest.class), eq(User.class)))
+                .willReturn(null);
+
+        mockMvc.perform(post("/api/public/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .characterEncoding("utf-8")
+                        .content(json(loginReq("nope@example.com", "pw"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", is("Invalid username or password")));
+    }
+
+    @Test
+    @DisplayName("POST /api/public/register → 201")
+    void register_created() throws Exception {
         var req = new RegisterUserRequest();
         req.setUsername("new@example.com");
         req.setPassword("pw");
         req.setRole("PATIENT");
 
-        mockMvc.perform(post("/api/users/register")
+        var resp = UserIdResponse.builder()
+                .id("abc-123").username("new@example.com").role("PATIENT").build();
+
+        given(userService.register(any(RegisterUserRequest.class))).willReturn(resp);
+
+        mockMvc.perform(post("/api/public/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .characterEncoding("utf-8")
+                        .content(json(req)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.userId", is("abc-123")));
+                .andExpect(jsonPath("$.id", is("abc-123")))
+                .andExpect(jsonPath("$.username", is("new@example.com")))
+                .andExpect(jsonPath("$.role", is("PATIENT")));
     }
 
     @Test
-    @DisplayName("GET /api/users/{id} → 200 quando existe, 404 quando não")
+    @DisplayName("GET /api/users/{id} → 200/404")
     void getUser_variants() throws Exception {
         User user = new User();
         user.setId("u1");
         user.setUsername("john@example.com");
+
         given(userService.findById("u1")).willReturn(Optional.of(user));
         given(userService.findById("missing")).willReturn(Optional.empty());
 
         mockMvc.perform(get("/api/users/u1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is("u1")));
+                .andExpect(jsonPath("$.id", is("u1")))
+                .andExpect(jsonPath("$.username", is("john@example.com")));
 
         mockMvc.perform(get("/api/users/missing"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("POST /api/auth/authenticate → 200 com utilizador ou 404")
-    void authenticate_withPeers() throws Exception {
-        User okUser = new User();
-        okUser.setId("u2");
-        okUser.setUsername("peer@example.com");
-
-        given(authService.authenticateWithPeers(eq("peer@example.com"), eq("pw")))
-                .willReturn(Optional.of(okUser));
-        given(authService.authenticateWithPeers(eq("nope@example.com"), eq("pw")))
-                .willReturn(Optional.empty());
-
-        var ok = new AuthService.AuthRequest("peer@example.com", "pw");
-        var ko = new AuthService.AuthRequest("nope@example.com", "pw");
-
-        mockMvc.perform(post("/api/auth/authenticate")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(ok)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is("u2")));
-
-        mockMvc.perform(post("/api/auth/authenticate")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(ko)))
                 .andExpect(status().isNotFound());
     }
 }

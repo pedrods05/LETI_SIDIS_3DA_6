@@ -4,11 +4,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,13 +24,17 @@ class AuthHelperTest {
     }
 
     private void setAuthorities(String... roles) {
-        List<GrantedAuthority> auths = java.util.Arrays.stream(roles)
-                .map(r -> (GrantedAuthority) () -> r)
+        // As tuas verificações em AuthHelper usam "ADMIN" e "PATIENT" (sem "ROLE_")
+        List<SimpleGrantedAuthority> auths = Arrays.stream(roles)
+                .map(SimpleGrantedAuthority::new)
                 .toList();
 
-        Authentication authentication = Mockito.mock(Authentication.class);
-        Mockito.when(authentication.getAuthorities()).thenReturn(auths);
 
+        // Authentication REAL com authorities — evita mock do getAuthorities()
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken("user", "pw", auths);
+
+        // Apenas o SecurityContext é mockado para devolver o Authentication acima
         SecurityContext context = Mockito.mock(SecurityContext.class);
         Mockito.when(context.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(context);

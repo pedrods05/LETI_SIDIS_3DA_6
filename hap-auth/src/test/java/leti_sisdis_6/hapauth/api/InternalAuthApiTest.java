@@ -2,94 +2,97 @@ package leti_sisdis_6.hapauth.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import leti_sisdis_6.hapauth.services.AuthService;
-import leti_sisdis_6.hapauth.usermanagement.UserService;
 import leti_sisdis_6.hapauth.usermanagement.model.User;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Optional;
+import java.util.List;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = InternalAuthApi.class)
+/**
+ * Path esperado:
+ *  - POST /api/internal/auth/authenticate
+ * Confirma o @RequestMapping do teu controller interno e ajusta se necessário.
+ */
+@WebMvcTest(
+        controllers = InternalAuthApi.class,
+        excludeAutoConfiguration = {
+                DataSourceAutoConfiguration.class,
+                HibernateJpaAutoConfiguration.class,
+                JpaRepositoriesAutoConfiguration.class,
+                OAuth2ResourceServerAutoConfiguration.class
+        }
+)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(InternalAuthApiTest.TestConfig.class)
 class InternalAuthApiTest {
 
-    @TestConfiguration
+    @Autowired private MockMvc mockMvc;
+    @Autowired private ObjectMapper objectMapper;
+    @Autowired private AuthService authService; // mock (bean)
+
+    @Configuration
     static class TestConfig {
         @Bean AuthService authService() { return Mockito.mock(AuthService.class); }
-        @Bean UserService userService() { return Mockito.mock(UserService.class); }
     }
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private AuthService authService;
-
-    @Autowired
-    private UserService userService;
+    private String json(Object o) throws Exception { return objectMapper.writeValueAsString(o); }
 
     @Test
-    @DisplayName("GET /api/internal/users/{id} → 200 ou 404")
-    void getUser() throws Exception {
-        User user = new User();
-        user.setId("u1");
-        user.setUsername("in@example.com");
+    @DisplayName("POST /api/internal/auth/authenticate → 200")
+    void authenticate_ok() throws Exception {
+        User principal = new User();
+        principal.setId("u1");
+        principal.setUsername("john@example.com");
 
-        given(userService.findById("u1")).willReturn(Optional.of(user));
-        given(userService.findById("missing")).willReturn(Optional.empty());
+        var authentication = new UsernamePasswordAuthenticationToken(
+                principal, "pw", List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        given(authService.authenticate(eq("john@example.com"), eq("pw"))).willReturn(authentication);
 
-        mockMvc.perform(get("/api/internal/users/u1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is("u1")));
-
-        mockMvc.perform(get("/api/internal/users/missing"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("POST /api/internal/auth/authenticate → 200 com utilizador ou 404")
-    void authenticate() throws Exception {
-        User user = new User();
-        user.setId("u2");
-        user.setUsername("peer@example.com");
-
-        given(authService.authenticateWithPeers(eq("peer@example.com"), eq("pw")))
-                .willReturn(Optional.of(user));
-        given(authService.authenticateWithPeers(eq("nope@example.com"), eq("pw")))
-                .willReturn(Optional.empty());
-
-        var ok = new AuthService.AuthRequest("peer@example.com", "pw");
-        var ko = new AuthService.AuthRequest("nope@example.com", "pw");
+        var req = new AuthService.AuthRequest("john@example.com", "pw");
 
         mockMvc.perform(post("/api/internal/auth/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(ok)))
+                        .characterEncoding("utf-8")
+                        .content(json(req)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is("u2")));
+                .andExpect(jsonPath("$.id", is("u1")))
+                .andExpect(jsonPath("$.username", is("john@example.com")));
+    }
+
+    @Test
+    @DisplayName("POST /api/internal/auth/authenticate → 404 em credenciais inválidas")
+    void authenticate_notFound() throws Exception {
+        given(authService.authenticate(any(), any())).willThrow(new RuntimeException("bad creds"));
+
+        var req = new AuthService.AuthRequest("nope@example.com", "bad");
 
         mockMvc.perform(post("/api/internal/auth/authenticate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(ko)))
+                        .characterEncoding("utf-8")
+                        .content(json(req)))
                 .andExpect(status().isNotFound());
     }
 }
