@@ -17,6 +17,10 @@ import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 public class AppointmentService {
@@ -40,6 +45,9 @@ public class AppointmentService {
     private ExternalServiceClient externalServiceClient;
     @Autowired
     private final AppointmentMapper appointmentMapper;
+
+    @Autowired
+    private RestTemplate restTemplate;
 
     public AppointmentService(AppointmentMapper appointmentMapper) {
         this.appointmentMapper = appointmentMapper;
@@ -172,7 +180,43 @@ public class AppointmentService {
     public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto) {
         Optional<Appointment> optionalAppointment = appointmentRepository.findById(appointmentId);
         if (optionalAppointment.isEmpty()) {
-            return null;
+            // Handle remote-only appointments: merge with remote and update records
+            try {
+                Map<String, Object> current = externalServiceClient.getAppointment(appointmentId);
+                // Merge fields: prefer DTO values when provided
+                String patientId = Objects.requireNonNullElse(dto.getPatientId(), (String) current.get("patientId"));
+                String physicianId = Objects.requireNonNullElse(dto.getPhysicianId(), (String) current.get("physicianId"));
+                String dateTime = (dto.getDateTime() != null ? dto.getDateTime() : LocalDateTime.parse(String.valueOf(current.get("dateTime")))).toString();
+                String consultationType = (dto.getConsultationType() != null ? dto.getConsultationType() : ConsultationType.valueOf(String.valueOf(current.get("consultationType")))).toString();
+                String status = (dto.getStatus() != null ? dto.getStatus() : AppointmentStatus.valueOf(String.valueOf(current.get("status")))).toString();
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("patientId", patientId);
+                payload.put("physicianId", physicianId);
+                payload.put("dateTime", dateTime);
+                payload.put("consultationType", consultationType);
+                payload.put("status", status);
+
+                Map<String, Object> updated = externalServiceClient.updateAppointmentInRecords(appointmentId, payload);
+                // Map to local entity and upsert locally for consistency
+                Appointment mapped = mapRemoteAppointment(updated);
+                return appointmentRepository.save(mapped);
+            } catch (AppointmentRecordNotFoundException ex) {
+                // Not present in records either: try peer-forwarding to owning physicians instance
+                for (String peer : externalServiceClient.getPeerUrls()) {
+                    String url = peer + "/internal/appointments/" + appointmentId;
+                    try {
+                        ResponseEntity<Appointment> resp = restTemplate.exchange(
+                                url, HttpMethod.PUT, new HttpEntity<>(dto), Appointment.class);
+                        if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
+                            return resp.getBody();
+                        }
+                    } catch (Exception ignored) {}
+                }
+                return null;
+            } catch (Exception ex) {
+                throw new RuntimeException("Failed to update appointment: " + ex.getMessage());
+            }
         }
 
         Appointment appointment = optionalAppointment.get();
@@ -198,18 +242,21 @@ public class AppointmentService {
 
         try {
             externalServiceClient.updateAppointmentInRecords(appointmentId, appointmentData);
-
-            if (dto.getPatientId() != null) appointment.setPatientId(dto.getPatientId());
-            appointment.setPhysician(physicianToSet);
-            if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
-            if (dto.getConsultationType() != null) appointment.setConsultationType(dto.getConsultationType());
-            if (dto.getStatus() != null) appointment.setStatus(dto.getStatus());
-            if (dto.getWasRescheduled() != null) appointment.setWasRescheduled(dto.getWasRescheduled());
-
-            return appointmentRepository.save(appointment);
+        } catch (AppointmentRecordNotFoundException e) {
+            // For appointments seeded only in Physicians (e.g., futures), proceed with local update
         } catch (MicroserviceCommunicationException e) {
-            throw new RuntimeException("Failed to update appointment: " + e.getMessage());
+            // If records service is unavailable or other error occurs, proceed with local update as fallback
         }
+
+        // Apply local changes
+        if (dto.getPatientId() != null) appointment.setPatientId(dto.getPatientId());
+        appointment.setPhysician(physicianToSet);
+        if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
+        if (dto.getConsultationType() != null) appointment.setConsultationType(dto.getConsultationType());
+        if (dto.getStatus() != null) appointment.setStatus(dto.getStatus());
+        if (dto.getWasRescheduled() != null) appointment.setWasRescheduled(dto.getWasRescheduled());
+
+        return appointmentRepository.save(appointment);
     }
 
     public boolean deleteAppointment(String appointmentId) {
@@ -279,6 +326,23 @@ public class AppointmentService {
                     }
                 })
                 .toList();
+    }
+
+    public Appointment cancelAppointment(String appointmentId) {
+        // propagate to appointment-records first
+        try {
+            externalServiceClient.cancelAppointmentInRecords(appointmentId);
+        } catch (Exception e) {
+            // if remote says not found or other error, continue updating local state
+        }
+        // update local if exists
+        Optional<Appointment> opt = appointmentRepository.findById(appointmentId);
+        if (opt.isPresent()) {
+            Appointment a = opt.get();
+            a.setStatus(AppointmentStatus.CANCELED);
+            return appointmentRepository.save(a);
+        }
+        return null;
     }
 
     private Appointment mapRemoteAppointment(Map<String, Object> m) {

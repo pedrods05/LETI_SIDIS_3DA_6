@@ -302,7 +302,7 @@ public class ExternalServiceClient {
 
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     public Map<String, Object> updateAppointmentInRecords(String appointmentId, Map<String, Object> appointmentData) {
-        String url = appointmentRecordsServiceUrl + "/api/appointments/" + appointmentId;
+        String url = appointmentRecordsServiceUrl + "/api/appointments/internal/" + appointmentId;
         try {
             HttpHeaders headers = buildForwardHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -314,6 +314,23 @@ public class ExternalServiceClient {
             throw new AppointmentRecordNotFoundException("Appointment not found: " + appointmentId, e);
         } catch (Exception e) {
             throw new MicroserviceCommunicationException("AppointmentRecords", "updateAppointment", e.getMessage(), e);
+        }
+    }
+
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    public Map<String, Object> cancelAppointmentInRecords(String appointmentId) {
+        String url = appointmentRecordsServiceUrl + "/api/appointments/internal/" + appointmentId + "/cancel";
+        try {
+            HttpHeaders headers = buildForwardHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    url, HttpMethod.PUT, new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            return resp.getBody();
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new AppointmentRecordNotFoundException("Appointment not found: " + appointmentId, e);
+        } catch (Exception e) {
+            throw new MicroserviceCommunicationException("AppointmentRecords", "cancelAppointment", e.getMessage(), e);
         }
     }
 

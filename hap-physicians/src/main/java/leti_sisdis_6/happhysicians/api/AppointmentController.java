@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
@@ -164,6 +165,16 @@ public class AppointmentController {
     public ResponseEntity<List<AppointmentListDTO>> listUpcomingAppointments() {
         List<AppointmentListDTO> appointments = appointmentService.listUpcomingAppointments();
         return ResponseEntity.ok(appointments);
+    }
+
+    @PutMapping("/{appointmentId}/cancel")
+    @Operation(summary = "Cancel appointment by ID")
+    public ResponseEntity<?> cancelAppointment(@PathVariable String appointmentId) {
+        Appointment updated = appointmentService.cancelAppointment(appointmentId);
+        if (updated != null) {
+            return ResponseEntity.ok(updated);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Appointment not found"));
     }
 
 
