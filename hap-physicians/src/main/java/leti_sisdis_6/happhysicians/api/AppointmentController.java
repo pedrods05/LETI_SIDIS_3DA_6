@@ -1,14 +1,19 @@
 package leti_sisdis_6.happhysicians.api;
 
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.dto.output.AppointmentListDTO;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.client.RestTemplate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,25 +25,33 @@ import java.util.Optional;
 @Tag(name = "Appointment", description = "Appointment management endpoints")
 public class AppointmentController {
 
-    @Autowired
+   @Autowired
     private AppointmentService appointmentService;
-
     @Autowired
     private ExternalServiceClient externalServiceClient;
-
     @Autowired
     private RestTemplate restTemplate;
 
     @GetMapping("/{appointmentId}")
-    @Operation(summary = "Get appointment by ID")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PATIENT')")
+    @Operation(
+            summary = "Get appointment by ID",
+    description = "Retrieve appointment details by appointment ID",
+    security = @SecurityRequirement(name = "bearerAuth"),
+    responses = {
+        @ApiResponse(responseCode = "200", description = "Appointment details retrieved"),
+        @ApiResponse(responseCode = "404", description = "Appointment not found"),
+        @ApiResponse(responseCode = "403", description = "Access forbidden")
+    }
+
+
+    )
     public ResponseEntity<Appointment> getAppointment(@PathVariable String appointmentId) {
-        // Check local store first
         Optional<Appointment> appointment = appointmentService.getAppointmentById(appointmentId);
         if (appointment.isPresent()) {
             return ResponseEntity.ok(appointment.get());
         }
 
-        // Query peers if not found locally
         System.out.println("Appointment not found locally, querying peers");
         List<String> peers = externalServiceClient.getPeerUrls();
         for (String peer : peers) {
@@ -137,5 +150,21 @@ public class AppointmentController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    @GetMapping("/upcoming")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(
+            summary = "List upcoming appointments",
+            description = "Retrieves a list of all upcoming appointments sorted chronologically",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved upcoming appointments"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
+    public ResponseEntity<List<AppointmentListDTO>> listUpcomingAppointments() {
+        List<AppointmentListDTO> appointments = appointmentService.listUpcomingAppointments();
+        return ResponseEntity.ok(appointments);
+    }
+
 
 }

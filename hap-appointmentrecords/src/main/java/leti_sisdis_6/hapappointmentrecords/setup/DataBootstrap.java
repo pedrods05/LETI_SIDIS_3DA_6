@@ -97,29 +97,6 @@ public class DataBootstrap implements CommandLineRunner {
             appointmentRecordRepository.save(rec);
         }
 
-        // Criar 5 appointments futuras (SCHEDULED) sem records - PAT02
-        String patId2 = patientIds.get(1); // PAT02
-        for (int i = 0; i < 5; i++) {
-            String phyId = physicianIds.get(i % physicianIds.size());
-
-            LocalDateTime dt = LocalDateTime.now()
-                    .plusDays(1 + i * 7)  // 1 semana de intervalo entre cada
-                    .withHour(10 + (i % 6))
-                    .withMinute(0).withSecond(0).withNano(0);
-
-            int n = counter.getAndIncrement();
-
-            Appointment appt = Appointment.builder()
-                    .appointmentId(String.format("APT%02d", n))
-                    .patientId(patId2)
-                    .physicianId(phyId)
-                    .dateTime(dt)
-                    .consultationType(ConsultationType.FOLLOW_UP)
-                    .status(AppointmentStatus.SCHEDULED)
-                    .build();
-
-            appointmentRepository.save(appt);
-            // Não cria record porque a consulta ainda não aconteceu
-        }
+        // Removido: appointments futuras (SCHEDULED) sem records - agora são semeadas em hap-physicians
     }
 }
