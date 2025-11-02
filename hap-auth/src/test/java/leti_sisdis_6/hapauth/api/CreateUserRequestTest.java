@@ -15,7 +15,7 @@ import leti_sisdis_6.hapauth.usermanagement.model.Role;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class CreateUserRequestValidationTest {
+class CreateUserRequestTest {
 
     private static Validator validator;
 
