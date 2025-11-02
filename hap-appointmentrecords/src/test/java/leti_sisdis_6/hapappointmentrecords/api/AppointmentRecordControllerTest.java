@@ -10,25 +10,23 @@ import leti_sisdis_6.hapappointmentrecords.exceptions.UnauthorizedException;
 import leti_sisdis_6.hapappointmentrecords.http.ExternalServiceClient;
 import leti_sisdis_6.hapappointmentrecords.service.AppointmentRecordService;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -37,9 +35,27 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AppointmentRecordController.class)
+@WebMvcTest(controllers = AppointmentRecordController.class, excludeAutoConfiguration = {
+        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class
+})
 @AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
+@TestPropertySource(properties = "spring.jpa.open-in-view=false")
 class AppointmentRecordControllerTest {
+
+    @org.springframework.boot.test.context.TestConfiguration
+    static class NoJpaTestConfig {
+        @org.springframework.context.annotation.Bean(name = "entityManagerFactory")
+        jakarta.persistence.EntityManagerFactory entityManagerFactory() {
+            jakarta.persistence.EntityManagerFactory emf = org.mockito.Mockito.mock(jakarta.persistence.EntityManagerFactory.class);
+            // Ensure metamodel is not null to satisfy Spring Data JPA
+            jakarta.persistence.metamodel.Metamodel metamodel = org.mockito.Mockito.mock(jakarta.persistence.metamodel.Metamodel.class);
+            org.mockito.Mockito.when(emf.getMetamodel()).thenReturn(metamodel);
+            return emf;
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,14 +63,20 @@ class AppointmentRecordControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private AppointmentRecordService recordService;
 
-    @MockBean
+    @MockitoBean
     private ExternalServiceClient externalServiceClient;
 
-    @MockBean
+    @MockitoBean
     private RestTemplate restTemplate;
+
+    @MockitoBean
+    private leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository appointmentRecordRepository;
+
+    @MockitoBean
+    private leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository appointmentRepository;
 
     private AppointmentRecordRequest validRequest() {
         AppointmentRecordRequest r = new AppointmentRecordRequest();

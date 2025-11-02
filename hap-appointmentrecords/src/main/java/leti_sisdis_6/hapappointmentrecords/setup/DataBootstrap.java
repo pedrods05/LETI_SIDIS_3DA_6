@@ -60,6 +60,10 @@ public class DataBootstrap implements CommandLineRunner {
 
         AtomicInteger counter = new AtomicInteger(1);
 
+        // Vamos construir as listas e persistir em batch (saveAll) para alinhar com os testes
+        java.util.ArrayList<Appointment> appointments = new java.util.ArrayList<>();
+        java.util.ArrayList<AppointmentRecord> records = new java.util.ArrayList<>();
+
         // Criar 5 appointments passadas (COMPLETED) com records - PAT01
         String patId1 = patientIds.get(0); // PAT01
         for (int i = 0; i < 5; i++) {
@@ -81,7 +85,7 @@ public class DataBootstrap implements CommandLineRunner {
                     .status(AppointmentStatus.COMPLETED)
                     .build();
 
-            appt = appointmentRepository.save(appt);
+            appointments.add(appt);
 
             int idx = i % diagnoses.length;
 
@@ -94,7 +98,7 @@ public class DataBootstrap implements CommandLineRunner {
                     .duration(LocalTime.of(0, 20))
                     .build();
 
-            appointmentRecordRepository.save(rec);
+            records.add(rec);
         }
 
         // Criar 5 appointments futuras (SCHEDULED) sem records - PAT02
@@ -118,8 +122,12 @@ public class DataBootstrap implements CommandLineRunner {
                     .status(AppointmentStatus.SCHEDULED)
                     .build();
 
-            appointmentRepository.save(appt);
+            appointments.add(appt);
             // Não cria record porque a consulta ainda não aconteceu
         }
+
+        // Persistir em batch conforme esperado pelos testes
+        appointmentRepository.saveAll(appointments);
+        appointmentRecordRepository.saveAll(records);
     }
 }

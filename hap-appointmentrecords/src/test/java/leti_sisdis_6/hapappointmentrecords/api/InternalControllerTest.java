@@ -4,12 +4,14 @@ import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
 import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
+import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -21,15 +23,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = InternalController.class)
+@WebMvcTest(controllers = InternalController.class, excludeAutoConfiguration = {
+        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class
+})
 @AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
 class InternalControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private AppointmentRepository appointmentRepository;
+
+    // Mock extra para impedir a criação do repositório JPA real no slice
+    @MockitoBean
+    private AppointmentRecordRepository appointmentRecordRepository;
 
     private Appointment sample(String id) {
         return Appointment.builder()

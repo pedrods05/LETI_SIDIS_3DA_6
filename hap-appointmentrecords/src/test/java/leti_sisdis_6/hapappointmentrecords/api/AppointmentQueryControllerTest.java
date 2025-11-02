@@ -6,18 +6,17 @@ import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
 import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
+import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
-import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,20 +30,13 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AppointmentQueryController.class)
+@WebMvcTest(controllers = AppointmentQueryController.class, excludeAutoConfiguration = {
+        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
+})
 @AutoConfigureMockMvc(addFilters = false)
-@Import(AppointmentQueryControllerTest.TestConfig.class)
+@ActiveProfiles("test")
 class AppointmentQueryControllerTest {
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        AppointmentRepository appointmentRepository() { return Mockito.mock(AppointmentRepository.class); }
-        @Bean
-        ExternalServiceClient externalServiceClient() { return Mockito.mock(ExternalServiceClient.class); }
-        @Bean
-        RestTemplate restTemplate() { return Mockito.mock(RestTemplate.class); }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -52,13 +44,17 @@ class AppointmentQueryControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
+    @MockitoBean
     private AppointmentRepository appointmentRepository;
 
-    @Autowired
+    // Mock to avoid JPA infrastructure (entityManagerFactory) in this WebMvc slice
+    @MockitoBean
+    private AppointmentRecordRepository appointmentRecordRepository;
+
+    @MockitoBean
     private ExternalServiceClient externalServiceClient;
 
-    @Autowired
+    @MockitoBean
     private RestTemplate restTemplate;
 
     private Appointment sampleAppointment(String id) {
