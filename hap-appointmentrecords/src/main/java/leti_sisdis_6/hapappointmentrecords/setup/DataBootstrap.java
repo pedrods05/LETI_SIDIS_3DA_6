@@ -60,10 +60,6 @@ public class DataBootstrap implements CommandLineRunner {
 
         AtomicInteger counter = new AtomicInteger(1);
 
-        // Vamos construir as listas e persistir em batch (saveAll) para alinhar com os testes
-        java.util.ArrayList<Appointment> appointments = new java.util.ArrayList<>();
-        java.util.ArrayList<AppointmentRecord> records = new java.util.ArrayList<>();
-
         // Criar 5 appointments passadas (COMPLETED) com records - PAT01
         String patId1 = patientIds.get(0); // PAT01
         for (int i = 0; i < 5; i++) {
@@ -85,7 +81,7 @@ public class DataBootstrap implements CommandLineRunner {
                     .status(AppointmentStatus.COMPLETED)
                     .build();
 
-            appointments.add(appt);
+            appt = appointmentRepository.save(appt);
 
             int idx = i % diagnoses.length;
 
@@ -98,36 +94,9 @@ public class DataBootstrap implements CommandLineRunner {
                     .duration(LocalTime.of(0, 20))
                     .build();
 
-            records.add(rec);
+            appointmentRecordRepository.save(rec);
         }
 
-        // Criar 5 appointments futuras (SCHEDULED) sem records - PAT02
-        String patId2 = patientIds.get(1); // PAT02
-        for (int i = 0; i < 5; i++) {
-            String phyId = physicianIds.get(i % physicianIds.size());
-
-            LocalDateTime dt = LocalDateTime.now()
-                    .plusDays(1 + i * 7)  // 1 semana de intervalo entre cada
-                    .withHour(10 + (i % 6))
-                    .withMinute(0).withSecond(0).withNano(0);
-
-            int n = counter.getAndIncrement();
-
-            Appointment appt = Appointment.builder()
-                    .appointmentId(String.format("APT%02d", n))
-                    .patientId(patId2)
-                    .physicianId(phyId)
-                    .dateTime(dt)
-                    .consultationType(ConsultationType.FOLLOW_UP)
-                    .status(AppointmentStatus.SCHEDULED)
-                    .build();
-
-            appointments.add(appt);
-            // Não cria record porque a consulta ainda não aconteceu
-        }
-
-        // Persistir em batch conforme esperado pelos testes
-        appointmentRepository.saveAll(appointments);
-        appointmentRecordRepository.saveAll(records);
+        // Removido: appointments futuras (SCHEDULED) sem records - agora são semeadas em hap-physicians
     }
 }

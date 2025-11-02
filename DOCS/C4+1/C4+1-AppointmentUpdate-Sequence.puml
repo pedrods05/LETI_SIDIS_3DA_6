@@ -1,0 +1,67 @@
+@startuml
+' C4+1 — Appointment update SD (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Appointment Update (Physicians → AppointmentRecords)
+
+actor Client
+participant "AppointmentController (Physicians)" as Controller
+participant "AppointmentService (Physicians)" as Service
+participant "AppointmentRepository (Physicians)" as Repo
+participant "Appointment Records API" as Records
+
+autonumber
+Client -> Controller : PUT /appointments/{id}
+activate Controller
+Controller -> Service : updateAppointment(id, dto)
+activate Service
+Service -> Records : PUT /api/appointments/internal/{id}\n(forward Authorization, X-User-Id)
+activate Records
+alt Records accepted
+  Records --> Service : 200 OK { updated }
+  deactivate Records
+  Service -> Repo : save(updated local)
+  activate Repo
+  Repo --> Service : persisted
+  deactivate Repo
+  Service --> Controller : 200 OK { updated }
+  deactivate Service
+  Controller --> Client : 200 OK { updated }
+  deactivate Controller
+else Records says Not Found (404)
+  Records --> Service : 404 Not Found
+  deactivate Records
+  ' Fallback: local-only update (seeded future)
+  Service -> Repo : findById(id)
+  activate Repo
+  alt Local exists
+    Repo --> Service : Appointment
+    deactivate Repo
+    Service -> Repo : save(merge dto into local)
+    activate Repo
+    Repo --> Service : persisted
+    deactivate Repo
+    Service --> Controller : 200 OK { updated (local) }
+    deactivate Service
+    Controller --> Client : 200 OK { updated (local) }
+    deactivate Controller
+  else Local not found
+    ' no explicit null return
+    deactivate Repo
+    Service --> Controller : 404 Not Found
+    deactivate Service
+    Controller --> Client : 404 Not Found
+    deactivate Controller
+  end
+else Records error (5xx/timeout)
+  Records --> Service : error
+  deactivate Records
+  Service --> Controller : 502 Bad Gateway
+  deactivate Service
+  Controller --> Client : 502 Bad Gateway
+  deactivate Controller
+end
+
+@enduml

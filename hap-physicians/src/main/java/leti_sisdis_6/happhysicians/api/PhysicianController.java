@@ -37,13 +37,11 @@ public class PhysicianController {
     @GetMapping("/{physicianId}")
     @Operation(summary = "Get physician by ID")
     public ResponseEntity<Physician> getPhysician(@PathVariable String physicianId) {
-        // Check local store first
         Optional<Physician> physician = physicianRepository.findById(physicianId);
         if (physician.isPresent()) {
             return ResponseEntity.ok(physician.get());
         }
         
-        // Query peers if not found locally
         List<String> peers = externalServiceClient.getPeerUrls();
         for (String peer : peers) {
             try {
@@ -53,7 +51,6 @@ public class PhysicianController {
                     return ResponseEntity.ok(remotePhysician);
                 }
             } catch (Exception e) {
-                // Log error and continue to next peer
                 System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
             }
         }

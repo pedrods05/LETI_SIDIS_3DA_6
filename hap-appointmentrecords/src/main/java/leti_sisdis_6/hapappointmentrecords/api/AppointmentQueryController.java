@@ -95,8 +95,8 @@ public class AppointmentQueryController {
         }
     }
 
-    @PutMapping("/{appointmentId}")
-    public ResponseEntity<?> updateAppointment(
+    @PutMapping("/internal/{appointmentId}")
+    public ResponseEntity<?> updateAppointmentInternal(
             @PathVariable String appointmentId,
             @RequestBody Appointment appointmentDetails) {
         try {
@@ -117,14 +117,13 @@ public class AppointmentQueryController {
         }
     }
 
-    @PutMapping("/{appointmentId}/cancel")
-    public ResponseEntity<?> cancelAppointment(@PathVariable String appointmentId) {
-        // ... (A mesma lógica de findById, setStatus("CANCELADO") e save)
+    @PutMapping("/internal/{appointmentId}/cancel")
+    public ResponseEntity<?> cancelAppointmentInternal(@PathVariable String appointmentId) {
         return appointmentRepository.findById(appointmentId)
                 .map(existingAppointment -> {
                     existingAppointment.setStatus(AppointmentStatus.CANCELLED);
                     Appointment updated = appointmentRepository.save(existingAppointment);
-                    return ResponseEntity.ok(updated); // Retorna 200 OK com o objeto atualizado
+                    return ResponseEntity.ok(updated);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

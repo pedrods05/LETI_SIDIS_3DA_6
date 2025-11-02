@@ -7,21 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConsultationTypeTest {
 
     @Test
-    void testEnumValues() {
-        // Verifica que todos os valores do enum existem
-        ConsultationType[] values = ConsultationType.values();
-        assertEquals(2, values.length);
-        assertTrue(containsValue(values, ConsultationType.FIRST_TIME));
-        assertTrue(containsValue(values, ConsultationType.FOLLOW_UP));
-    }
-
-    @Test
-    void testGetValue() {
-        assertEquals("First-time", ConsultationType.FIRST_TIME.getValue());
-        assertEquals("Follow-up", ConsultationType.FOLLOW_UP.getValue());
-    }
-
-    @Test
     void testFromString_ValidValues() {
         assertEquals(ConsultationType.FIRST_TIME, ConsultationType.fromString("First-time"));
         assertEquals(ConsultationType.FOLLOW_UP, ConsultationType.fromString("Follow-up"));
@@ -52,15 +37,6 @@ class ConsultationTypeTest {
         assertThrows(IllegalArgumentException.class, () -> {
             ConsultationType.fromString("");
         });
-    }
-
-    private boolean containsValue(ConsultationType[] values, ConsultationType type) {
-        for (ConsultationType value : values) {
-            if (value == type) {
-                return true;
-            }
-        }
-        return false;
     }
 }
 

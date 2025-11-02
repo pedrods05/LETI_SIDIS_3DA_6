@@ -1,9 +1,8 @@
 package leti_sisdis_6.happatients.setup;
 
 import leti_sisdis_6.happatients.model.Patient;
-// Se o teu modelo tiver Address/InsuranceInfo locais, descomenta:
-// import leti_sisdis_6.happatients.model.Address;
-// import leti_sisdis_6.happatients.model.InsuranceInfo;
+//import leti_sisdis_6.happatients.model.Address;
+//import leti_sisdis_6.happatients.model.InsuranceInfo;
 
 import leti_sisdis_6.happatients.repository.PatientRepository;
 
@@ -25,9 +24,8 @@ public class DataBootstrap implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (patientRepository.count() > 0) return; // idempotente
+        if (patientRepository.count() > 0) return;
 
-        // Exemplo simples; adapta aos campos do teu modelo local
         List<Patient> patients = Arrays.asList(
                 Patient.builder()
                         .patientId("PAT01")
@@ -35,8 +33,8 @@ public class DataBootstrap implements CommandLineRunner {
                         .email("ana.costa@email.com")
                         .phoneNumber("+351912345681")
                         .birthDate(LocalDate.of(1985, 5, 15))
-                        // .address(Address.builder().street("Rua das Flores, 123").city("Lisboa").postalCode("1000-100").country("Portugal").build())
-                        // .insuranceInfo(InsuranceInfo.builder().policyNumber("MED2024001").provider("Medicare Seguros").coverageType("COMPREHENSIVE").build())
+                        //.address(Address.builder().street("Rua das Flores, 123").city("Lisboa").postalCode("1000-100").country("Portugal").build())
+                        //.insuranceInfo(InsuranceInfo.builder().policyNumber("MED2024001").provider("Medicare Seguros").coverageType("COMPREHENSIVE").build())
                         .dataConsentGiven(true)
                         .dataConsentDate(LocalDate.now())
                         .build(),

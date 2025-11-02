@@ -1,8 +1,10 @@
 package leti_sisdis_6.happhysicians.services;
 
+import leti_sisdis_6.happhysicians.api.AppointmentMapper;
 import leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.dto.output.AppointmentListDTO;
 import leti_sisdis_6.happhysicians.exceptions.AppointmentRecordNotFoundException;
 import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
 import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException;
@@ -14,13 +16,21 @@ import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 public class AppointmentService {
@@ -34,14 +44,23 @@ public class AppointmentService {
     @Autowired
     private ExternalServiceClient externalServiceClient;
 
+    @Autowired
+    private final AppointmentMapper appointmentMapper;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    public AppointmentService(AppointmentMapper appointmentMapper) {
+        this.appointmentMapper = appointmentMapper;
+    }
+
+
     public Appointment createAppointment(ScheduleAppointmentRequest dto) {
-        // Validate physician exists
         Optional<Physician> physician = physicianRepository.findById(dto.getPhysicianId());
         if (physician.isEmpty()) {
             throw new RuntimeException("Physician not found");
         }
 
-        // Propagate to hap-appointmentrecords (source of truth)
         Map<String, Object> appointmentData = new HashMap<>();
         appointmentData.put("appointmentId", dto.getAppointmentId());
         appointmentData.put("patientId", dto.getPatientId());
@@ -51,10 +70,8 @@ public class AppointmentService {
         appointmentData.put("status", dto.getStatus().toString());
 
         try {
-            // Create in appointment-records service (will validate conflicts there)
             externalServiceClient.createAppointmentInRecords(appointmentData);
 
-            // Fetch patient data from patients service
             Appointment.AppointmentBuilder appointmentBuilder = Appointment.builder()
                     .appointmentId(dto.getAppointmentId())
                     .patientId(dto.getPatientId())
@@ -64,14 +81,12 @@ public class AppointmentService {
                     .status(dto.getStatus())
                     .wasRescheduled(dto.getWasRescheduled() != null ? dto.getWasRescheduled() : false);
 
-            // Try to fetch patient details from patients service
             try {
                 Map<String, Object> patientData = externalServiceClient.getPatientById(dto.getPatientId());
                 appointmentBuilder.patientName((String) patientData.get("fullName"));
                 appointmentBuilder.patientEmail((String) patientData.get("email"));
                 appointmentBuilder.patientPhone((String) patientData.get("phoneNumber"));
             } catch (Exception e) {
-                // If patient fetch fails, continue without patient data
                 System.out.println("Warning: Could not fetch patient data for ID " + dto.getPatientId() + ": " + e.getMessage());
             }
 
@@ -83,12 +98,48 @@ public class AppointmentService {
                 : "Failed to create appointment: " + msg);
         }
     }
+    @Transactional(readOnly = true)
+    public List<AppointmentListDTO> listUpcomingAppointments() {
+        List<Appointment> upcoming = appointmentRepository
+                .findByDateTimeAfterOrderByDateTimeAsc(LocalDateTime.now())
+                .stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .toList();
+        for (Appointment a : upcoming) {
+            if (a.getPatientName() == null || a.getPatientEmail() == null || a.getPatientPhone() == null) {
+                try {
+                    Map<String, Object> patientData = externalServiceClient.getPatientById(a.getPatientId());
+                    a.setPatientName((String) patientData.get("fullName"));
+                    a.setPatientEmail((String) patientData.get("email"));
+                    a.setPatientPhone((String) patientData.get("phoneNumber"));
+                } catch (Exception ignored) {}
+            }
+        }
+        return appointmentMapper.toListDTO(upcoming);
+    }
 
     public List<Appointment> getAllAppointments() {
-        // Read through appointment-records service to avoid data duplication
-        return externalServiceClient.listAppointments().stream()
+        List<Appointment> remote = externalServiceClient.listAppointments().stream()
                 .map(this::mapRemoteAppointment)
                 .collect(Collectors.toList());
+        List<Appointment> localScheduled = appointmentRepository
+                .findByDateTimeAfterOrderByDateTimeAsc(LocalDateTime.now()).stream()
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .collect(Collectors.toList());
+        for (Appointment a : localScheduled) {
+            if (a.getPatientName() == null || a.getPatientEmail() == null || a.getPatientPhone() == null) {
+                try {
+                    Map<String, Object> patientData = externalServiceClient.getPatientById(a.getPatientId());
+                    a.setPatientName((String) patientData.get("fullName"));
+                    a.setPatientEmail((String) patientData.get("email"));
+                    a.setPatientPhone((String) patientData.get("phoneNumber"));
+                } catch (Exception ignored) {}
+            }
+        }
+        Map<String, Appointment> merged = new LinkedHashMap<>();
+        for (Appointment r : remote) merged.put(r.getAppointmentId(), r);
+        for (Appointment l : localScheduled) merged.put(l.getAppointmentId(), l);
+        return new ArrayList<>(merged.values());
     }
 
     public List<Appointment> getAppointmentsByPhysician(String physicianId) {
@@ -108,7 +159,18 @@ public class AppointmentService {
             Map<String, Object> m = externalServiceClient.getAppointment(appointmentId);
             return Optional.of(mapRemoteAppointment(m));
         } catch (Exception e) {
-            return appointmentRepository.findById(appointmentId);
+            Optional<Appointment> local = appointmentRepository.findById(appointmentId);
+            local.ifPresent(a -> {
+                if (a.getPatientName() == null || a.getPatientEmail() == null || a.getPatientPhone() == null) {
+                    try {
+                        Map<String, Object> patientData = externalServiceClient.getPatientById(a.getPatientId());
+                        a.setPatientName((String) patientData.get("fullName"));
+                        a.setPatientEmail((String) patientData.get("email"));
+                        a.setPatientPhone((String) patientData.get("phoneNumber"));
+                    } catch (Exception ignored) {}
+                }
+            });
+            return local;
         }
     }
 
@@ -119,12 +181,43 @@ public class AppointmentService {
     public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto) {
         Optional<Appointment> optionalAppointment = appointmentRepository.findById(appointmentId);
         if (optionalAppointment.isEmpty()) {
-            return null;
+            try {
+                Map<String, Object> current = externalServiceClient.getAppointment(appointmentId);
+                String patientId = Objects.requireNonNullElse(dto.getPatientId(), (String) current.get("patientId"));
+                String physicianId = Objects.requireNonNullElse(dto.getPhysicianId(), (String) current.get("physicianId"));
+                String dateTime = (dto.getDateTime() != null ? dto.getDateTime() : LocalDateTime.parse(String.valueOf(current.get("dateTime")))).toString();
+                String consultationType = (dto.getConsultationType() != null ? dto.getConsultationType() : ConsultationType.valueOf(String.valueOf(current.get("consultationType")))).toString();
+                String status = (dto.getStatus() != null ? dto.getStatus() : AppointmentStatus.valueOf(String.valueOf(current.get("status")))).toString();
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("patientId", patientId);
+                payload.put("physicianId", physicianId);
+                payload.put("dateTime", dateTime);
+                payload.put("consultationType", consultationType);
+                payload.put("status", status);
+
+                Map<String, Object> updated = externalServiceClient.updateAppointmentInRecords(appointmentId, payload);
+                Appointment mapped = mapRemoteAppointment(updated);
+                return appointmentRepository.save(mapped);
+            } catch (AppointmentRecordNotFoundException ex) {
+                for (String peer : externalServiceClient.getPeerUrls()) {
+                    String url = peer + "/internal/appointments/" + appointmentId;
+                    try {
+                        ResponseEntity<Appointment> resp = restTemplate.exchange(
+                                url, HttpMethod.PUT, new HttpEntity<>(dto), Appointment.class);
+                        if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
+                            return resp.getBody();
+                        }
+                    } catch (Exception ignored) {}
+                }
+                return null;
+            } catch (Exception ex) {
+                throw new RuntimeException("Failed to update appointment: " + ex.getMessage());
+            }
         }
 
         Appointment appointment = optionalAppointment.get();
 
-        // Get physician if provided
         final String physicianIdToUse;
         final Physician physicianToSet;
 
@@ -133,12 +226,10 @@ public class AppointmentService {
             physicianToSet = physicianRepository.findById(physicianIdToUse)
                     .orElseThrow(() -> new RuntimeException("Physician not found: " + physicianIdToUse));
         } else {
-            // Use existing physician
             physicianToSet = appointment.getPhysician();
             physicianIdToUse = physicianToSet.getPhysicianId();
         }
 
-        // Propagate update to hap-appointmentrecords
         Map<String, Object> appointmentData = new HashMap<>();
         appointmentData.put("patientId", dto.getPatientId() != null ? dto.getPatientId() : appointment.getPatientId());
         appointmentData.put("physicianId", physicianIdToUse);
@@ -148,32 +239,28 @@ public class AppointmentService {
 
         try {
             externalServiceClient.updateAppointmentInRecords(appointmentId, appointmentData);
-
-            // Update locally
-            if (dto.getPatientId() != null) appointment.setPatientId(dto.getPatientId());
-            appointment.setPhysician(physicianToSet);
-            if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
-            if (dto.getConsultationType() != null) appointment.setConsultationType(dto.getConsultationType());
-            if (dto.getStatus() != null) appointment.setStatus(dto.getStatus());
-            if (dto.getWasRescheduled() != null) appointment.setWasRescheduled(dto.getWasRescheduled());
-
-            return appointmentRepository.save(appointment);
+        } catch (AppointmentRecordNotFoundException e) {
         } catch (MicroserviceCommunicationException e) {
-            throw new RuntimeException("Failed to update appointment: " + e.getMessage());
         }
+
+        if (dto.getPatientId() != null) appointment.setPatientId(dto.getPatientId());
+        appointment.setPhysician(physicianToSet);
+        if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
+        if (dto.getConsultationType() != null) appointment.setConsultationType(dto.getConsultationType());
+        if (dto.getStatus() != null) appointment.setStatus(dto.getStatus());
+        if (dto.getWasRescheduled() != null) appointment.setWasRescheduled(dto.getWasRescheduled());
+
+        return appointmentRepository.save(appointment);
     }
 
     public boolean deleteAppointment(String appointmentId) {
         if (appointmentRepository.existsById(appointmentId)) {
             try {
-                // Delete from appointment-records first
                 externalServiceClient.deleteAppointmentInRecords(appointmentId);
 
-                // Then delete locally
                 appointmentRepository.deleteById(appointmentId);
                 return true;
             } catch (MicroserviceCommunicationException e) {
-                // If not found in records, still delete locally
                 appointmentRepository.deleteById(appointmentId);
                 return true;
             }
@@ -181,48 +268,37 @@ public class AppointmentService {
         return false;
     }
 
-    // ===== MÉTODOS DE COMUNICAÇÃO INTER-MICROSERVIÇOS =====
 
     public AppointmentDetailsDTO getAppointmentWithPatient(String appointmentId) {
-        // Get consultation details locally
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-        // Call Patient service for patient details
         try {
             Map<String, Object> patientData = externalServiceClient.getPatientById(appointment.getPatientId());
-            // Update appointment with patient data from external service
             appointment.setPatientName((String) patientData.get("fullName"));
             appointment.setPatientEmail((String) patientData.get("email"));
             appointment.setPatientPhone((String) patientData.get("phoneNumber"));
             return new AppointmentDetailsDTO(appointment);
         } catch (PatientNotFoundException e) {
-            // Return appointment with local data only
             return new AppointmentDetailsDTO(appointment);
         }
     }
 
     public AppointmentDetailsDTO getAppointmentWithPatientAndRecord(String appointmentId) {
-        // Get consultation details locally
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-        // Call Patient service for patient details
         try {
             Map<String, Object> patientData = externalServiceClient.getPatientById(appointment.getPatientId());
             appointment.setPatientName((String) patientData.get("fullName"));
             appointment.setPatientEmail((String) patientData.get("email"));
             appointment.setPatientPhone((String) patientData.get("phoneNumber"));
         } catch (PatientNotFoundException e) {
-            // Continue without patient data
         }
 
-        // Call Appointment Records service for record details
         try {
             Map<String, Object> appointmentRecord = externalServiceClient.getAppointmentRecord(appointmentId);
-            // Could store record data in appointment if needed
         } catch (AppointmentRecordNotFoundException e) {
-            // Continue without record data
         }
 
         return new AppointmentDetailsDTO(appointment);
@@ -240,16 +316,27 @@ public class AppointmentService {
                         appointment.setPatientPhone((String) patientData.get("phoneNumber"));
                         return new AppointmentDetailsDTO(appointment);
                     } catch (PatientNotFoundException e) {
-                        // Return appointment with local data only
                         return new AppointmentDetailsDTO(appointment);
                     }
                 })
                 .toList();
     }
 
+    public Appointment cancelAppointment(String appointmentId) {
+        try {
+            externalServiceClient.cancelAppointmentInRecords(appointmentId);
+        } catch (Exception e) {
+        }
+        Optional<Appointment> opt = appointmentRepository.findById(appointmentId);
+        if (opt.isPresent()) {
+            Appointment a = opt.get();
+            a.setStatus(AppointmentStatus.CANCELED);
+            return appointmentRepository.save(a);
+        }
+        return null;
+    }
+
     private Appointment mapRemoteAppointment(Map<String, Object> m) {
-        // Remote shape from hap-appointmentrecords.model.Appointment
-        // { appointmentId, patientId, physicianId, dateTime, consultationType, status }
         String appointmentId = (String) m.get("appointmentId");
         String patientId = (String) m.get("patientId");
         String physicianId = (String) m.get("physicianId");
@@ -272,14 +359,12 @@ public class AppointmentService {
                 .status(status)
                 .wasRescheduled(false);
 
-        // Try to fetch patient data from patients service
         try {
             Map<String, Object> patientData = externalServiceClient.getPatientById(patientId);
             builder.patientName((String) patientData.get("fullName"));
             builder.patientEmail((String) patientData.get("email"));
             builder.patientPhone((String) patientData.get("phoneNumber"));
         } catch (Exception e) {
-            // If patient fetch fails, continue without patient data
         }
 
         return builder.build();

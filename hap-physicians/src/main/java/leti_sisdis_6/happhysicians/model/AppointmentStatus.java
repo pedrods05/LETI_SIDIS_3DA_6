@@ -16,8 +16,14 @@ public enum AppointmentStatus {
     }
 
     public static AppointmentStatus fromString(String text) {
+        if (text == null) throw new IllegalArgumentException("Invalid appointment status: null");
+        String normalized = text.trim().toUpperCase();
+        if (normalized.equals("CANCELLED")) {
+            // tolerate double-L from other services
+            return CANCELED;
+        }
         for (AppointmentStatus status : AppointmentStatus.values()) {
-            if (status.value.equalsIgnoreCase(text)) {
+            if (status.value.equalsIgnoreCase(normalized)) {
                 return status;
             }
         }

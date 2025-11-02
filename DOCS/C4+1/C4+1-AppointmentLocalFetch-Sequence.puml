@@ -1,0 +1,58 @@
+@startuml
+' C4+1 — Appointment local fetch SD (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Appointment Local Fetch (Physicians)
+
+actor Client
+participant "AppointmentController" as Controller
+participant "AppointmentService" as Service
+participant "AppointmentRepository" as Repo
+participant "Patients Service (hap-patients)" as Patients
+participant "Appointment Records (hap-appointmentrecords)" as Records
+
+autonumber
+Client -> Controller : GET /appointments/{id}
+activate Controller
+Controller -> Service : getAppointmentById(id)
+activate Service
+Service -> Repo : findById(id)
+activate Repo
+alt Found locally
+  Repo --> Service : Appointment (local)
+  deactivate Repo
+  alt Missing patient details
+    Service -> Patients : GET /patients/{patientId}
+    activate Patients
+    Patients --> Service : { fullName, email, phone }
+    deactivate Patients
+  else Already enriched
+  end
+  Service --> Controller : Appointment (enriched)
+  deactivate Service
+  Controller --> Client : 200 OK { appointment }
+  deactivate Controller
+else Not found locally
+  ' no explicit null return from Repo
+  deactivate Repo
+  Service -> Records : GET /api/appointments/{id}
+  activate Records
+  alt Found in records
+    Records --> Service : Appointment JSON
+    deactivate Records
+    Service --> Controller : Appointment (mapped)
+    deactivate Service
+    Controller --> Client : 200 OK { appointment }
+    deactivate Controller
+  else Not found in records
+    ' close records and service without explicit NotFound arrows
+    deactivate Records
+    deactivate Service
+    Controller --> Client : 404 Not Found
+    deactivate Controller
+  end
+end
+
+@enduml

@@ -7,6 +7,7 @@ import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +42,6 @@ public class InternalController {
     @Autowired
     private RestTemplate restTemplate;
 
-    // ===== INTERNAL PHYSICIAN ENDPOINTS =====
 
     /**
      * Internal endpoint to get physician by ID (for peer communication)
@@ -61,7 +61,6 @@ public class InternalController {
         return physicianRepository.findAll();
     }
 
-    // ===== INTERNAL APPOINTMENT ENDPOINTS =====
 
     /**
      * Internal endpoint to get appointment by ID (for peer communication)
@@ -102,7 +101,17 @@ public class InternalController {
         }
     }
 
-    // ===== PEER MANAGEMENT ENDPOINTS =====
+    /**
+     * Internal endpoint to update an appointment by ID (for peer communication)
+     */
+    @PutMapping("/appointments/{appointmentId}")
+    public ResponseEntity<Appointment> updateAppointmentInternal(
+            @PathVariable String appointmentId,
+            @RequestBody UpdateAppointmentRequest dto) {
+        Appointment updated = appointmentService.updateAppointment(appointmentId, dto);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
 
     /**
      * Get list of peer instances (internal)

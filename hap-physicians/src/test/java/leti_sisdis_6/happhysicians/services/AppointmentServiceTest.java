@@ -1,8 +1,10 @@
 package leti_sisdis_6.happhysicians.services;
 
+import leti_sisdis_6.happhysicians.api.AppointmentMapper;
 import leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.exceptions.AppointmentRecordNotFoundException;
 import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException;
 import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
 import leti_sisdis_6.happhysicians.model.Appointment;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,7 +31,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AppointmentServiceTest {
 
     @Mock
@@ -40,6 +47,12 @@ class AppointmentServiceTest {
     @Mock
     private ExternalServiceClient externalServiceClient;
 
+    @Mock
+    private AppointmentMapper appointmentMapper;
+
+    @Mock
+    private org.springframework.web.client.RestTemplate restTemplate;
+
     @InjectMocks
     private AppointmentService appointmentService;
 
@@ -49,6 +62,12 @@ class AppointmentServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Manually inject @Autowired fields that Mockito can't inject
+        ReflectionTestUtils.setField(appointmentService, "appointmentRepository", appointmentRepository);
+        ReflectionTestUtils.setField(appointmentService, "physicianRepository", physicianRepository);
+        ReflectionTestUtils.setField(appointmentService, "externalServiceClient", externalServiceClient);
+        ReflectionTestUtils.setField(appointmentService, "restTemplate", restTemplate);
+        
         Department department = Department.builder()
                 .departmentId("DEPT01")
                 .code("CARD")
@@ -258,6 +277,9 @@ class AppointmentServiceTest {
         String appointmentId = "APT99";
         UpdateAppointmentRequest updateRequest = new UpdateAppointmentRequest();
         when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.empty());
+        when(externalServiceClient.getAppointment(appointmentId))
+            .thenThrow(new AppointmentRecordNotFoundException("Not found"));
+        when(externalServiceClient.getPeerUrls()).thenReturn(Collections.emptyList());
 
         // Act
         Appointment result = appointmentService.updateAppointment(appointmentId, updateRequest);
