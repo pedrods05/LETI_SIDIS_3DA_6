@@ -10,7 +10,6 @@ import leti_sisdis_6.hapauth.usermanagement.model.User;   // <- IMPORT NECESSÁR
 @Repository
 public class UserInMemoryRepository {
 
-    // Thread-safe map for storing users
     private final Map<String, User> userStore = new ConcurrentHashMap<>();
     private final Map<String, User> usernameIndex = new ConcurrentHashMap<>();
 
@@ -30,7 +29,6 @@ public class UserInMemoryRepository {
         if (user.getId() == null || user.getId().isBlank()) {
             user.setId(generateId());
         }
-        // Update both indexes
         userStore.put(user.getId(), user);
         usernameIndex.put(user.getUsername(), user);
         return user;
@@ -66,13 +64,11 @@ public class UserInMemoryRepository {
         return UUID.randomUUID().toString().substring(0, 8); // um pouco maior para reduzir colisões
     }
 
-    /** Clear all data (useful for testing) */
     public void clear() {
         userStore.clear();
         usernameIndex.clear();
     }
 
-    /** Get instance info for debugging */
     public Map<String, Object> getInstanceInfo() {
         Map<String, Object> info = new HashMap<>();
         info.put("totalUsers", userStore.size());

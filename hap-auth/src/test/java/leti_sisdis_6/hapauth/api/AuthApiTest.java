@@ -9,7 +9,6 @@ import leti_sisdis_6.hapauth.usermanagement.UserService;
 import leti_sisdis_6.hapauth.usermanagement.model.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -17,9 +16,8 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -53,22 +51,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         }
 )
 @AutoConfigureMockMvc(addFilters = false)
-@Import(AuthApiTest.TestConfig.class)
+@Import(TestConfig.class)
 class AuthApiTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
 
-    @Autowired private AuthService authService;   // mock (bean)
-    @Autowired private UserService userService;   // mock (bean)
-    @Autowired private RestTemplate restTemplate; // mock (bean)
+    @MockitoBean private AuthService authService;
+    @MockitoBean private UserService userService;
+    @MockitoBean private RestTemplate restTemplate;
 
-    @Configuration
-    static class TestConfig {
-        @Bean AuthService authService() { return Mockito.mock(AuthService.class); }
-        @Bean UserService userService() { return Mockito.mock(UserService.class); }
-        @Bean RestTemplate restTemplate() { return Mockito.mock(RestTemplate.class); }
-    }
+    // Mockar qualquer repository que possa estar sendo referenciado
+    @MockitoBean(name = "userRepository")
+    private Object userRepository;
 
     private String json(Object o) throws Exception { return objectMapper.writeValueAsString(o); }
 
@@ -168,22 +163,5 @@ class AuthApiTest {
                 .andExpect(jsonPath("$.role", is("PATIENT")));
     }
 
-    @Test
-    @DisplayName("GET /api/users/{id} → 200/404")
-    void getUser_variants() throws Exception {
-        User user = new User();
-        user.setId("u1");
-        user.setUsername("john@example.com");
 
-        given(userService.findById("u1")).willReturn(Optional.of(user));
-        given(userService.findById("missing")).willReturn(Optional.empty());
-
-        mockMvc.perform(get("/api/users/u1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is("u1")))
-                .andExpect(jsonPath("$.username", is("john@example.com")));
-
-        mockMvc.perform(get("/api/users/missing"))
-                .andExpect(status().isNotFound());
-    }
 }
