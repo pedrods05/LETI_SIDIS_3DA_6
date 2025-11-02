@@ -103,7 +103,6 @@ class AuthServiceTest {
         var jwtMock = mock(org.springframework.security.oauth2.jwt.Jwt.class);
         when(jwtMock.getTokenValue()).thenReturn("jwt-123");
 
-        // capturar os parâmetros do encode
         ArgumentCaptor<JwtEncoderParameters> captor = ArgumentCaptor.forClass(JwtEncoderParameters.class);
         when(jwtEncoder.encode(captor.capture())).thenReturn(jwtMock);
 

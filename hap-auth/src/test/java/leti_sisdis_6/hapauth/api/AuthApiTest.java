@@ -34,13 +34,7 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Paths esperados:
- *  - POST /api/public/login
- *  - POST /api/public/register
- *  - GET  /api/users/{id}
- * Ajusta se o teu @RequestMapping mudar.
- */
+
 @WebMvcTest(
         controllers = AuthApi.class,
         excludeAutoConfiguration = {
@@ -61,7 +55,6 @@ class AuthApiTest {
     @MockitoBean private UserService userService;
     @MockitoBean private RestTemplate restTemplate;
 
-    // Mockar qualquer repository que possa estar sendo referenciado
     @MockitoBean(name = "userRepository")
     private Object userRepository;
 
