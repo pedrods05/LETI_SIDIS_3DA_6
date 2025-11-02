@@ -28,14 +28,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest
 @Import({SecurityConfig.class, SecurityConfigTest.TestConfig.class, SecurityConfigTest.DummyController.class})
-@AutoConfigureMockMvc // Liga os filtros de segurança (NÃO usar addFilters = false)
+@AutoConfigureMockMvc
 class SecurityConfigTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private JwtEncoder jwtEncoder; // Injetado a partir do SecurityConfig real
+    private JwtEncoder jwtEncoder;
 
 
     @Configuration
@@ -93,7 +93,6 @@ class SecurityConfigTest {
     private String generateTestToken(String subject, String... roles) {
         Instant now = Instant.now();
 
-        // CORREÇÃO: Especificar o algoritmo HS256 (MAC) no header
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()

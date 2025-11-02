@@ -29,10 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Testa o InternalAuthApi, usado para comunicação entre peers.
- * Esta versão contém apenas os testes de falha (404) que estavam a passar.
- */
+
 @WebMvcTest(
         controllers = InternalAuthApi.class,
         excludeAutoConfiguration = {
