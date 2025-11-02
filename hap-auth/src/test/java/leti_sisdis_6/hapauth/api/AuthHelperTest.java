@@ -24,17 +24,14 @@ class AuthHelperTest {
     }
 
     private void setAuthorities(String... roles) {
-        // As tuas verificações em AuthHelper usam "ADMIN" e "PATIENT" (sem "ROLE_")
         List<SimpleGrantedAuthority> auths = Arrays.stream(roles)
                 .map(SimpleGrantedAuthority::new)
                 .toList();
 
 
-        // Authentication REAL com authorities — evita mock do getAuthorities()
         Authentication authentication =
                 new UsernamePasswordAuthenticationToken("user", "pw", auths);
 
-        // Apenas o SecurityContext é mockado para devolver o Authentication acima
         SecurityContext context = Mockito.mock(SecurityContext.class);
         Mockito.when(context.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(context);
@@ -51,12 +48,10 @@ class AuthHelperTest {
     @Test
     @DisplayName("isAdmin() → false quando ausência de auth ou sem ADMIN")
     void isAdmin_false() {
-        // sem autenticação
         SecurityContextHolder.clearContext();
         AuthHelper helper = Mockito.mock(AuthHelper.class, Mockito.CALLS_REAL_METHODS);
         assertFalse(helper.isAdmin());
 
-        // com outra role
         setAuthorities("PATIENT");
         assertFalse(helper.isAdmin());
     }

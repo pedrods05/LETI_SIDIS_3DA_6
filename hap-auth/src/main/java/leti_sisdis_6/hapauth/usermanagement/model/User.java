@@ -25,7 +25,7 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String username;
 
-    @JsonIgnore                 // evita expor a password em respostas JSON
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
 
@@ -33,10 +33,8 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    // ---- UserDetails ----
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Mapeia o enum para "ROLE_<NOME>"
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
