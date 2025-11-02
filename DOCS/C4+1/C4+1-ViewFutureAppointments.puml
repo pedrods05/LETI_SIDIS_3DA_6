@@ -1,0 +1,78 @@
+@startuml
+' C4+1 — View Future Appointments (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - View Future Appointments (ADMIN)
+
+actor "Admin Client" as C
+participant "Spring Security" as SEC
+participant "AppointmentController" as AC
+participant "AppointmentService" as AS
+participant "AppointmentRepository" as AREPO
+participant "ExternalServiceClient (patients)" as EXT #lightblue
+participant "AppointmentMapper" as AMAP
+
+autonumber
+
+' ---- HTTP + Segurança ----
+C -> AC : GET /appointments/upcoming\nAuthorization: Bearer ...
+activate AC
+AC -> SEC : hasAuthority('ADMIN') ?
+activate SEC
+alt Authorized
+  SEC --> AC : allow
+  deactivate SEC
+else Not authorized
+  SEC --> C : 403 Forbidden
+  deactivate SEC
+  deactivate AC
+  return
+end
+
+' ---- Controller -> Service ----
+AC -> AS : listUpcomingAppointments()
+activate AS
+
+' ---- Repo: buscar futuros ordenados ----
+AS -> AREPO : findByDateTimeAfterOrderByDateTimeAsc(now)
+activate AREPO
+AREPO --> AS : List<Appointment> (futuros)
+deactivate AREPO
+
+' ---- Filtrar por status SCHEDULED ----
+AS -> AS : filter(a.status == SCHEDULED)
+
+' ---- Enriquecimento condicional por paciente ----
+loop for each Appointment a
+  alt patientName/email/phone ausentes
+    AS -> EXT : getPatientById(a.patientId)
+    activate EXT
+    alt sucesso
+      EXT --> AS : { fullName, email, phoneNumber }
+      deactivate EXT
+      AS -> AS : setPatientName/Email/Phone
+    else erro externo
+      EXT --> AS : exception
+      deactivate EXT
+      AS -> AS : ignorar erro (try/catch)
+    end
+  else dados de paciente já presentes
+    AS -> AS : seguir para próximo
+  end
+end
+
+' ---- Mapear para DTOs de lista ----
+AS -> AMAP : toListDTO(upcoming)
+activate AMAP
+AMAP --> AS : List<AppointmentListDTO>
+deactivate AMAP
+
+AS --> AC : List<AppointmentListDTO>
+deactivate AS
+
+AC --> C : 200 OK + List<AppointmentListDTO>
+deactivate AC
+
+@enduml
