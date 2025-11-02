@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Profile;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,6 +63,9 @@ public class DataBootstrap implements CommandLineRunner {
 
         // Criar 5 appointments passadas (COMPLETED) com records - PAT01
         String patId1 = patientIds.get(0); // PAT01
+        List<Appointment> toSaveAppointments = new ArrayList<>();
+        List<AppointmentRecord> toSaveRecords = new ArrayList<>();
+
         for (int i = 0; i < 5; i++) {
             String phyId = physicianIds.get(i % physicianIds.size());
 
@@ -81,7 +85,7 @@ public class DataBootstrap implements CommandLineRunner {
                     .status(AppointmentStatus.COMPLETED)
                     .build();
 
-            appt = appointmentRepository.save(appt);
+            toSaveAppointments.add(appt);
 
             int idx = i % diagnoses.length;
 
@@ -94,8 +98,12 @@ public class DataBootstrap implements CommandLineRunner {
                     .duration(LocalTime.of(0, 20))
                     .build();
 
-            appointmentRecordRepository.save(rec);
+            toSaveRecords.add(rec);
         }
+
+        // Persist in batch to satisfy tests expecting saveAll invocations
+        appointmentRepository.saveAll(toSaveAppointments);
+        appointmentRecordRepository.saveAll(toSaveRecords);
 
         // Removido: appointments futuras (SCHEDULED) sem records - agora são semeadas em hap-physicians
     }

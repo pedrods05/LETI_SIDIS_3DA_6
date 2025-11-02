@@ -127,4 +127,17 @@ public class AppointmentQueryController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // Public endpoints expected by tests
+    @PutMapping("/{appointmentId}")
+    public ResponseEntity<?> updateAppointment(
+            @PathVariable String appointmentId,
+            @RequestBody Appointment appointmentDetails) {
+        return updateAppointmentInternal(appointmentId, appointmentDetails);
+    }
+
+    @PutMapping("/{appointmentId}/cancel")
+    public ResponseEntity<?> cancelAppointment(@PathVariable String appointmentId) {
+        return cancelAppointmentInternal(appointmentId);
+    }
 }
