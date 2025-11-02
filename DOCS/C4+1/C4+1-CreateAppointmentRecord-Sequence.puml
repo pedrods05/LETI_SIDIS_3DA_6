@@ -1,0 +1,76 @@
+@startuml
+' C4+1 — Create Appointment Record (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Create Appointment Record
+
+actor "Physician Client" as C
+participant "Spring Security" as SEC
+participant "AppointmentRecordController" as ARC
+participant "AppointmentRecordService" as ARS
+participant "hap-physicians API (external)" as HPHY #lightblue
+
+autonumber
+
+' ---- Request & Security Gate ----
+C -> ARC : POST /api/appointment-records/{appointmentId}/record\nAuthorization, X-User-Id, body: AppointmentRecordRequest
+activate ARC
+ARC -> SEC : hasAuthority('PHYSICIAN') ?
+activate SEC
+alt Authorized
+  SEC --> ARC : allow
+  deactivate SEC
+else Not authorized
+  SEC --> C : 403 Forbidden + {"error": "..."}\n(Spring Security)
+  deactivate SEC
+  deactivate ARC
+  return
+end
+
+' ---- Controller -> Service ----
+ARC -> ARS : createRecord(appointmentId, request, physicianId)
+activate ARS
+
+' ---- External validation step ----
+ARS -> HPHY : GET /appointments/{appointmentId}\n(+ auth headers)
+activate HPHY
+alt Appointment exists
+  HPHY --> ARS : 200 OK + Appointment
+  deactivate HPHY
+else Appointment not found
+  HPHY --> ARS : 404 Not Found
+  deactivate HPHY
+end
+
+' ---- Outcomes mapped às exceções/HTTP do controller ----
+alt Created successfully
+  ARS -> ARS : persistir novo AppointmentRecord
+  ARS --> ARC : AppointmentRecordResponse
+  deactivate ARS
+  ARC --> C : 201 Created + AppointmentRecordResponse
+  deactivate ARC
+else NotFoundException
+  ARS --> ARC : throw NotFoundException(msg)
+  deactivate ARS
+  ARC --> C : 404 Not Found + {"error": msg}
+  deactivate ARC
+else UnauthorizedException
+  ARS --> ARC : throw UnauthorizedException(msg)
+  deactivate ARS
+  ARC --> C : 403 Forbidden + {"error": msg}
+  deactivate ARC
+else IllegalStateException (conflict)
+  ARS --> ARC : throw IllegalStateException(msg)
+  deactivate ARS
+  ARC --> C : 409 Conflict + {"error": msg}
+  deactivate ARC
+else Unexpected Exception
+  ARS --> ARC : throw Exception(e)
+  deactivate ARS
+  ARC --> C : 500 Internal Server Error\n+ {"error": "External service communication error: ..."}
+  deactivate ARC
+end
+
+@enduml
