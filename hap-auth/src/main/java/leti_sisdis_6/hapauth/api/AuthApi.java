@@ -81,32 +81,7 @@ public class AuthApi {
                     .body(LoginResponse.builder().token(token).roles(roles).build());
 
         } catch (Exception e) {
-            // tentar peers
-            for (String peer : peers) {
-                try {
-                    String url = peer + "/api/internal/auth/authenticate";
-                    AuthService.AuthRequest authRequest =
-                            new AuthService.AuthRequest(request.getUsername(), request.getPassword());
-
-                    User remoteUser = restTemplate.postForObject(url, authRequest, User.class);
-                    if (remoteUser != null) {
-                        String token = authService.generateTokenForUser(remoteUser);
-
-                        List<String> roles = remoteUser.getAuthorities().stream()
-                                .map(GrantedAuthority::getAuthority)
-                                .collect(Collectors.toList());
-
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.set("Authorization", "Bearer " + token);
-
-                        return ResponseEntity.ok()
-                                .headers(headers)
-                                .body(LoginResponse.builder().token(token).roles(roles).build());
-                    }
-                } catch (Exception ex) {
-                    System.out.println("Failed to query peer " + peer + ": " + ex.getMessage());
-                }
-            }
+            // Fail fast on invalid local credentials to avoid long waits perceived as "loading forever".
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Invalid username or password"));
         }
     }

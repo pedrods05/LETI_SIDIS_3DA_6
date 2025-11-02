@@ -88,32 +88,17 @@ class AuthApiTest {
     }
 
     @Test
-    @DisplayName("POST /api/public/login → 200 via peer")
-    void login_peer_ok() throws Exception {
+    @DisplayName("POST /api/public/login → 401 fail-fast (invalid local creds)")
+    void login_invalid_fail_fast() throws Exception {
         given(authService.authenticate(eq("peer@example.com"), eq("pw")))
                 .willThrow(new RuntimeException("bad creds"));
-
-        User remoteUser = new User() {
-            @Override public java.util.Collection<org.springframework.security.core.GrantedAuthority> getAuthorities() {
-                return List.of(new SimpleGrantedAuthority("ROLE_PATIENT"));
-            }
-        };
-        remoteUser.setId("u2");
-        remoteUser.setUsername("peer@example.com");
-
-        given(restTemplate.postForObject(anyString(),
-                any(AuthService.AuthRequest.class), eq(User.class)))
-                .willReturn(remoteUser);
-        given(authService.generateTokenForUser(eq(remoteUser))).willReturn("token-remote");
 
         mockMvc.perform(post("/api/public/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .characterEncoding("utf-8")
                         .content(json(loginReq("peer@example.com", "pw"))))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Authorization", containsString("Bearer token-remote")))
-                .andExpect(jsonPath("$.token", is("token-remote")))
-                .andExpect(jsonPath("$.roles[0]", is("ROLE_PATIENT")));
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message", is("Invalid username or password")));
     }
 
     @Test
