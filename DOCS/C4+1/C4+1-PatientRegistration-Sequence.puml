@@ -1,5 +1,4 @@
 @startuml
-' C4+1 — Patient registration SD (layered)
 skinparam dpi 150
 skinparam shadowing false
 skinparam DefaultFontName Arial
@@ -7,65 +6,52 @@ skinparam DefaultFontName Arial
 title C4: Sequence Diagram - Patient Registration (Public)
 
 actor User
-participant "PatientsController" as Controller
-participant "PatientService" as Service
+participant "PatientRegistrationController" as Controller
+participant "PatientRegistrationService" as Service
 participant "PatientRepository" as Repo
-participant "PatientLocalRepository" as LocalCache
 participant "Auth Service (hap-auth)" as AUTH
 
 activate User
+autonumber
 User -> Controller : POST /api/v2/patients/register { patient data }
 activate Controller
-alt Wrong Port
-  Controller --> User : 400 Bad Request
+Controller -> Service : registerPatient(dto)
+activate Service
+Service -> Service : validate consent (dataConsentGiven)
+alt Email already exists
+  Service -> Repo : existsByEmail(email)
+  activate Repo
+  Repo --> Service : true
+  deactivate Repo
+  Service --> Controller : EmailAlreadyExistsException
+  deactivate Service
+  Controller --> User : 409 Conflict (email in use)
   deactivate Controller
-else Valid Port
-Controller -> LocalCache : existsByEmail(email)
-  activate Controller
-  activate LocalCache
-  alt Already exists in cache
-    LocalCache --> Controller : true
-    deactivate LocalCache
-    Controller --> User : 409 Conflict (email in use)
+else Email not in use
+  Service -> Repo : existsByEmail(email)
+  activate Repo
+  Repo --> Service : false
+  deactivate Repo
+  Service -> AUTH : POST /api/public/register { username=email, password, role=PATIENT }
+  activate AUTH
+  alt Auth accepted (201)
+    AUTH --> Service : 201 Created { userId }
+    deactivate AUTH
+    Service -> Repo : save(new Patient ...)
+    activate Repo
+    Repo --> Service : Patient Entity { patientId }
+    deactivate Repo
+    Service --> Controller : 201 Created { patientId }
+    deactivate Service
+    Controller --> User : 201 Created { patientId }
     deactivate Controller
-  else Not in cache
-    activate LocalCache
-    LocalCache --> Controller : false
-    deactivate LocalCache
-    activate Controller
-    Controller -> Service : registerPatient(dto)
-    activate Service
-    Service -> Repo : existsByEmail(email)
-    activate Repo
-    alt Exists in DB
-      Repo --> Service : true
-      deactivate Repo
-      Service --> Controller : Conflict
-      deactivate Service
-      Controller --> User : 409 Conflict
-      deactivate Controller
-    else Not in DB
-    activate Repo
-      Repo --> Service : false
-      deactivate Repo
-      activate Service
-      Service -> AUTH : POST /api/public/register { username, password, role }
-      activate AUTH
-      alt Auth accepted
-        AUTH --> Service : 201 Created { userId }
-        deactivate AUTH
-        Service -> Repo : save(new Patient)
-        activate Repo
-        Repo --> Service : Patient Entity { patientId }
-        deactivate Repo
-        Service --> Controller : 201 Created { patientId }
-        deactivate Service
-        activate Controller
-        Controller --> User : 201 Created { patientId }
-        deactivate Controller
-
-      end
-    end
+  else Auth error (4xx/5xx/timeout)
+    AUTH --> Service : exception
+    deactivate AUTH
+    Service --> Controller : IllegalArgumentException("Failed to register in Auth")
+    deactivate Service
+    Controller --> User : 400 Bad Request { error }
+    deactivate Controller
   end
 end
 

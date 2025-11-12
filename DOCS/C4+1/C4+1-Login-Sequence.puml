@@ -1,5 +1,5 @@
 @startuml
-' C4+1 — Login SD (layered)
+' C4+1 — Login SD (Atualizado segundo implementação real)
 skinparam dpi 150
 skinparam shadowing false
 skinparam DefaultFontName Arial
@@ -7,47 +7,50 @@ skinparam DefaultFontName Arial
 title C4: Sequence Diagram - Login (Public)
 
 actor User
-participant "AuthController" as Controller
-participant "AuthService" as Service
-participant "UserRepository" as Repo
+participant "AuthApi (Controller)" as Controller
+participant "AuthService" as AuthService
+participant "AuthenticationManager" as AuthManager
+participant "UserDetailsService /\nUserInMemoryRepository" as UserStore
 
 activate User
 User -> Controller : POST /api/public/login { username, password }
 activate Controller
-alt Wrong Port
-  Controller --> User : 400 Bad Request
+alt Validation error (Bean Validation)
+  Controller --> User : 400 Bad Request (validation details)
   deactivate Controller
-else Valid payload
-  Controller -> Service : login(credentials)
-  activate Controller
-  activate Service
-  Service -> Repo : findByUsername(username)
-  activate Repo
-  alt User found
-    Repo --> Service : User Entity (+passwordHash)
-    deactivate Repo
-    Service -> Service : verifyPassword()
-    alt Credentials valid
-      Service --> Controller : Token { jwt }
-      deactivate Service
-      Controller --> User : 200 OK { token }
-      deactivate Controller
-    else Invalid credentials
-      Service --> Controller : Invalid Credentials
-      activate Service
-      deactivate Service
-      activate Controller
-      Controller --> User : 401 Invalid Credentials
-      deactivate Controller
-    end
-  else User not found
-   Service --> Controller : Invalid Credentials
-    activate Controller
-    activate Service
-    deactivate Service
-    Controller --> User : 401 Invalid Credentials
+else Attempt authentication
+  Controller -> AuthService : authenticate(username, password)
+  activate AuthService
+  AuthService -> AuthManager : authenticate(UsernamePasswordAuthenticationToken)
+  activate AuthManager
+  AuthManager -> UserStore : loadUserByUsername(username) / findByUsername()
+  activate UserStore
+  alt User exists
+    UserStore --> AuthManager : UserDetails (username, passwordHash, roles)
+    deactivate UserStore
+    AuthManager --> AuthService : Authentication (principal User)
+    deactivate AuthManager
+    AuthService -> AuthService : generateToken()
+    AuthService --> Controller : jwt token
+    deactivate AuthService
+    Controller --> User : 200 OK { token, roles }
+    deactivate Controller
+  else User not found OR bad password
+    UserStore --> AuthManager : throws UsernameNotFoundException / returns null
+    deactivate UserStore
+    AuthManager --> AuthService : AuthenticationException
+    deactivate AuthManager
+    AuthService --> Controller : auth failed
+    deactivate AuthService
+    Controller --> User : 401 Invalid username or password
     deactivate Controller
   end
 end
+
+note right of AuthService
+A chamada direta a findByUsername() não ocorre no AuthApi.
+O AuthenticationManager delega para UserDetailsService
+que internamente usa UserInMemoryRepository.findByUsername.
+end note
 
 @enduml

@@ -1,5 +1,5 @@
 @startuml
-' C4+1 — Patient peer forwarding SD (layered)
+' C4+1 — Patient peer forwarding SD (alinhado com implementação atual)
 skinparam dpi 150
 skinparam shadowing false
 skinparam DefaultFontName Arial
@@ -10,9 +10,7 @@ actor "Client" as C
 participant "PatientController (inst A)" as PC_A
 participant "PatientService (inst A)" as PS_A
 participant "PatientRepository (inst A)" as PREPO_A
-participant "PatientController (inst B - peer)" as PC_B
-participant "PatientService (inst B)" as PS_B
-participant "PatientRepository (inst B)" as PREPO_B
+participant "Peer Patients (inst B)" as PEER
 
 activate C
 autonumber
@@ -22,50 +20,34 @@ PC_A -> PS_A : getPatientDetails(id)
 activate PS_A
 PS_A -> PREPO_A : findById(id)
 activate PREPO_A
-alt Found in inst A
+alt Found locally (inst A)
   PREPO_A --> PS_A : Patient entity
   deactivate PREPO_A
   PS_A --> PC_A : PatientDetailsDTO
   deactivate PS_A
   PC_A --> C : 200 OK + PatientDetailsDTO
   deactivate PC_A
-else Not found in inst A
-  ' close repository and service without explicit null/NotFound arrows
+else Not found locally (inst A)
   deactivate PREPO_A
   deactivate PS_A
-  ' Try peers sequentially
+  ' Try peers sequentially using INTERNAL endpoint
   loop for each peer
-    PC_A -> PC_B : HTTP GET /patients/{id}\n(forward Authorization)
-    activate PC_A
-    activate PC_B
-    PC_B -> PS_B : getPatientDetails(id)
-    activate PS_B
-    PS_B -> PREPO_B : findById(id)
-    activate PREPO_B
-    alt Found in inst B
-      PREPO_B --> PS_B : Patient entity
-      deactivate PREPO_B
-      PS_B --> PC_B : PatientDetailsDTO
-      deactivate PS_B
-      PC_B --> PC_A : 200 OK + PatientDetailsDTO
-      deactivate PC_B
+    PC_A -> PEER : HTTP GET /internal/patients/{id}\n(forward Authorization)
+    activate PEER
+    alt Peer returns 200
+      PEER --> PC_A : 200 OK + PatientDetailsDTO
+      deactivate PEER
       PC_A --> C : 200 OK + PatientDetailsDTO
       deactivate PC_A
       break
-    else Not found in inst B
-      ' close repo/service; continue to next peer
-      deactivate PREPO_B
-      deactivate PS_B
-      activate PC_B
-      PC_B --> PC_A : 404 Not Found
-      deactivate PC_B
-      activate PC_A
+    else Peer returns 404 / error
+      PEER --> PC_A : 404 Not Found / error
+      deactivate PEER
+      ' continue loop
     end
   end
-  ' No peer returned a hit
   PC_A --> C : 404 Not Found
   deactivate PC_A
 end
 
 @enduml
-

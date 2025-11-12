@@ -1,5 +1,5 @@
 @startuml
-' C4+1 — Appointment create SD (layered)
+' C4+1 — Appointment create SD (alinhado com implementação atual)
 skinparam dpi 150
 skinparam shadowing false
 skinparam DefaultFontName Arial
@@ -22,50 +22,47 @@ else Valid payload
   Controller -> Service : createAppointment(dto)
   deactivate Controller
   activate Service
-  ' Create in source-of-truth first
-  Service -> Records : POST /api/appointments\n(forward Authorization, X-User-Id)
-  activate Records
-  alt Created (201)
-    Records --> Service : 201 Created { appointment }
-    deactivate Records
-    ' Optional enrichment from Patients (best-effort)
-    alt Enrichment needed
-      Service -> Patients : GET /patients/{patientId}
-      activate Patients
-      Patients --> Service : { fullName, email, phone }
-      deactivate Patients
-    else Skip enrichment
-    end
-    ' Persist local mirror
-    Service -> Repo : save(appointment [+patient fields])
-    activate Repo
-    Repo --> Service : persisted
-    deactivate Repo
-    Service --> Controller : 201 Created { appointment }
+  Service -> Service : verify physician exists
+  alt Physician missing
+    Service --> Controller : error("Physician not found")
     activate Controller
     deactivate Service
-    Controller --> Client : 201 Created { appointment }
+    Controller --> Client : 400 Bad Request { error }
     deactivate Controller
-  else Conflict (409)
+  else Physician found
+    ' Create in source-of-truth first
+    Service -> Records : POST /api/appointments\n(forward Authorization, X-User-Id)
     activate Records
-    Records --> Service : 409 Conflict (exists/time clash)
-    deactivate Records
-    activate Service
-    Service --> Controller : 409 Conflict
-    deactivate Service
-    activate Controller
-    Controller --> Client : 409 Conflict
-    deactivate Controller
-  else Records error (5xx/timeout)
-  activate Records
-    Records --> Service : error
-    deactivate Records
-    activate Service
-    Service --> Controller : 502 Bad Gateway
-    deactivate Service
-    activate Controller
-    Controller --> Client : 502 Bad Gateway
-    deactivate Controller
+    alt Created (201)
+      Records --> Service : 201 Created { appointment }
+      deactivate Records
+      ' Optional enrichment from Patients (best-effort)
+      alt Enrichment needed
+        Service -> Patients : GET /patients/{patientId}
+        activate Patients
+        Patients --> Service : { fullName, email, phone }
+        deactivate Patients
+      else Skip enrichment
+      end
+      ' Persist local mirror
+      Service -> Repo : save(appointment [+patient fields])
+      activate Repo
+      Repo --> Service : persisted
+      deactivate Repo
+      Service --> Controller : 200 OK { appointment }
+      activate Controller
+      deactivate Service
+      Controller --> Client : 200 OK { appointment }
+      deactivate Controller
+    else Conflict or error (409/5xx/timeout)
+      Records --> Service : exception
+      deactivate Records
+      Service --> Controller : error("...conflict..." or "Failed to create...")
+      activate Controller
+      deactivate Service
+      Controller --> Client : 400 Bad Request { error }
+      deactivate Controller
+    end
   end
 end
 

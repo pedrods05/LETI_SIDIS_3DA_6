@@ -30,6 +30,7 @@ else Not authorized
 end
 
 ' ---- Controller -> Service ----
+activate ARC
 ARC -> ARS : createRecord(appointmentId, request, physicianId)
 activate ARS
 
@@ -47,25 +48,22 @@ end
 ' ---- Outcomes mapped às exceções/HTTP do controller ----
 alt Created successfully
   ARS -> ARS : persistir novo AppointmentRecord
+  activate ARC
   ARS --> ARC : AppointmentRecordResponse
   deactivate ARS
   ARC --> C : 201 Created + AppointmentRecordResponse
-  deactivate ARC
 else NotFoundException
   ARS --> ARC : throw NotFoundException(msg)
   deactivate ARS
   ARC --> C : 404 Not Found + {"error": msg}
-  deactivate ARC
 else UnauthorizedException
   ARS --> ARC : throw UnauthorizedException(msg)
   deactivate ARS
   ARC --> C : 403 Forbidden + {"error": msg}
-  deactivate ARC
 else IllegalStateException (conflict)
   ARS --> ARC : throw IllegalStateException(msg)
   deactivate ARS
   ARC --> C : 409 Conflict + {"error": msg}
-  deactivate ARC
 else Unexpected Exception
   ARS --> ARC : throw Exception(e)
   deactivate ARS

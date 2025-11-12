@@ -64,7 +64,9 @@ Cheat‑sheet de endpoints (linha de base)
 Notas de integração
 - As chamadas entre serviços propagam headers (Authorization, X-User-Id, X-User-Role) quando aplicável.
 - O Physicians agrega dados remotos (records) e locais (futuros) e faz forward entre peers quando necessário.
-
+- Lista de peers estática por módulo, pré-configurada para localhost nas portas de cada instância.
+- Peer forwarding: quando uma instância não tem o recurso localmente, tenta peers do mesmo serviço; pode usar endpoints internos ("/internal/...") conforme o módulo.
+- Se nenhuma instância possuir o recurso após tentar todos os peers, o serviço responde 404 Not Found.
 Documentação (C4)
 - Índice: [DOCS/Docs.md](./DOCS/Docs.md)
 
@@ -78,12 +80,10 @@ Documentação (C4)
   - Auth: autenticação e registo público (sem dependência direta dos outros dados clínicos).
 - Colaboração entre serviços:
   - RestTemplate para chamadas HTTP síncronas entre containers; headers de autorização e identidade são propagados.
-  - Peer forwarding: quando uma instância não tem o recurso localmente, tenta peers do mesmo serviço usando os endpoints públicos (não “/internal”).
-- Segurança:
+  - Peer forwarding: quando uma instância não tem o recurso localmente, tenta peers do mesmo serviço; pode usar endpoints internos ("/internal") de cada módulo quando aplicável.
   - Endpoints públicos em Auth para login/register; serviços propagam Authorization/X-User-Id/X-User-Role nas chamadas a outros serviços quando aplicável.
 - Resiliência e consistência:
   - Estratégia de fallback simples (tenta primeiro local, depois peers). Consistência eventual entre instâncias.
-
 ## Known limitations
 - Não há service discovery (lista de peers é estática/configurada por profile).
 - RestTemplate (bloqueante) é usado por simplicidade; não há WebClient/Reactor.
@@ -101,4 +101,3 @@ Documentação (C4)
   - [DOCS/screenshots/criarPaciente.png](./DOCS/screenshots/criarPaciente.png)
   - [DOCS/screenshots/loginAdmin.png](./DOCS/screenshots/loginAdmin.png)
   - [DOCS/screenshots/ScheduleAppointment.png](./DOCS/screenshots/ScheduleAppointment.png)
-

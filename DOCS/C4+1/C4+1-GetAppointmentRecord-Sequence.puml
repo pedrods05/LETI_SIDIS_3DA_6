@@ -35,6 +35,7 @@ end
 ARC -> ARC : build UserDTO(id=X-User-Id, role=X-User-Role)
 
 ' ---- Controller -> Service ----
+activate ARC
 ARC -> ARS : getAppointmentRecord(recordId, currentUser)
 activate ARS
 
@@ -55,7 +56,6 @@ alt Record found
   ARS --> ARC : AppointmentRecordViewDTO
   deactivate ARS
   ARC --> C : 200 OK + AppointmentRecordViewDTO
-  deactivate ARC
 else NotFoundException
   ARS --> ARC : throw NotFoundException(msg)
   deactivate ARS
@@ -63,7 +63,6 @@ else NotFoundException
   ' ---- Anti-loop guard ----
   alt Request tem "X-Peer-Request"
     ARC --> C : 404 Not Found + {"error": msg}
-    deactivate ARC
   else Sem "X-Peer-Request" -> tentar peers
     ' Preparar cabeçalhos reencaminhados: Authorization, X-User-Id, X-User-Role, X-Peer-Request=true
     loop para cada peer em ExternalServiceClient.getPeerUrls()
@@ -73,7 +72,6 @@ else NotFoundException
         ARC_PEER --> ARC : 200 OK + AppointmentRecordViewDTO
         deactivate ARC_PEER
         ARC --> C : 200 OK + AppointmentRecordViewDTO
-        deactivate ARC
         break
       else Peer responde 404
         ARC_PEER --> ARC : 404 Not Found
@@ -87,20 +85,18 @@ else NotFoundException
     end
     ' Nenhum peer devolveu sucesso
     ARC --> C : 404 Not Found + {"error": msg}
-    deactivate ARC
   end
 
 else UnauthorizedException
+activate ARC
   ARS --> ARC : throw UnauthorizedException(msg)
   deactivate ARS
   ARC --> C : 403 Forbidden + {"error": msg}
-  deactivate ARC
 
 else Unexpected Exception
   ARS --> ARC : throw Exception(e)
   deactivate ARS
   ARC --> C : 500 Internal Server Error\n+ {"error": "External service communication error: ..."}
-  deactivate ARC
 end
 
 @enduml
