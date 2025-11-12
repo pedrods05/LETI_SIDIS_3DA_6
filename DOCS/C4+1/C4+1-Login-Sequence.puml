@@ -11,6 +11,7 @@ participant "AuthController" as Controller
 participant "AuthService" as Service
 participant "UserRepository" as Repo
 
+activate User
 User -> Controller : POST /api/public/login { username, password }
 activate Controller
 alt Wrong Port
@@ -18,6 +19,7 @@ alt Wrong Port
   deactivate Controller
 else Valid payload
   Controller -> Service : login(credentials)
+  activate Controller
   activate Service
   Service -> Repo : findByUsername(username)
   activate Repo
@@ -32,12 +34,16 @@ else Valid payload
       deactivate Controller
     else Invalid credentials
       Service --> Controller : Invalid Credentials
+      activate Service
       deactivate Service
+      activate Controller
       Controller --> User : 401 Invalid Credentials
       deactivate Controller
     end
   else User not found
    Service --> Controller : Invalid Credentials
+    activate Controller
+    activate Service
     deactivate Service
     Controller --> User : 401 Invalid Credentials
     deactivate Controller

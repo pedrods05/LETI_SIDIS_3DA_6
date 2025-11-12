@@ -13,7 +13,7 @@ participant "AppointmentRecordService" as ARS
 participant "hap-physicians API (external)" as HPHY #lightblue
 
 autonumber
-
+activate C
 ' ---- Request & Security Gate ----
 C -> ARC : POST /api/appointment-records/{appointmentId}/record\nAuthorization, X-User-Id, body: AppointmentRecordRequest
 activate ARC

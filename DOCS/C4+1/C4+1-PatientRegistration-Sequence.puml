@@ -12,8 +12,8 @@ participant "PatientService" as Service
 participant "PatientRepository" as Repo
 participant "PatientLocalRepository" as LocalCache
 participant "Auth Service (hap-auth)" as AUTH
-participant "Peer Instance (Patients)" as Peer
 
+activate User
 User -> Controller : POST /api/v2/patients/register { patient data }
 activate Controller
 alt Wrong Port
@@ -21,6 +21,7 @@ alt Wrong Port
   deactivate Controller
 else Valid Port
 Controller -> LocalCache : existsByEmail(email)
+  activate Controller
   activate LocalCache
   alt Already exists in cache
     LocalCache --> Controller : true
@@ -28,8 +29,10 @@ Controller -> LocalCache : existsByEmail(email)
     Controller --> User : 409 Conflict (email in use)
     deactivate Controller
   else Not in cache
+    activate LocalCache
     LocalCache --> Controller : false
     deactivate LocalCache
+    activate Controller
     Controller -> Service : registerPatient(dto)
     activate Service
     Service -> Repo : existsByEmail(email)
@@ -42,8 +45,10 @@ Controller -> LocalCache : existsByEmail(email)
       Controller --> User : 409 Conflict
       deactivate Controller
     else Not in DB
+    activate Repo
       Repo --> Service : false
       deactivate Repo
+      activate Service
       Service -> AUTH : POST /api/public/register { username, password, role }
       activate AUTH
       alt Auth accepted
@@ -55,6 +60,7 @@ Controller -> LocalCache : existsByEmail(email)
         deactivate Repo
         Service --> Controller : 201 Created { patientId }
         deactivate Service
+        activate Controller
         Controller --> User : 201 Created { patientId }
         deactivate Controller
 

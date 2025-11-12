@@ -15,7 +15,7 @@ participant "hap-patients API" as HPAT #lightblue
 participant "Peer AppointmentRecordController" as ARC_PEER #lightgray
 
 autonumber
-
+activate C
 ' ---- Request & Security Gate ----
 C -> ARC : GET /api/appointment-records/{recordId}\nAuthorization, X-User-Id, X-User-Role
 activate ARC

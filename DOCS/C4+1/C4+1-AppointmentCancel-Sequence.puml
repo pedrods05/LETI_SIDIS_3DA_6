@@ -11,20 +11,20 @@ participant "AppointmentController (Physicians)" as Controller
 participant "AppointmentService (Physicians)" as Service
 participant "AppointmentRepository (Physicians)" as Repo
 participant "Appointment Records API" as Records
-
+    activate Client
 autonumber
-Client -> Controller : PUT /appointments/{id}/cancel
-activate Controller
-Controller -> Service : cancelAppointment(id)
-activate Service
-Service -> Records : PUT /api/appointments/internal/{id}/cancel\n(forward Authorization, X-User-Id)
-activate Records
-alt Records accepted
-  Records --> Service : 200 OK { cancelled }
-  deactivate Records
-  Service -> Repo : findById(id)
-  activate Repo
-  alt Local exists
+    Client -> Controller : PUT /appointments/{id}/cancel
+    activate Controller
+    Controller -> Service : cancelAppointment(id)
+    activate Service
+    Service -> Records : PUT /api/appointments/internal/{id}/cancel\n(forward Authorization, X-User-Id)
+    activate Records
+    alt Records accepted
+    Records --> Service : 200 OK { cancelled }
+    deactivate Records
+    Service -> Repo : findById(id)
+     activate Repo
+    alt Local exists
     Repo --> Service : Appointment
     deactivate Repo
     Service -> Repo : save(status=CANCELLED)
@@ -32,49 +32,51 @@ alt Records accepted
     Repo --> Service : persisted
     deactivate Repo
     Service --> Controller : 200 OK { cancelled }
-    deactivate Service
     Controller --> Client : 200 OK { cancelled }
-    deactivate Controller
-  else Local not found
+
+    else Local not found
     ' no local row: still return 200 based on records
     deactivate Repo
     Service --> Controller : 200 OK { cancelled }
     deactivate Service
     Controller --> Client : 200 OK { cancelled }
     deactivate Controller
-  end
-else Records says Not Found (404)
-  Records --> Service : 404 Not Found
-  deactivate Records
-  ' Fallback: local-only cancel if exists
-  Service -> Repo : findById(id)
-  activate Repo
-  alt Local exists
+    activate Records
+    end
+    else Records says Not Found (404)
+    Records --> Service : 404 Not Found
+    ' Fallback: local-only cancel if exists
+    activate Service
+    Service -> Repo : findById(id)
+    deactivate Records
+    activate Repo
+    alt Local exists
     Repo --> Service : Appointment
     deactivate Repo
     Service -> Repo : save(status=CANCELLED)
     activate Repo
     Repo --> Service : persisted
     deactivate Repo
+    activate Controller
     Service --> Controller : 200 OK { cancelled (local) }
-    deactivate Service
     Controller --> Client : 200 OK { cancelled (local) }
-    deactivate Controller
-  else Local not found
+    else Local not found
     ' no explicit null return
     deactivate Repo
     Service --> Controller : 404 Not Found
     deactivate Service
     Controller --> Client : 404 Not Found
     deactivate Controller
-  end
-else Records error (5xx/timeout)
-  Records --> Service : error
-  deactivate Records
-  Service --> Controller : 502 Bad Gateway
-  deactivate Service
-  Controller --> Client : 502 Bad Gateway
-  deactivate Controller
-end
-
+    activate Records
+    end
+    else Records error (5xx/timeout)
+    Records --> Service : error
+    activate Service
+    deactivate Records
+    activate Controller
+    Service --> Controller : 502 Bad Gateway
+    deactivate Service
+    Controller --> Client : 502 Bad Gateway
+    deactivate Controller
+    end
 @enduml

@@ -12,15 +12,15 @@ participant "AppointmentService (Physicians)" as Service
 participant "Appointment Records API" as Records
 participant "Patients Service (hap-patients)" as Patients
 participant "AppointmentRepository (Physicians)" as Repo
-
+activate Client
 autonumber
 Client -> Controller : POST /appointments { appointmentDTO }
 activate Controller
 alt Missing/invalid payload
   Controller --> Client : 400 Bad Request
-  deactivate Controller
 else Valid payload
   Controller -> Service : createAppointment(dto)
+  deactivate Controller
   activate Service
   ' Create in source-of-truth first
   Service -> Records : POST /api/appointments\n(forward Authorization, X-User-Id)
@@ -42,21 +42,28 @@ else Valid payload
     Repo --> Service : persisted
     deactivate Repo
     Service --> Controller : 201 Created { appointment }
+    activate Controller
     deactivate Service
     Controller --> Client : 201 Created { appointment }
     deactivate Controller
   else Conflict (409)
+    activate Records
     Records --> Service : 409 Conflict (exists/time clash)
     deactivate Records
+    activate Service
     Service --> Controller : 409 Conflict
     deactivate Service
+    activate Controller
     Controller --> Client : 409 Conflict
     deactivate Controller
   else Records error (5xx/timeout)
+  activate Records
     Records --> Service : error
     deactivate Records
+    activate Service
     Service --> Controller : 502 Bad Gateway
     deactivate Service
+    activate Controller
     Controller --> Client : 502 Bad Gateway
     deactivate Controller
   end

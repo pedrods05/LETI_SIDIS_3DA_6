@@ -15,6 +15,7 @@ participant "AppointmentController (Instance2)" as C2
 participant "AppointmentService (Instance2)" as S2
 participant "AppointmentRepository (Instance2)" as R2
 
+activate Client
 autonumber
 Client -> C1 : GET /appointments/{id}
 activate C1
@@ -33,11 +34,13 @@ else Not found in instance1
   ' no explicit null return from R1
   deactivate R1
   S1 -> Records : GET /api/appointments/{id}
+  activate S1
   activate Records
   alt Found in records
     Records --> S1 : Appointment JSON
     deactivate Records
     S1 --> C1 : Appointment (mapped)
+    activate C1
     deactivate S1
     C1 --> Client : 200 OK { appointment }
     deactivate C1
@@ -46,6 +49,7 @@ else Not found in instance1
     deactivate Records
     deactivate S1
     C1 -> C2 : HTTP GET /internal/appointments/{id}
+    activate C1
     activate C2
     C2 -> S2 : getAppointmentById(id)
     activate S2
@@ -64,8 +68,10 @@ else Not found in instance1
       ' close R2/S2/C2 without explicit NotFound arrows
       deactivate R2
       deactivate S2
+      activate C2
       C2 --> C1 : 404 Not Found
       deactivate C2
+      activate C1
       C1 --> Client : 404 Not Found
       deactivate C1
     end

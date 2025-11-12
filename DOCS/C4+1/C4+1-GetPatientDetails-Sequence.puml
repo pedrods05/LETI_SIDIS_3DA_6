@@ -12,7 +12,7 @@ participant "PatientService" as Service
 participant "PatientRepository" as Repo
 participant "PatientLocalRepository" as LocalCache
 participant "Peer Instance" as Peer
-
+activate Admin
 Admin -> Controller : GET /patients/{id}
 activate Controller
 Controller -> LocalCache : findById(id)

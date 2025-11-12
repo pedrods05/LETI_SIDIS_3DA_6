@@ -12,6 +12,7 @@ participant "AppointmentService (Physicians)" as Service
 participant "AppointmentRepository (Physicians)" as Repo
 participant "Appointment Records API" as Records
 
+activate Client
 autonumber
 Client -> Controller : PUT /appointments/{id}
 activate Controller
@@ -31,8 +32,10 @@ alt Records accepted
   Controller --> Client : 200 OK { updated }
   deactivate Controller
 else Records says Not Found (404)
+  activate Records
   Records --> Service : 404 Not Found
   deactivate Records
+  activate Service
   ' Fallback: local-only update (seeded future)
   Service -> Repo : findById(id)
   activate Repo
@@ -45,6 +48,7 @@ else Records says Not Found (404)
     deactivate Repo
     Service --> Controller : 200 OK { updated (local) }
     deactivate Service
+    activate Controller
     Controller --> Client : 200 OK { updated (local) }
     deactivate Controller
   else Local not found
@@ -52,14 +56,18 @@ else Records says Not Found (404)
     deactivate Repo
     Service --> Controller : 404 Not Found
     deactivate Service
+    activate Controller
     Controller --> Client : 404 Not Found
     deactivate Controller
+    activate Records
   end
 else Records error (5xx/timeout)
   Records --> Service : error
   deactivate Records
+  activate Service
   Service --> Controller : 502 Bad Gateway
   deactivate Service
+  activate Controller
   Controller --> Client : 502 Bad Gateway
   deactivate Controller
 end

@@ -14,6 +14,7 @@ participant "PatientController (inst B - peer)" as PC_B
 participant "PatientService (inst B)" as PS_B
 participant "PatientRepository (inst B)" as PREPO_B
 
+activate C
 autonumber
 C -> PC_A : GET /patients/{id}
 activate PC_A
@@ -35,6 +36,7 @@ else Not found in inst A
   ' Try peers sequentially
   loop for each peer
     PC_A -> PC_B : HTTP GET /patients/{id}\n(forward Authorization)
+    activate PC_A
     activate PC_B
     PC_B -> PS_B : getPatientDetails(id)
     activate PS_B
@@ -54,8 +56,10 @@ else Not found in inst A
       ' close repo/service; continue to next peer
       deactivate PREPO_B
       deactivate PS_B
+      activate PC_B
       PC_B --> PC_A : 404 Not Found
       deactivate PC_B
+      activate PC_A
     end
   end
   ' No peer returned a hit
