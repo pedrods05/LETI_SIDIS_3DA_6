@@ -40,8 +40,10 @@ public class AuthApi {
     private final UserService userService;
     private final RestTemplate restTemplate;            // injeta via @Bean
 
+    // pode ir para application.properties; mantido simples aqui
     private final List<String> peers = Arrays.asList("http://localhost:8089");
 
+    // Minimal error payload for 4xx responses
     @Schema(name = "ApiError", description = "Standard error response")
     public static class ApiError {
         @Schema(example = "Invalid username or password")
@@ -79,6 +81,7 @@ public class AuthApi {
                     .body(LoginResponse.builder().token(token).roles(roles).build());
 
         } catch (Exception e) {
+            // Fail fast on invalid local credentials to avoid long waits perceived as "loading forever".
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Invalid username or password"));
         }
     }
