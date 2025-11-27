@@ -47,4 +47,12 @@ mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
 mvnw.cmd -q test
 mvnw.cmd -q -DskipTests package
 ```
+## CQRS
 
+- Na nossa implementação Java com Spring Boot, os conceitos de CQRS foram mapeados da seguinte forma:
+
+- Os Commands (ex: RegisterPatient) são representados pelos métodos transacionais no PatientRegistrationService, que atuam sobre o Modelo de Escrita (JPA).
+
+- As Queries (ex: GetPatientById) são representadas pelos métodos de leitura no PatientQueryService, que consultam o Modelo de Leitura (MongoDB).
+
+- Os DTOs de entrada (PatientRegistrationDTO) funcionam efetivamente como os objetos de comando.
