@@ -24,6 +24,24 @@ mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
 - PUT  /appointments/{id}/cancel
 - GET  /appointments/upcoming
 
+## CQRS
+
+Na nossa implementação Java com Spring Boot, os conceitos de CQRS foram mapeados da seguinte forma:
+
+- **Os Commands** (ex: `registerPhysician`, `createAppointment`, `updateAppointment`, `cancelAppointment`) são representados pelos métodos transacionais nos serviços `PhysicianCommandService` e `AppointmentCommandService`, que atuam sobre o **Modelo de Escrita (JPA/H2)**.
+
+- **As Queries** (ex: `getPhysicianById`, `getAllAppointments`, `getAppointmentById`, `listUpcomingAppointments`) são representadas pelos métodos de leitura nos serviços `PhysicianQueryService` e `AppointmentQueryService`, que consultam o **Modelo de Leitura (MongoDB)**.
+
+- **Os DTOs de entrada** (`RegisterPhysicianRequest`, `ScheduleAppointmentRequest`, `UpdateAppointmentRequest`) funcionam efetivamente como os objetos de comando.
+
+- **Eventos** são publicados via RabbitMQ após cada operação de escrita bem-sucedida:
+  - `PhysicianRegisteredEvent` → atualiza `PhysicianSummary` no MongoDB
+  - `AppointmentCreatedEvent` → atualiza `AppointmentSummary` no MongoDB
+  - `AppointmentUpdatedEvent` → atualiza `AppointmentSummary` no MongoDB
+  - `AppointmentCanceledEvent` → atualiza `AppointmentSummary` no MongoDB
+
+- **Consistência Eventual**: O modelo de leitura (MongoDB) é atualizado de forma assíncrona através de event handlers que consomem eventos do RabbitMQ. Em caso de dados incompletos no modelo de leitura, há um mecanismo de fallback que consulta o modelo de escrita (JPA/H2).
+
 ## Colaboração entre serviços (HTTP/REST)
 - Patients: GET http://localhost:{8082|8088}/patients/{id}
 - Appointment Records: GET http://localhost:{8083|8090}/api/appointment-records/{id}
