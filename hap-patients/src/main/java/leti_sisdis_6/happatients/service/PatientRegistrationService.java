@@ -137,12 +137,29 @@ public class PatientRegistrationService {
     }
     private void publishPatientRegisteredEvent(Patient patient) {
         try {
+            PatientRegisteredEvent.AddressEventData addressData = new PatientRegisteredEvent.AddressEventData(
+                    patient.getAddress().getStreet(),
+                    patient.getAddress().getCity(),
+                    patient.getAddress().getPostalCode(),
+                    patient.getAddress().getCountry()
+            );
+
+            PatientRegisteredEvent.InsuranceEventData insuranceData = new PatientRegisteredEvent.InsuranceEventData(
+                    patient.getInsuranceInfo().getPolicyNumber(),
+                    patient.getInsuranceInfo().getProvider(),
+                    patient.getInsuranceInfo().getCoverageType()
+            );
             PatientRegisteredEvent event = new PatientRegisteredEvent(
                     patient.getPatientId(),
                     patient.getFullName(),
-                    patient.getEmail()
+                    patient.getEmail(),
+                    patient.getPhoneNumber(),
+                    patient.getBirthDate(),
+                    patient.isDataConsentGiven(),
+                    patient.getDataConsentDate(),
+                    addressData,
+                    insuranceData
             );
-
             rabbitTemplate.convertAndSend(exchangeName, "patient.registered", event);
 
             System.out.println("⚡ Evento PatientRegisteredEvent enviado para o RabbitMQ: " + patient.getPatientId());

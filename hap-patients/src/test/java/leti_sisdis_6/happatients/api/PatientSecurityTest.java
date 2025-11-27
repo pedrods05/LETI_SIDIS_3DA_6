@@ -4,6 +4,7 @@ import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
 import leti_sisdis_6.happatients.dto.PatientProfileDTO;
 import leti_sisdis_6.happatients.http.ResilientRestTemplate;
 import leti_sisdis_6.happatients.repository.PatientLocalRepository;
+import leti_sisdis_6.happatients.service.PatientQueryService;
 import leti_sisdis_6.happatients.service.PatientService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,7 @@ class PatientSecurityTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private PatientService patientService;
     @Autowired private PatientLocalRepository localRepository;
+    @Autowired private PatientQueryService patientQueryService; // <--- ADICIONADO
 
     @Test
     void listPatients_requiresAdmin() throws Exception {
@@ -82,16 +84,18 @@ class PatientSecurityTest {
                 .andExpect(status().isUnauthorized());
 
         PatientProfileDTO profile = PatientProfileDTO.builder()
-                .patient(PatientDetailsDTO.builder().patientId(id).fullName("Alice").email("a@a").build())
-                .appointmentHistory(List.of())
+                .patientId(id)
+                .fullName("Alice")
+                .email("a@a")
                 .build();
+
         when(patientService.getPatientProfile(any(), any())).thenReturn(profile);
 
         mockMvc.perform(get("/patients/{id}/profile", id)
                         .with(SecurityMockMvcRequestPostProcessors.jwt()
                                 .authorities(new SimpleGrantedAuthority("PHYSICIAN"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.patient.patientId").value(id));
+                .andExpect(jsonPath("$.patientId").value(id)); // CORREÇÃO: Validar campo na raiz
     }
 
     @Test

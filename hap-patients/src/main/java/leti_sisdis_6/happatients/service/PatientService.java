@@ -1,10 +1,8 @@
 package leti_sisdis_6.happatients.service;
 
 import leti_sisdis_6.happatients.exceptions.EmailAlreadyExistsException;
-import leti_sisdis_6.happatients.model.Address;
-import leti_sisdis_6.happatients.model.InsuranceInfo;
-import leti_sisdis_6.happatients.model.Patient;
-import leti_sisdis_6.happatients.model.Photo;
+import leti_sisdis_6.happatients.exceptions.NotFoundException;
+import leti_sisdis_6.happatients.model.*;
 import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
 import leti_sisdis_6.happatients.dto.PatientRegistrationDTO;
 import leti_sisdis_6.happatients.dto.ContactDetailsUpdateDTO;
@@ -21,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -105,12 +105,42 @@ public class PatientService {
     }
 
     @Transactional(readOnly = true)
-    public PatientProfileDTO getPatientProfile(String patientId, String bearerToken) {
-        PatientDetailsDTO details = getPatientDetails(patientId);
-        List<JsonNode> history = getPatientAppointmentHistory(patientId, bearerToken);
-        return PatientProfileDTO.builder().patient(details).appointmentHistory(history).build();
-    }
+    public PatientProfileDTO getPatientProfile(String id, String authorizationHeader) {
+        Patient patient = patientRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Patient not found with ID: " + id));
 
+
+        return PatientProfileDTO.builder()
+                .patientId(patient.getPatientId())
+                .fullName(patient.getFullName())
+                .email(patient.getEmail())
+                .phoneNumber(patient.getPhoneNumber())
+                .birthDate(patient.getBirthDate())
+                .dataConsentGiven(patient.isDataConsentGiven())
+                .dataConsentDate(patient.getDataConsentDate())
+
+                .address(PatientProfileDTO.AddressDTO.builder()
+                        .street(patient.getAddress().getStreet())
+                        .city(patient.getAddress().getCity())
+                        .postalCode(patient.getAddress().getPostalCode())
+                        .country(patient.getAddress().getCountry())
+                        .build())
+
+                .insuranceInfo(PatientProfileDTO.InsuranceInfoDTO.builder()
+                        .policyNumber(patient.getInsuranceInfo().getPolicyNumber())
+                        .provider(patient.getInsuranceInfo().getProvider())
+                        .coverageType(patient.getInsuranceInfo().getCoverageType())
+                        .build())
+
+                .healthConcerns(patient.getHealthConcerns() != null
+                        ? patient.getHealthConcerns().stream()
+                        .map(HealthConcern::getDescription)
+                        .toList()
+                        : Collections.emptyList())
+
+                .build();
+
+    }
     @Transactional(readOnly = true)
     public List<PatientDetailsDTO> listAllPatients() {
         return patientRepository.findAll().stream().map(patientMapper::toDetailsDTO).toList();

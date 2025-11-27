@@ -21,16 +21,36 @@ public class PatientEventHandler {
             key = "patient.registered"
     ))
     public void handlePatientRegistered(PatientRegisteredEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento: " + event.getName());
+        System.out.println("📥 [Query Side] Recebi evento: " + event.getFullName());
+
+        PatientSummary.AddressSummary addr = new PatientSummary.AddressSummary(
+                event.getAddress().getStreet(),
+                event.getAddress().getCity(),
+                event.getAddress().getPostalCode(),
+                event.getAddress().getCountry()
+        );
+
+        PatientSummary.InsuranceSummary ins = new PatientSummary.InsuranceSummary(
+                event.getInsuranceInfo().getPolicyNumber(),
+                event.getInsuranceInfo().getProvider(),
+                event.getInsuranceInfo().getCoverageType()
+        );
 
         PatientSummary summary = new PatientSummary(
                 event.getPatientId(),
-                event.getName(),
-                event.getEmail()
+                event.getFullName(),
+                event.getEmail(),
+                event.getPhoneNumber(),
+                event.getBirthDate(),
+                event.getDataConsentGiven(),
+                event.getDataConsentDate(),
+                addr,
+                ins,
+                java.util.Collections.emptyList()
         );
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Guardado no MongoDB: " + summary.getId());
+        System.out.println("✅ [Query Side] Guardado no MongoDB: " + summary.getPatientId());
     }
 }
