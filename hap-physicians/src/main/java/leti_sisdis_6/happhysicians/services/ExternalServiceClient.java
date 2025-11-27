@@ -73,6 +73,20 @@ public class ExternalServiceClient {
     // Patient Service calls
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     public Map<String, Object> getPatientById(String patientId) {
+        // Try internal endpoint first (no auth required)
+        String internalUrl = patientsServiceUrl + "/internal/patients/" + patientId;
+        try {
+            ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
+                    internalUrl, HttpMethod.GET, new HttpEntity<>(buildForwardHeaders()),
+                    new ParameterizedTypeReference<Map<String, Object>>(){});
+            if (resp.getBody() != null) {
+                return resp.getBody();
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Internal endpoint failed, trying public endpoint: " + e.getMessage());
+        }
+        
+        // Fallback to public endpoint
         String url = patientsServiceUrl + "/patients/" + patientId;
         try {
             ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(

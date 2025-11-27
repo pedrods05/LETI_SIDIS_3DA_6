@@ -6,6 +6,8 @@ import leti_sisdis_6.happhysicians.dto.request.RegisterPhysicianRequest;
 import leti_sisdis_6.happhysicians.dto.response.PhysicianIdResponse;
 import leti_sisdis_6.happhysicians.services.PhysicianService;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
+import leti_sisdis_6.happhysicians.command.PhysicianCommandService;
+import leti_sisdis_6.happhysicians.query.PhysicianQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,27 +36,35 @@ public class PhysicianController {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private PhysicianCommandService physicianCommandService;
+
+    @Autowired
+    private PhysicianQueryService physicianQueryService;
+
     @GetMapping("/{physicianId}")
     @Operation(summary = "Get physician by ID")
     public ResponseEntity<Physician> getPhysician(@PathVariable String physicianId) {
-        Optional<Physician> physician = physicianRepository.findById(physicianId);
-        if (physician.isPresent()) {
-            return ResponseEntity.ok(physician.get());
-        }
-        
-        List<String> peers = externalServiceClient.getPeerUrls();
-        for (String peer : peers) {
-            try {
-                Physician remotePhysician = restTemplate.getForObject(
-                    peer + "/internal/physicians/" + physicianId, Physician.class);
-                if (remotePhysician != null) {
-                    return ResponseEntity.ok(remotePhysician);
+        try {
+            // Use Query Service (reads from MongoDB read model)
+            Physician physician = physicianQueryService.getPhysicianById(physicianId);
+            return ResponseEntity.ok(physician);
+        } catch (Exception e) {
+            // Fallback to peer forwarding if not found in read model
+            List<String> peers = externalServiceClient.getPeerUrls();
+            for (String peer : peers) {
+                try {
+                    Physician remotePhysician = restTemplate.getForObject(
+                        peer + "/internal/physicians/" + physicianId, Physician.class);
+                    if (remotePhysician != null) {
+                        return ResponseEntity.ok(remotePhysician);
+                    }
+                } catch (Exception ex) {
+                    System.out.println("Failed to query peer " + peer + ": " + ex.getMessage());
                 }
-            } catch (Exception e) {
-                System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
             }
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
     }
 
 
@@ -62,7 +72,8 @@ public class PhysicianController {
     @Operation(summary = "Register a new physician")
     public ResponseEntity<?> registerPhysician(@RequestBody RegisterPhysicianRequest request) {
         try {
-            PhysicianIdResponse response = physicianService.register(request);
+            // Use Command Service (writes to write model and publishes event)
+            PhysicianIdResponse response = physicianCommandService.registerPhysician(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

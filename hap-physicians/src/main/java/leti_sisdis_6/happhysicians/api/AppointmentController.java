@@ -7,6 +7,8 @@ import leti_sisdis_6.happhysicians.dto.output.AppointmentListDTO;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
+import leti_sisdis_6.happhysicians.command.AppointmentCommandService;
+import leti_sisdis_6.happhysicians.query.AppointmentQueryService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.client.RestTemplate;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,6 +35,12 @@ public class AppointmentController {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private AppointmentCommandService appointmentCommandService;
+
+    @Autowired
+    private AppointmentQueryService appointmentQueryService;
+
     @GetMapping("/{appointmentId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'PATIENT')")
     @Operation(
@@ -48,11 +56,13 @@ public class AppointmentController {
 
     )
     public ResponseEntity<Appointment> getAppointment(@PathVariable String appointmentId) {
-        Optional<Appointment> appointment = appointmentService.getAppointmentById(appointmentId);
+        // Use Query Service (reads from MongoDB read model with fallback to write model)
+        Optional<Appointment> appointment = appointmentQueryService.getAppointmentById(appointmentId);
         if (appointment.isPresent()) {
             return ResponseEntity.ok(appointment.get());
         }
 
+        // Fallback to peer forwarding if not found
         System.out.println("Appointment not found locally, querying peers");
         List<String> peers = externalServiceClient.getPeerUrls();
         for (String peer : peers) {
@@ -76,7 +86,8 @@ public class AppointmentController {
     @Operation(summary = "Create a new appointment")
     public ResponseEntity<?> createAppointment(@RequestBody leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest appointmentDTO) {
         try {
-            Appointment createdAppointment = appointmentService.createAppointment(appointmentDTO);
+            // Use Command Service (writes to write model and publishes event)
+            Appointment createdAppointment = appointmentCommandService.createAppointment(appointmentDTO);
             return ResponseEntity.ok(createdAppointment);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -86,7 +97,8 @@ public class AppointmentController {
     @GetMapping
     @Operation(summary = "Get all appointments")
     public List<Appointment> getAllAppointments() {
-        return appointmentService.getAllAppointments();
+        // Use Query Service (reads from MongoDB read model)
+        return appointmentQueryService.getAllAppointments();
     }
 
     @GetMapping("/physician/{physicianId}")
@@ -105,7 +117,8 @@ public class AppointmentController {
     @Operation(summary = "Update appointment by ID")
     public ResponseEntity<?> updateAppointment(@PathVariable String appointmentId, @RequestBody leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest updateDTO) {
         try {
-            Appointment updatedAppointment = appointmentService.updateAppointment(appointmentId, updateDTO);
+            // Use Command Service (writes to write model and publishes event)
+            Appointment updatedAppointment = appointmentCommandService.updateAppointment(appointmentId, updateDTO);
             if (updatedAppointment != null) {
                 return ResponseEntity.ok(updatedAppointment);
             } else {
@@ -161,14 +174,16 @@ public class AppointmentController {
             }
     )
     public ResponseEntity<List<AppointmentListDTO>> listUpcomingAppointments() {
-        List<AppointmentListDTO> appointments = appointmentService.listUpcomingAppointments();
+        // Use Query Service (reads from MongoDB read model)
+        List<AppointmentListDTO> appointments = appointmentQueryService.listUpcomingAppointments();
         return ResponseEntity.ok(appointments);
     }
 
     @PutMapping("/{appointmentId}/cancel")
     @Operation(summary = "Cancel appointment by ID")
     public ResponseEntity<?> cancelAppointment(@PathVariable String appointmentId) {
-        Appointment updated = appointmentService.cancelAppointment(appointmentId);
+        // Use Command Service (writes to write model and publishes event)
+        Appointment updated = appointmentCommandService.cancelAppointment(appointmentId);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         }

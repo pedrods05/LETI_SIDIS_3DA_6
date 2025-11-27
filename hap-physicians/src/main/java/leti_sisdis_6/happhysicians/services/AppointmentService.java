@@ -83,11 +83,17 @@ public class AppointmentService {
 
             try {
                 Map<String, Object> patientData = externalServiceClient.getPatientById(dto.getPatientId());
-                appointmentBuilder.patientName((String) patientData.get("fullName"));
-                appointmentBuilder.patientEmail((String) patientData.get("email"));
-                appointmentBuilder.patientPhone((String) patientData.get("phoneNumber"));
+                if (patientData != null) {
+                    appointmentBuilder.patientName((String) patientData.get("fullName"));
+                    appointmentBuilder.patientEmail((String) patientData.get("email"));
+                    appointmentBuilder.patientPhone((String) patientData.get("phoneNumber"));
+                    System.out.println("✅ Patient data fetched for appointment: " + dto.getAppointmentId());
+                } else {
+                    System.out.println("⚠️ Warning: Patient data is null for ID " + dto.getPatientId());
+                }
             } catch (Exception e) {
-                System.out.println("Warning: Could not fetch patient data for ID " + dto.getPatientId() + ": " + e.getMessage());
+                System.err.println("⚠️ Warning: Could not fetch patient data for ID " + dto.getPatientId() + ": " + e.getMessage());
+                e.printStackTrace();
             }
 
             return appointmentRepository.save(appointmentBuilder.build());
