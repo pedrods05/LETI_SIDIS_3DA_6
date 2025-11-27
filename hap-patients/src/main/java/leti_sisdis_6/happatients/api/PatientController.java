@@ -3,6 +3,7 @@ package leti_sisdis_6.happatients.api;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
 import leti_sisdis_6.happatients.dto.ContactDetailsUpdateDTO;
+import leti_sisdis_6.happatients.service.PatientQueryService;
 import leti_sisdis_6.happatients.service.PatientService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,6 +37,7 @@ public class PatientController {
     private final PatientLocalRepository localRepo;
 
     private final ResilientRestTemplate resilientRestTemplate;
+    private final PatientQueryService patientQueryService;
 
     private List<String> peers = new ArrayList<>(Arrays.asList(
             "http://localhost:8082",
@@ -95,35 +97,9 @@ public class PatientController {
         }
     )
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<?> getPatientDetails(@PathVariable String id) {
-        PatientDetailsDTO cached = localRepo.findById(id).orElse(null);
-        if (cached != null) {
-            return ResponseEntity.ok(cached);
-        }
-        try {
-            PatientDetailsDTO patient = patientService.getPatientDetails(id);
-            localRepo.save(patient);
-            return ResponseEntity.ok(patient);
-        } catch (EntityNotFoundException e) {
-            System.out.println("Patient not found locally, querying peers: " + peers);
-            for (String peer : peers) {
-                String url = (peer.endsWith("/")) ? (peer + "internal/patients/" + id) : (peer + "/internal/patients/" + id);
-                System.out.println("Querying peer: " + url);
-                try {
-                    PatientDetailsDTO remote = resilientRestTemplate.getForObjectWithFallback(url, PatientDetailsDTO.class);
-                    if (remote != null) {
-                        System.out.println("Found patient in peer: " + url);
-                        localRepo.save(remote);
-                        return ResponseEntity.ok(remote);
-                    }
-                } catch (Exception ex) {
-                    System.out.println("Failed to query peer " + url + ": " + ex.getMessage());
-                }
-            }
-            System.out.println("Patient not found in any peer");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Patient not found"));
-        }
+    public ResponseEntity<PatientProfileDTO> getPatientDetails(@PathVariable String id) {
+        PatientProfileDTO patientProfile = patientQueryService.getPatientProfile(id);
+        return ResponseEntity.ok(patientProfile);
     }
 
     @GetMapping("/search")

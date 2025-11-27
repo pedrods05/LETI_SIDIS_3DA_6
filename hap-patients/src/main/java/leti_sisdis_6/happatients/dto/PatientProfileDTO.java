@@ -14,5 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 public class PatientProfileDTO {
     private PatientDetailsDTO patient;
+    private String patientId;
+    private String fullName;
+    private String email;
     private List<JsonNode> appointmentHistory;
 }

@@ -8,6 +8,8 @@ import leti_sisdis_6.happatients.repository.PatientRepository;
 import leti_sisdis_6.happatients.repository.PhotoRepository;
 import leti_sisdis_6.happatients.repository.AddressRepository;
 import leti_sisdis_6.happatients.repository.InsuranceInfoRepository;
+import leti_sisdis_6.happatients.event.PatientRegisteredEvent;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,12 +32,17 @@ public class PatientRegistrationService {
     private final AddressRepository addressRepository;
     private final InsuranceInfoRepository insuranceInfoRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RabbitTemplate rabbitTemplate;
+
 
     @Autowired(required = false)
     private RestTemplate restTemplate;
 
     @Value("${hap.auth.base-url:http://localhost:8084}")
     private String authServiceBaseUrl;
+
+    @Value("${hap.rabbitmq.exchange:hap-exchange}")
+    private String exchangeName;
 
     private RestTemplate getRestTemplate() {
         if (this.restTemplate == null) {
@@ -64,11 +71,14 @@ public class PatientRegistrationService {
         req.put("username", dto.getEmail());
         req.put("password", dto.getPassword());
         req.put("role", "PATIENT");
+
         getRestTemplate().postForEntity(
             authServiceBaseUrl + "/api/public/register",
             req,
             Object.class
         );
+
+
 
         Photo photo = Photo.builder()
                 .id(generatePhotoId())
@@ -122,9 +132,24 @@ public class PatientRegistrationService {
                 .build();
 
         patient = patientRepository.save(patient);
+        publishPatientRegisteredEvent(patient);
         return patient.getPatientId();
     }
+    private void publishPatientRegisteredEvent(Patient patient) {
+        try {
+            PatientRegisteredEvent event = new PatientRegisteredEvent(
+                    patient.getPatientId(),
+                    patient.getFullName(),
+                    patient.getEmail()
+            );
 
+            rabbitTemplate.convertAndSend(exchangeName, "patient.registered", event);
+
+            System.out.println("⚡ Evento PatientRegisteredEvent enviado para o RabbitMQ: " + patient.getPatientId());
+        } catch (Exception e) {
+            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+        }
+    }
     private void validateHealthConcerns(List<HealthConcernDTO> healthConcerns) {
         for (HealthConcernDTO concern : healthConcerns) {
             if (!concern.getOngoing() && concern.getResolvedDate() == null) {
