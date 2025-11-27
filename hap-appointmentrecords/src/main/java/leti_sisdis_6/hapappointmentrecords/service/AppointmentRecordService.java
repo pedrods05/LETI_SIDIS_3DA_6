@@ -16,8 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -36,7 +36,17 @@ public class AppointmentRecordService {
 
         // 1) Detalhes da consulta (serviço externo hap-physicians)
         Map<String, Object> appointmentData = externalServiceClient.getAppointmentById(appointmentId);
+
         String appointmentPhysicianId = (String) appointmentData.get("physicianId");
+        if (appointmentPhysicianId == null) {
+            Object physObj = appointmentData.get("physician");
+            if (physObj instanceof Map<?,?> physMap) {
+                Object nestedId = physMap.get("physicianId");
+                if (nestedId instanceof String pid && !pid.isBlank()) {
+                    appointmentPhysicianId = pid;
+                }
+            }
+        }
         if (appointmentPhysicianId == null) {
             throw new NotFoundException("Appointment data is incomplete");
         }
@@ -46,7 +56,7 @@ public class AppointmentRecordService {
             throw new UnauthorizedException("You are not authorized to record details for this appointment");
         }
 
-        // 3) Evitar duplicado (agora via propriedade aninhada)
+        // 3) Evitar duplicado (via propriedade aninhada)
         if (recordRepository.findByAppointment_AppointmentId(appointmentId).isPresent()) {
             throw new IllegalStateException("Record already exists for appointment " + appointmentId);
         }
@@ -60,7 +70,7 @@ public class AppointmentRecordService {
 
         AppointmentRecord record = AppointmentRecord.builder()
                 .recordId(recordId)
-                .appointment(appointment) // <- relação 1–1
+                .appointment(appointment) // relação 1–1
                 .diagnosis(request.getDiagnosis())
                 .treatmentRecommendations(request.getTreatmentRecommendations())
                 .prescriptions(request.getPrescriptions())

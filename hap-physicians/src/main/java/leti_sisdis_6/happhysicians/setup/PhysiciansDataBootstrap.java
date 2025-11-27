@@ -18,7 +18,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@Order(2) // <- corre DEPOIS do MedicalDataBootstrap @Order(1)
+@Order(2)
 public class PhysiciansDataBootstrap implements CommandLineRunner {
 
     private final PhysicianRepository physicianRepository;
@@ -47,14 +47,14 @@ public class PhysiciansDataBootstrap implements CommandLineRunner {
                         .physicianId("PHY01")
                         .fullName("Dr. João Silva")
                         .licenseNumber("12345")
-                        .department(dep01)               // <- OBRIGATÓRIO
-                        .specialty(spc01)               // <- OBRIGATÓRIO
+                        .department(dep01)
+                        .specialty(spc01)
                         .emails(List.of("joao.silva@hospital.com"))
                         .phoneNumbers(List.of("+351912345678"))
                         .workingHourStart(LocalTime.of(9,0))
                         .workingHourEnd(LocalTime.of(17,0))
                         .username("joao.silva@hospital.com")
-                        .password("{noop}Password123!") // ou encoder real
+                        .password("{noop}Password123!")
                         .build(),
 
                 Physician.builder()
@@ -71,7 +71,6 @@ public class PhysiciansDataBootstrap implements CommandLineRunner {
                         .password("{noop}Password123!")
                         .build()
 
-                // …adiciona mais se precisares, sempre com department & specialty
         );
 
         physicianRepository.saveAll(physicians);

@@ -1,0 +1,64 @@
+@startuml
+' C4+1 — Physician peer forwarding SD (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Physician Peer Forwarding (Physicians)
+
+actor "Client" as C
+participant "PhysicianController (inst A)" as PC_A
+participant "PhysicianService (inst A)" as PS_A
+participant "PhysicianRepository (inst A)" as PREPO_A
+participant "PhysicianController (inst B - peer)" as PC_B
+participant "PhysicianService (inst B)" as PS_B
+participant "PhysicianRepository (inst B)" as PREPO_B
+
+autonumber
+C -> PC_A : GET /physicians/{id}
+activate PC_A
+PC_A -> PS_A : getPhysicianDetails(id)
+activate PS_A
+PS_A -> PREPO_A : findById(id)
+activate PREPO_A
+alt Found in inst A
+  PREPO_A --> PS_A : Physician entity
+  deactivate PREPO_A
+  PS_A --> PC_A : PhysicianDTO
+  deactivate PS_A
+  PC_A --> C : 200 OK + PhysicianDTO
+  deactivate PC_A
+else Not found in inst A
+  deactivate PREPO_A
+  deactivate PS_A
+  ' Try peers sequentially
+  loop for each peer
+    PC_A -> PC_B : HTTP GET /internal/physicians/{id}\n(forward Authorization)
+    activate PC_B
+    PC_B -> PS_B : getPhysicianDetails(id)
+    activate PS_B
+    PS_B -> PREPO_B : findById(id)
+    activate PREPO_B
+    alt Found in inst B
+      PREPO_B --> PS_B : Physician entity
+      deactivate PREPO_B
+      PS_B --> PC_B : PhysicianDTO
+      deactivate PS_B
+      PC_B --> PC_A : 200 OK + PhysicianDTO
+      deactivate PC_B
+      PC_A --> C : 200 OK + PhysicianDTO
+      deactivate PC_A
+      break
+    else Not found in inst B
+      deactivate PREPO_B
+      deactivate PS_B
+      PC_B --> PC_A : 404 Not Found
+      deactivate PC_B
+    end
+  end
+  ' No peer returned a hit
+  PC_A --> C : 404 Not Found
+  deactivate PC_A
+end
+
+@enduml

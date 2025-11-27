@@ -25,8 +25,7 @@ public class AuthService {
     private final JwtEncoder jwtEncoder;
     private final RestTemplate restTemplate;
     
-    // Hardcoded peer list - simple approach
-    // Each instance knows only the other peers
+
     private final List<String> peers = Arrays.asList(
         "http://localhost:8089"  // instance2
     );
@@ -46,13 +45,11 @@ public class AuthService {
 
     public Optional<User> authenticateWithPeers(String username, String password) {
         try {
-            // Try local authentication first
             Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password)
             );
             return Optional.of((User) auth.getPrincipal());
         } catch (Exception e) {
-            // If local fails, try peers
             return authenticateInPeers(username, password);
         }
     }
@@ -68,7 +65,6 @@ public class AuthService {
                     return Optional.of(user);
                 }
             } catch (Exception e) {
-                // Log and continue to next peer
                 System.out.println("Failed to authenticate with peer " + peer + ": " + e.getMessage());
             }
         }
@@ -80,7 +76,10 @@ public class AuthService {
         long expiry = 3600L;
 
         String scope = authentication.getAuthorities().stream()
-            .map(authority -> authority.getAuthority())
+            .map(authority -> {
+                String auth = authority.getAuthority();
+                return auth.startsWith("ROLE_") ? auth.substring(5) : auth;
+            })
             .collect(java.util.stream.Collectors.joining(" "));
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -102,8 +101,12 @@ public class AuthService {
         Instant now = Instant.now();
         long expiry = 3600L;
 
+        // Remove ROLE_ prefix from authorities to match the expected format
         String scope = user.getAuthorities().stream()
-            .map(authority -> authority.getAuthority())
+            .map(authority -> {
+                String auth = authority.getAuthority();
+                return auth.startsWith("ROLE_") ? auth.substring(5) : auth;
+            })
             .collect(java.util.stream.Collectors.joining(" "));
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -121,9 +124,7 @@ public class AuthService {
         ).getTokenValue();
     }
     
-    /**
-     * Simple authentication request DTO for peer communication
-     */
+
     public static class AuthRequest {
         private String username;
         private String password;

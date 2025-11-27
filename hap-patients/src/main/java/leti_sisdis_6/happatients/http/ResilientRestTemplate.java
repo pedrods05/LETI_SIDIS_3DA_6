@@ -21,12 +21,8 @@ public class ResilientRestTemplate {
 
     private static final Duration COOLDOWN = Duration.ofSeconds(30);
 
-    public ResilientRestTemplate() {
-        this.restTemplate = new RestTemplate();
-    }
-
     public ResilientRestTemplate(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate != null ? restTemplate : new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     public <T> T getForObjectWithFallback(String url, Class<T> responseType) {

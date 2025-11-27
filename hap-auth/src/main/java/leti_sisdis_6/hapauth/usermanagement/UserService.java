@@ -21,7 +21,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
 
-    // Pode externalizar para properties, mas mantemos simples aqui
     private final List<String> peers = Arrays.asList(
             "http://localhost:8089" // instance2
     );

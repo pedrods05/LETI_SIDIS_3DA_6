@@ -2,7 +2,7 @@ package leti_sisdis_6.hapauth.setup;
 
 import leti_sisdis_6.hapauth.usermanagement.model.Role;
 import leti_sisdis_6.hapauth.usermanagement.model.User;
-import leti_sisdis_6.hapauth.usermanagement.repository.UserRepository;
+import leti_sisdis_6.hapauth.usermanagement.repository.UserInMemoryRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AdminBootstrap implements CommandLineRunner {
 
-    private final UserRepository userRepository;
+    private final UserInMemoryRepository userInMemoryRepository;
     private final PasswordEncoder passwordEncoder;
     private int adminCounter = 1;
 
@@ -26,13 +26,13 @@ public class AdminBootstrap implements CommandLineRunner {
     }
 
     private void createAdminIfNotExists(String email, String rawPassword) {
-        userRepository.findByUsername(email).orElseGet(() -> {
+        userInMemoryRepository.findByUsername(email).orElseGet(() -> {
             User user = new User();
             user.setId(generateNextAdminId());
             user.setUsername(email);
             user.setPassword(passwordEncoder.encode(rawPassword));
             user.setRole(Role.ADMIN);
-            return userRepository.save(user);
+            return userInMemoryRepository.save(user);
         });
     }
 

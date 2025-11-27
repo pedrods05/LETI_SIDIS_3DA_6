@@ -7,6 +7,7 @@ import leti_sisdis_6.hapappointmentrecords.dto.local.UserDTO;
 import leti_sisdis_6.hapappointmentrecords.service.AppointmentRecordService;
 import leti_sisdis_6.hapappointmentrecords.exceptions.NotFoundException;
 import leti_sisdis_6.hapappointmentrecords.exceptions.UnauthorizedException;
+import leti_sisdis_6.hapappointmentrecords.http.ExternalServiceClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,6 +18,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.web.client.HttpClientErrorException;
+
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +34,8 @@ import java.util.Map;
 @Tag(name = "Appointment Records", description = "Appointment record management endpoints")
 public class AppointmentRecordController {
     private final AppointmentRecordService recordService;
+    private final ExternalServiceClient externalServiceClient;
+    private final RestTemplate restTemplate;
 
     @PostMapping("/{appointmentId}/record")
     @PreAuthorize("hasAuthority('PHYSICIAN')")
@@ -68,7 +78,8 @@ public class AppointmentRecordController {
     public ResponseEntity<?> viewAppointmentRecord(
             @PathVariable String recordId,
             @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Role") String userRole) {
+            @RequestHeader("X-User-Role") String userRole,
+            HttpServletRequest request) {
         try {
             UserDTO currentUser = UserDTO.builder()
                     .id(userId)
@@ -77,6 +88,33 @@ public class AppointmentRecordController {
             AppointmentRecordViewDTO record = recordService.getAppointmentRecord(recordId, currentUser);
             return ResponseEntity.ok(record);
         } catch (NotFoundException e) {
+            // Prevent infinite loops: if this is already a peer-forwarded request, stop here
+            if (request.getHeader("X-Peer-Request") != null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            // Try peers via the SAME external endpoint, forwarding caller headers
+            HttpHeaders fwd = new HttpHeaders();
+            String auth = request.getHeader("Authorization");
+            if (auth != null && !auth.isBlank()) fwd.add("Authorization", auth);
+            fwd.add("X-User-Id", userId);
+            fwd.add("X-User-Role", userRole);
+            fwd.add("X-Peer-Request", "true");
+            HttpEntity<Void> entity = new HttpEntity<>(fwd);
+
+            for (String peer : externalServiceClient.getPeerUrls()) {
+                String url = peer + "/api/appointment-records/" + recordId;
+                try {
+                    var resp = restTemplate.exchange(url, HttpMethod.GET, entity, AppointmentRecordViewDTO.class);
+                    if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
+                        return ResponseEntity.ok(resp.getBody());
+                    }
+                } catch (HttpClientErrorException.NotFound ignored404) {
+                    // try next peer
+                } catch (Exception ignored) {
+                    // ignore and try next
+                }
+            }
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", e.getMessage()));
         } catch (UnauthorizedException e) {

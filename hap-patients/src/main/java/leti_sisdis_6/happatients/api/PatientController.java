@@ -33,13 +33,10 @@ import org.springframework.beans.factory.annotation.Value;
 public class PatientController {
     private final PatientService patientService;
 
-    // Local in-memory cache following the requested structure
     private final PatientLocalRepository localRepo;
 
-    // Fallback peers and resilient HTTP client
     private final ResilientRestTemplate resilientRestTemplate;
 
-    // Hardcoded patient peers; we'll remove self based on server.port, but allow property override
     private List<String> peers = new ArrayList<>(Arrays.asList(
             "http://localhost:8082",
             "http://localhost:8088"
@@ -59,6 +56,7 @@ public class PatientController {
         if (serverPort > 0) {
             peers.remove("http://localhost:" + serverPort);
         }
+        System.out.println("Patient peers initialized for port " + serverPort + ": " + peers);
     }
 
     private List<String> parsePeers(String prop) {
@@ -98,31 +96,31 @@ public class PatientController {
     )
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getPatientDetails(@PathVariable String id) {
-        // 1) Try local cache first
         PatientDetailsDTO cached = localRepo.findById(id).orElse(null);
         if (cached != null) {
             return ResponseEntity.ok(cached);
         }
-        // 2) Try local service (DB)
         try {
             PatientDetailsDTO patient = patientService.getPatientDetails(id);
-            // store in local cache for future quick hits
             localRepo.save(patient);
             return ResponseEntity.ok(patient);
         } catch (EntityNotFoundException e) {
-            // 3) Fallback to peers hitting INTERNAL endpoint (no auth required)
+            System.out.println("Patient not found locally, querying peers: " + peers);
             for (String peer : peers) {
                 String url = (peer.endsWith("/")) ? (peer + "internal/patients/" + id) : (peer + "/internal/patients/" + id);
+                System.out.println("Querying peer: " + url);
                 try {
                     PatientDetailsDTO remote = resilientRestTemplate.getForObjectWithFallback(url, PatientDetailsDTO.class);
                     if (remote != null) {
+                        System.out.println("Found patient in peer: " + url);
                         localRepo.save(remote);
                         return ResponseEntity.ok(remote);
                     }
-                } catch (Exception ignored) {
-                    // ignore and try next peer
+                } catch (Exception ex) {
+                    System.out.println("Failed to query peer " + url + ": " + ex.getMessage());
                 }
             }
+            System.out.println("Patient not found in any peer");
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Patient not found"));
         }
