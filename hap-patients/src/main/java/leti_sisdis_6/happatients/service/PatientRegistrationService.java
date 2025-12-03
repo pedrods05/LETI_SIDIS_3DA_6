@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PatientRegistrationService {
     private final PatientRepository patientRepository;
     private final PhotoRepository photoRepository;
@@ -53,11 +54,13 @@ public class PatientRegistrationService {
 
     @Transactional
     public String registerPatient(PatientRegistrationDTOV2 dto) {
+        log.info("Iniciando registo de novo paciente: {}", dto.getEmail());
         if (!dto.getDataConsentGiven()) {
             throw new IllegalArgumentException("Data consent is required");
         }
 
         if (patientRepository.existsByEmail(dto.getEmail())) {
+            log.warn("Tentativa de registo com email duplicado: {}", dto.getEmail());
             throw new EmailAlreadyExistsException("Email address '" + dto.getEmail() + "' is already registered. Please use a different email address or try to recover your account if you forgot your password.");
         }
 
@@ -66,7 +69,8 @@ public class PatientRegistrationService {
         }
 
         String patientId = generatePatientId();
-
+        try {
+            log.debug("A contactar Auth Service para criar credenciais...");
         Map<String, String> req = new HashMap<>();
         req.put("username", dto.getEmail());
         req.put("password", dto.getPassword());
@@ -77,6 +81,11 @@ public class PatientRegistrationService {
             req,
             Object.class
         );
+            log.debug("Credenciais criadas com sucesso no Auth Service.");
+        } catch (Exception e) {
+            log.error("Falha ao comunicar com Auth Service: {}", e.getMessage());
+            throw e; // Relança para abortar a transação
+        }
 
 
 
@@ -132,6 +141,7 @@ public class PatientRegistrationService {
                 .build();
 
         patient = patientRepository.save(patient);
+        log.info("Paciente persistido localmente (SQL). ID: {}", patient.getPatientId());
         publishPatientRegisteredEvent(patient);
         return patient.getPatientId();
     }
@@ -163,9 +173,10 @@ public class PatientRegistrationService {
             );
             rabbitTemplate.convertAndSend(exchangeName, "patient.registered", event);
 
-            System.out.println("⚡ Evento PatientRegisteredEvent enviado para o RabbitMQ: " + patient.getPatientId());
+            log.info("⚡ Evento PatientRegisteredEvent enviado para o RabbitMQ | Exchange: {} | PatientID: {}", exchangeName, patient.getPatientId());
+
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA CRÍTICA ao enviar evento RabbitMQ para paciente {}", patient.getPatientId(), e);
         }
     }
     private void validateHealthConcerns(List<HealthConcernDTO> healthConcerns) {

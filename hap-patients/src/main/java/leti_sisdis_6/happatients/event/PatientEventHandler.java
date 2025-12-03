@@ -8,9 +8,10 @@ import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-
+import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class PatientEventHandler {
 
     private final PatientQueryRepository queryRepository;
@@ -21,8 +22,9 @@ public class PatientEventHandler {
             key = "patient.registered"
     ))
     public void handlePatientRegistered(PatientRegisteredEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento: " + event.getFullName());
+        log.info("📥 [Query Side] Evento recebido | ID: {} | Nome: {}", event.getPatientId(), event.getFullName());
 
+        try {
         PatientSummary.AddressSummary addr = new PatientSummary.AddressSummary(
                 event.getAddress().getStreet(),
                 event.getAddress().getCity(),
@@ -51,6 +53,8 @@ public class PatientEventHandler {
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Guardado no MongoDB: " + summary.getPatientId());
-    }
-}
+            log.info("✅ [Query Side] Sucesso | Mongo Document ID: {}", event.getPatientId());
+        } catch (Exception e) {
+                   log.error("❌ [Query Side] Falha ao processar evento ID: {}", event.getPatientId(), e);
+        }
+}}

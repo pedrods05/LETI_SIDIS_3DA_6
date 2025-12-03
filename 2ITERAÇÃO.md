@@ -21,6 +21,45 @@ Read Side (Queries): Responsável por servir dados rapidamente ao cliente, utili
 - GET /appointments/upcoming → Query: GetUpcomingAppointments
 - GET /api/appointment-records/{id} → Query: GetAppointmentRecordById
 
+## 2. Database per service
+Cada microserviço (Auth, Patients, Physicians, AppointmentRecords) possui a sua própria base de dados de escrita (H2/relacional em dev, equivalente a PostgreSQL/SQL Server em produção) e, quando aplicável, a sua própria base de dados de leitura (MongoDB).
+Não existe acesso direto entre bases de dados; os serviços comunicam exclusivamente por HTTP/REST ou eventos AMQP (RabbitMQ).
+
+## 3. Event Sourcing
+O projeto adota CQRS + eventos assíncronos com RabbitMQ.
+Event Sourcing completo (com Event Store dedicado) foi considerado, mas optámos por não o implementar nesta fase para limitar a complexidade; no entanto, a arquitetura atual já está preparada para evoluir nesse sentido.
+
+## 4. API-Led Architecture (System / Process / Experience APIs)
+
+Embora não tenhamos introduzido um API Gateway dedicado, a modelação das APIs segue princípios de API-Led Architecture, separando responsabilidades em três níveis lógicos:
+
+**System APIs (dados crus / CRUD):**
+- Exposição direta de recursos de cada microserviço, focada em operações básicas sobre as entidades de domínio.
+- Exemplos:
+  - `GET /patients/{id}`, `PATCH /patients/me` (hap-patients)
+  - `GET /physicians/{id}`, `POST /physicians/register` (hap-physicians)
+  - `GET /api/appointment-records/{id}`, `POST /api/appointment-records/{id}/record` (hap-appointmentrecords)
+  - `POST /api/public/register`, `POST /api/public/login` (hap-auth)
+
+**Process APIs (orquestração / fluxos de negócio):**
+- Endpoints que coordenam múltiplos sistemas ou múltiplas operações internas, encapsulando regras de negócio.
+- Exemplos:
+  - `POST /appointments`, `PUT /appointments/{id}`, `PUT /appointments/{id}/cancel` em hap-physicians:
+    - Validam o estado da consulta, verificam médico/paciente, comunicam com AppointmentRecords e publicam eventos.
+  - `POST /api/v2/patients/register` em hap-patients:
+    - Encapsula validação de consentimento, criação do perfil clínico e chamada síncrona ao hap-auth para criar credenciais.
+
+**Experience APIs (respostas adaptadas à UI):**
+- Endpoints e DTOs desenhados para fornecer dados já agregados e prontos para consumo pelo frontend, reduzindo lógica duplicada no cliente.
+- Exemplos:
+  - `GET /appointments/upcoming` (hap-physicians): devolve uma lista de consultas futuras já ordenadas e agregadas.
+  - `GET /patients/{id}` / `GET /patients/{id}/profile` (hap-patients): devolvem `PatientProfileDTO` com informação consolidada do paciente.
+
+Esta separação lógica permite:
+- Reutilizar System APIs entre diferentes Process/Experience APIs sem duplicar lógica.
+- Manter a orquestração de fluxos de negócio centralizada em poucos endpoints (Process APIs).
+- Fornecer respostas específicas para o frontend (Experience APIs) sem expor diretamente o modelo interno das entidades.
+
 ## 5. Análise dos Modelos de Comunicação: Estratégia Híbrida
 
 Para cumprir os requisitos de resiliência e usabilidade, adotámos uma abordagem híbrida que combina comunicação síncrona (REST) e assíncrona (AMQP), aplicando cada uma onde traz mais valor arquitetural.
