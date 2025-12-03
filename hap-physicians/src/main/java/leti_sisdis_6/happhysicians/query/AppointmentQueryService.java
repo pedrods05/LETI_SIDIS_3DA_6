@@ -51,17 +51,29 @@ public class AppointmentQueryService {
     }
 
     public List<AppointmentListDTO> listUpcomingAppointments() {
+        // Try read model first
         List<AppointmentSummary> summaries = appointmentQueryRepository
                 .findByDateTimeAfterOrderByDateTimeAsc(LocalDateTime.now())
                 .stream()
                 .filter(s -> "SCHEDULED".equals(s.getStatus()))
                 .collect(Collectors.toList());
 
-        List<Appointment> appointments = summaries.stream()
-                .map(this::toAppointmentWithFallback)
+        if (!summaries.isEmpty()) {
+            List<Appointment> appointments = summaries.stream()
+                    .map(this::toAppointmentWithFallback)
+                    .collect(Collectors.toList());
+            return appointmentMapper.toListDTO(appointments);
+        }
+
+        // Fallback to write model if read model is empty or has no upcoming appointments
+        List<Appointment> allAppointments = appointmentRepository.findAll();
+        List<Appointment> upcomingAppointments = allAppointments.stream()
+                .filter(a -> a.getDateTime().isAfter(LocalDateTime.now()))
+                .filter(a -> a.getStatus() == AppointmentStatus.SCHEDULED)
+                .sorted((a1, a2) -> a1.getDateTime().compareTo(a2.getDateTime()))
                 .collect(Collectors.toList());
 
-        return appointmentMapper.toListDTO(appointments);
+        return appointmentMapper.toListDTO(upcomingAppointments);
     }
 
     private Appointment toAppointmentWithFallback(AppointmentSummary summary) {
@@ -92,10 +104,43 @@ public class AppointmentQueryService {
         Appointment.AppointmentBuilder builder = Appointment.builder()
                 .appointmentId(summary.getId())
                 .patientId(summary.getPatientId())
-                .dateTime(summary.getDateTime())
-                .consultationType(ConsultationType.valueOf(summary.getConsultationType()))
-                .status(AppointmentStatus.valueOf(summary.getStatus()))
                 .wasRescheduled(false);
+        
+        // Safely set dateTime (handle null)
+        if (summary.getDateTime() != null) {
+            builder.dateTime(summary.getDateTime());
+        } else {
+            System.out.println("⚠️ Warning: dateTime is null for appointment " + summary.getId() + ", using current time");
+            builder.dateTime(java.time.LocalDateTime.now());
+        }
+        
+        // Safely convert consultationType (handle null)
+        if (summary.getConsultationType() != null && !summary.getConsultationType().isEmpty()) {
+            try {
+                builder.consultationType(ConsultationType.valueOf(summary.getConsultationType()));
+            } catch (IllegalArgumentException e) {
+                System.out.println("⚠️ Warning: Invalid consultationType '" + summary.getConsultationType() + 
+                    "' for appointment " + summary.getId() + ", defaulting to FIRST_TIME");
+                builder.consultationType(ConsultationType.FIRST_TIME);
+            }
+        } else {
+            System.out.println("⚠️ Warning: consultationType is null for appointment " + summary.getId() + ", defaulting to FIRST_TIME");
+            builder.consultationType(ConsultationType.FIRST_TIME);
+        }
+        
+        // Safely convert status (handle null)
+        if (summary.getStatus() != null && !summary.getStatus().isEmpty()) {
+            try {
+                builder.status(AppointmentStatus.valueOf(summary.getStatus()));
+            } catch (IllegalArgumentException e) {
+                System.out.println("⚠️ Warning: Invalid status '" + summary.getStatus() + 
+                    "' for appointment " + summary.getId() + ", defaulting to SCHEDULED");
+                builder.status(AppointmentStatus.SCHEDULED);
+            }
+        } else {
+            System.out.println("⚠️ Warning: status is null for appointment " + summary.getId() + ", defaulting to SCHEDULED");
+            builder.status(AppointmentStatus.SCHEDULED);
+        }
 
         // Try to enrich with patient data
         try {

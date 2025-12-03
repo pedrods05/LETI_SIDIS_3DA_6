@@ -253,9 +253,13 @@ public class AppointmentService {
         appointment.setPhysician(physicianToSet);
         if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
         if (dto.getConsultationType() != null) appointment.setConsultationType(dto.getConsultationType());
-        if (dto.getStatus() != null) appointment.setStatus(dto.getStatus());
+        if (dto.getStatus() != null) {
+            System.out.println("🔍 [Service] Setting status from DTO: " + dto.getStatus() + " for appointment: " + appointmentId);
+            appointment.setStatus(dto.getStatus());
+        }
         if (dto.getWasRescheduled() != null) appointment.setWasRescheduled(dto.getWasRescheduled());
 
+        System.out.println("🔍 [Service] Final appointment status before save: " + appointment.getStatus() + " for appointment: " + appointmentId);
         return appointmentRepository.save(appointment);
     }
 

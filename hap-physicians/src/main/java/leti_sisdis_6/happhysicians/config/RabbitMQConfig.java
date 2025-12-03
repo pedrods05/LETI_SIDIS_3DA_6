@@ -2,6 +2,7 @@ package leti_sisdis_6.happhysicians.config;
 
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +18,15 @@ public class RabbitMQConfig {
     @Bean
     public TopicExchange exchange() {
         return new TopicExchange(exchangeName);
+    }
+
+    @Bean
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        RabbitAdmin admin = new RabbitAdmin(connectionFactory);
+        admin.setAutoStartup(true);
+        // Declara o exchange explicitamente
+        admin.declareExchange(exchange());
+        return admin;
     }
 
     @Bean

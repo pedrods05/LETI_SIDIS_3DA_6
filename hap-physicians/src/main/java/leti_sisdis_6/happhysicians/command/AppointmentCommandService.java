@@ -38,12 +38,24 @@ public class AppointmentCommandService {
 
     @Transactional
     public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto) {
+        System.out.println("🔍 [Command] Updating appointment: " + appointmentId + " with status: " + (dto.getStatus() != null ? dto.getStatus() : "null"));
+        
         // Delegate to existing service
         Appointment appointment = appointmentService.updateAppointment(appointmentId, dto);
         
         if (appointment != null) {
-            // Publish event
-            publishAppointmentUpdatedEvent(appointment);
+            System.out.println("🔍 [Command] Appointment after update - Status: " + appointment.getStatus());
+            
+            // Only publish UpdatedEvent if status is NOT CANCELED
+            // If status is CANCELED, it means the update actually canceled it, so we should publish CanceledEvent
+            if (appointment.getStatus() == leti_sisdis_6.happhysicians.model.AppointmentStatus.CANCELED) {
+                System.out.println("⚠️ WARNING: Update resulted in CANCELED status for appointment: " + appointmentId + ". This should not happen during a normal update!");
+                publishAppointmentCanceledEvent(appointment);
+            } else {
+                // Normal update - publish UpdatedEvent
+                System.out.println("✅ [Command] Publishing AppointmentUpdatedEvent for appointment: " + appointmentId);
+                publishAppointmentUpdatedEvent(appointment);
+            }
         }
         
         return appointment;
