@@ -136,6 +136,7 @@ public class PatientRegistrationService {
         return patient.getPatientId();
     }
     private void publishPatientRegisteredEvent(Patient patient) {
+
         try {
             PatientRegisteredEvent.AddressEventData addressData = new PatientRegisteredEvent.AddressEventData(
                     patient.getAddress().getStreet(),

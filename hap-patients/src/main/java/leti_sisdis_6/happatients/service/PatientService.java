@@ -1,5 +1,6 @@
 package leti_sisdis_6.happatients.service;
 
+import jakarta.annotation.PostConstruct;
 import leti_sisdis_6.happatients.exceptions.EmailAlreadyExistsException;
 import leti_sisdis_6.happatients.exceptions.NotFoundException;
 import leti_sisdis_6.happatients.model.*;
@@ -41,6 +42,21 @@ public class PatientService {
 
     @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
     private String appointmentRecordsBaseUrl;
+
+    @Value("${hap.patients.peers:}")
+    private String patientPeersProp;
+
+    private List<String> patientPeers = new ArrayList<>();
+
+    @PostConstruct
+    void initPatientPeers() {
+        if (patientPeersProp != null && !patientPeersProp.isBlank()) {
+            for (String s : patientPeersProp.split(",")) {
+                String v = s.trim();
+                if (!v.isEmpty()) patientPeers.add(v);
+            }
+        }
+    }
 
     @Transactional(readOnly = true)
     public PatientDetailsDTO getPatientDetails(String patientId) {
@@ -182,5 +198,31 @@ public class PatientService {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public PatientProfileDTO getPatientProfileWithPeers(String id) {
+        // 1) tentar localmente (read model relacional)
+        try {
+            return getPatientProfile(id, null);
+        } catch (NotFoundException | EntityNotFoundException ex) {
+            // ignorar e tentar peers
+        }
+
+        // 2) tentar sequencialmente em cada peer pela rota pública GET /patients/{id}
+        for (String base : patientPeers) {
+            String url = base + "/patients/" + id;
+            try {
+                PatientProfileDTO dto = resilientRestTemplate.getForObjectWithFallback(url, PatientProfileDTO.class);
+                if (dto != null) {
+                    return dto;
+                }
+            } catch (Exception ignored) {
+                // tenta próximo peer
+            }
+        }
+
+        // 3) nenhum peer devolveu o paciente
+        throw new NotFoundException("Patient not found with ID: " + id);
     }
 }
