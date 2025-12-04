@@ -1,0 +1,100 @@
+@startuml AppointmentCreate-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Appointment Create - Sequence Diagram
+
+actor Client
+participant "AppointmentController" as Controller
+participant "AppointmentCommandService" as CommandService
+participant "AppointmentService" as Service
+participant "ExternalServiceClient" as ExternalClient
+participant "AppointmentRepository\n(Write Model - H2)" as WriteRepo
+participant "RabbitMQ\nExchange" as RabbitMQ
+participant "AppointmentEventHandler" as EventHandler
+participant "AppointmentQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+participant "AppointmentReminderHandler" as ReminderHandler
+
+autonumber
+activate Client
+Client -> Controller: POST /appointments\n(ScheduleAppointmentRequest)
+activate Controller
+
+Controller -> CommandService: createAppointment(dto)
+activate CommandService
+
+CommandService -> Service: createAppointment(dto)
+activate Service
+
+Service -> Service: Validate appointment data
+Service -> ExternalClient: createAppointmentInRecords(appointmentData)
+activate ExternalClient
+ExternalClient --> Service: Appointment created in records
+deactivate ExternalClient
+
+Service -> ExternalClient: getPatientById(patientId)
+activate ExternalClient
+ExternalClient --> Service: Patient data (Map)
+deactivate ExternalClient
+
+Service -> Service: Build Appointment with patient data
+Service -> WriteRepo: save(appointment)
+activate WriteRepo
+WriteRepo --> Service: Appointment (saved)
+deactivate WriteRepo
+
+Service --> CommandService: Appointment
+deactivate Service
+
+CommandService -> CommandService: publishAppointmentCreatedEvent(appointment)
+CommandService -> RabbitMQ: convertAndSend("appointment.created", event)
+activate RabbitMQ
+RabbitMQ --> CommandService: Event published
+deactivate RabbitMQ
+
+CommandService -> CommandService: publishAppointmentReminderEvent(appointment, "CREATED")
+CommandService -> RabbitMQ: convertAndSend("appointment.reminder", event)
+activate RabbitMQ
+RabbitMQ --> CommandService: Reminder event published
+deactivate RabbitMQ
+
+CommandService --> Controller: Appointment
+deactivate CommandService
+
+Controller --> Client: 200 OK\nAppointment
+deactivate Controller
+deactivate Client
+
+note right of RabbitMQ
+  Asynchronous processing:
+  Events are consumed by handlers
+end note
+
+RabbitMQ -> EventHandler: AppointmentCreatedEvent
+activate RabbitMQ
+activate EventHandler
+EventHandler -> WriteRepo: findById(appointmentId)
+activate WriteRepo
+WriteRepo --> EventHandler: Optional<Appointment>
+deactivate WriteRepo
+
+alt Appointment not CANCELED in write model
+    EventHandler -> ReadRepo: save(AppointmentSummary)
+    activate ReadRepo
+    ReadRepo --> EventHandler: Saved
+    deactivate ReadRepo
+    EventHandler -> EventHandler: Update MongoDB read model
+else Appointment is CANCELED
+    EventHandler -> EventHandler: Ignore old creation event
+end
+
+deactivate EventHandler
+
+RabbitMQ -> ReminderHandler: AppointmentReminderEvent
+deactivate RabbitMQ
+activate ReminderHandler
+ReminderHandler -> ReminderHandler: sendReminderEmail(event)
+ReminderHandler -> ReminderHandler: Log reminder details
+@enduml
+

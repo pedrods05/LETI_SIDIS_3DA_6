@@ -1,0 +1,52 @@
+@startuml
+' C4+1 — Appointment cancel SD (alinhado com implementação atual)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Appointment Cancel (Physicians → AppointmentRecords)
+
+actor Client
+participant "AppointmentController (Physicians)" as Controller
+participant "AppointmentService (Physicians)" as Service
+participant "AppointmentRepository (Physicians)" as Repo
+participant "Appointment Records API" as Records
+
+autonumber
+Client -> Controller : PUT /appointments/{id}/cancel
+activate Controller
+Controller -> Service : cancelAppointment(id)
+activate Service
+Service -> Records : PUT /api/appointments/internal/{id}/cancel\n(forward Authorization, X-User-Id)
+activate Records
+Records --> Service : 200 / 404 / 5xx (ignored)
+deactivate Records
+Service -> Repo : findById(id)
+activate Repo
+alt Local exists
+  Repo --> Service : Appointment
+  deactivate Repo
+  Service -> Repo : save(status=CANCELED)
+  activate Repo
+  Repo --> Service : persisted
+  deactivate Repo
+  Service --> Controller : 200 OK { cancelled }
+  deactivate Service
+  Controller --> Client : 200 OK { cancelled }
+  deactivate Controller
+else Local not found
+  deactivate Repo
+  Service --> Controller : null
+  deactivate Service
+  Controller --> Client : 404 Not Found
+  deactivate Controller
+end
+
+note right of Service
+A implementação atual tenta cancelar no AppointmentRecords,
+mas ignora qualquer exceção/resultado dessa chamada e prossegue
+com o repositório local. Se o appointment local não existir,
+responde 404; caso exista, atualiza para CANCELED e retorna 200.
+end note
+
+@enduml

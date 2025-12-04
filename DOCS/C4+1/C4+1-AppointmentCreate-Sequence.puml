@@ -1,0 +1,69 @@
+@startuml
+' C4+1 — Appointment create SD (alinhado com implementação atual)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Appointment Create (Physicians → AppointmentRecords)
+
+actor Client
+participant "AppointmentController (Physicians)" as Controller
+participant "AppointmentService (Physicians)" as Service
+participant "Appointment Records API" as Records
+participant "Patients Service (hap-patients)" as Patients
+participant "AppointmentRepository (Physicians)" as Repo
+activate Client
+autonumber
+Client -> Controller : POST /appointments { appointmentDTO }
+activate Controller
+alt Missing/invalid payload
+  Controller --> Client : 400 Bad Request
+else Valid payload
+  Controller -> Service : createAppointment(dto)
+  deactivate Controller
+  activate Service
+  Service -> Service : verify physician exists
+  alt Physician missing
+    Service --> Controller : error("Physician not found")
+    activate Controller
+    deactivate Service
+    Controller --> Client : 400 Bad Request { error }
+    deactivate Controller
+  else Physician found
+    ' Create in source-of-truth first
+    Service -> Records : POST /api/appointments\n(forward Authorization, X-User-Id)
+    activate Records
+    alt Created (201)
+      Records --> Service : 201 Created { appointment }
+      deactivate Records
+      ' Optional enrichment from Patients (best-effort)
+      alt Enrichment needed
+        Service -> Patients : GET /patients/{patientId}
+        activate Patients
+        Patients --> Service : { fullName, email, phone }
+        deactivate Patients
+      else Skip enrichment
+      end
+      ' Persist local mirror
+      Service -> Repo : save(appointment [+patient fields])
+      activate Repo
+      Repo --> Service : persisted
+      deactivate Repo
+      Service --> Controller : 200 OK { appointment }
+      activate Controller
+      deactivate Service
+      Controller --> Client : 200 OK { appointment }
+      deactivate Controller
+    else Conflict or error (409/5xx/timeout)
+      Records --> Service : exception
+      deactivate Records
+      Service --> Controller : error("...conflict..." or "Failed to create...")
+      activate Controller
+      deactivate Service
+      Controller --> Client : 400 Bad Request { error }
+      deactivate Controller
+    end
+  end
+end
+
+@enduml

@@ -1,0 +1,73 @@
+@startuml
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Patient Registration (Public)
+
+actor User
+participant "PatientRegistrationController" as Controller
+participant "PatientRegistrationService" as Service
+participant "PatientRepository" as Repo
+participant "Auth Service (hap-auth)" as AUTH
+participant "RabbitMQ" as MQ
+participant "PatientEventHandler" as EventHandler
+participant "PatientQueryRepository" as QueryRepo
+
+activate User
+autonumber
+User -> Controller : POST /api/v2/patients/register { patient data }
+activate Controller
+Controller -> Service : registerPatient(dto)
+activate Service
+Service -> Service : validate consent (dataConsentGiven)
+alt Email already exists
+  Service -> Repo : existsByEmail(email)
+  activate Repo
+  Repo --> Service : true
+  deactivate Repo
+  Service --> Controller : EmailAlreadyExistsException
+  deactivate Service
+  Controller --> User : 409 Conflict (email in use)
+  deactivate Controller
+else Email not in use
+  Service -> Repo : existsByEmail(email)
+  activate Repo
+  Repo --> Service : false
+  deactivate Repo
+  Service -> AUTH : POST /api/public/register { username=email, password, role=PATIENT }
+  activate AUTH
+  alt Auth accepted (201)
+    AUTH --> Service : 201 Created { userId }
+    deactivate AUTH
+    Service -> Repo : save(new Patient ...)
+    activate Repo
+    Repo --> Service : Patient Entity { patientId }
+    deactivate Repo
+    Service -> MQ : convertAndSend(\n  exchange=\"hap-exchange\",\n  routingKey=\"patient.registered\",\n  event: PatientRegisteredEvent\n)
+    deactivate Service
+    Service --> Controller : 201 Created { patientId }
+    deactivate Service
+    Controller --> User : 201 Created { patientId }
+    deactivate Controller
+    activate MQ
+    MQ -> EventHandler : PatientRegisteredEvent\n{ patientId, fullName, email, phone,\n  address, insuranceInfo, ... }
+    deactivate MQ
+    activate EventHandler
+
+    EventHandler -> QueryRepo : save(new PatientSummary(...))\n(MongoDB projection)
+    activate QueryRepo
+    QueryRepo --> EventHandler : OK
+    deactivate QueryRepo
+    deactivate EventHandler
+  else Auth error (4xx/5xx/timeout)
+    AUTH --> Service : exception
+    deactivate AUTH
+    Service --> Controller : IllegalArgumentException("Failed to register in Auth")
+    deactivate Service
+    Controller --> User : 400 Bad Request { error }
+    deactivate Controller
+  end
+end
+
+@enduml

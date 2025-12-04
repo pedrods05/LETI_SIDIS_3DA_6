@@ -1,8 +1,8 @@
 package leti_sisdis_6.hapauth.api;
 
 import leti_sisdis_6.hapauth.exceptions.UserNotFoundException;
-import leti_sisdis_6.hapauth.usermanagement.User;
-import leti_sisdis_6.hapauth.usermanagement.UserRepository;
+import leti_sisdis_6.hapauth.usermanagement.model.User;
+import leti_sisdis_6.hapauth.usermanagement.repository.UserInMemoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,14 +12,14 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AuthHelper {
 
-    private final UserRepository userRepository;
+    private final UserInMemoryRepository userInMemoryRepository;
 
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new SecurityException("No authenticated user found");
         }
-        return userRepository.findByUsername(authentication.getName())
+        return userInMemoryRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new UserNotFoundException(authentication.getName()));
     }
 

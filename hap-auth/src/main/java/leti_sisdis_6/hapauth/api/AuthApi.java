@@ -2,22 +2,31 @@ package leti_sisdis_6.hapauth.api;
 
 import leti_sisdis_6.hapauth.dto.LoginRequest;
 import leti_sisdis_6.hapauth.dto.LoginResponse;
+import leti_sisdis_6.hapauth.dto.RegisterUserRequest;
+import leti_sisdis_6.hapauth.dto.UserIdResponse;
+
 import leti_sisdis_6.hapauth.services.AuthService;
-import leti_sisdis_6.hapauth.usermanagement.RegisterUserRequest;
-import leti_sisdis_6.hapauth.usermanagement.UserIdResponse;
+import leti_sisdis_6.hapauth.usermanagement.model.User;
 import leti_sisdis_6.hapauth.usermanagement.UserService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,48 +38,63 @@ public class AuthApi {
 
     private final AuthService authService;
     private final UserService userService;
+    private final RestTemplate restTemplate;            // injeta via @Bean
+
+    // pode ir para application.properties; mantido simples aqui
+    private final List<String> peers = Arrays.asList("http://localhost:8089");
+
+    // Minimal error payload for 4xx responses
+    @Schema(name = "ApiError", description = "Standard error response")
+    public static class ApiError {
+        @Schema(example = "Invalid username or password")
+        public String message;
+        public ApiError() {}
+        public ApiError(String message) { this.message = message; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
 
     @PostMapping("/login")
     @Operation(
-        summary = "User login",
-        description = "Authenticates a user and returns a JWT token along with their roles",
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Login successful"),
-            @ApiResponse(responseCode = "401", description = "Invalid credentials")
-        }
+            summary = "User login",
+            description = "Authenticates a user and returns a JWT token along with roles",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Login successful"),
+                    @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiError.class)))
+            }
     )
-    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
         try {
             Authentication authentication = authService.authenticate(request.getUsername(), request.getPassword());
             String token = authService.generateToken(authentication);
-            
+
             List<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-            
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + token);
-            
+
             return ResponseEntity.ok()
-                .headers(headers)
-                .body(LoginResponse.builder()
-                    .token(token)
-                    .roles(roles)
-                    .build());
+                    .headers(headers)
+                    .body(LoginResponse.builder().token(token).roles(roles).build());
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            // Fail fast on invalid local credentials to avoid long waits perceived as "loading forever".
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiError("Invalid username or password"));
         }
     }
 
     @PostMapping("/register")
     @Operation(
-        summary = "Register new user",
-        description = "Creates a new user account with the specified role",
-        responses = {
-            @ApiResponse(responseCode = "201", description = "User registered successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request data"),
-            @ApiResponse(responseCode = "409", description = "Username already exists")
-        }
+            summary = "Register new user",
+            description = "Creates a new user account with the specified role",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "User registered successfully"),
+                    @ApiResponse(responseCode = "400", description = "Invalid request data"),
+                    @ApiResponse(responseCode = "409", description = "Username already exists")
+            }
     )
     public ResponseEntity<UserIdResponse> register(@RequestBody @Valid RegisterUserRequest request) {
         UserIdResponse response = userService.register(request);

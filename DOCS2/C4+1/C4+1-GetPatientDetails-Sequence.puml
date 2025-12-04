@@ -1,0 +1,100 @@
+@startuml
+' C4+1 — SD: Get Patient Details (Admin)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+Title C4: Sequence Diagram - Get Patient Details (Admin)
+
+actor Administrator as Admin
+participant "PatientController" as Controller
+participant "PatientQueryService" as QueryService
+participant "PatientQueryRepository\n(Mongo Read Model)" as MongoRepo
+participant "PatientService" as Service
+participant "PatientRepository" as Repo
+participant "PatientLocalRepository" as LocalCache
+participant "Peer Instance" as Peer
+activate Admin
+Admin -> Controller : GET /patients/{id}
+activate Controller
+
+Controller -> QueryService : getPatientDetailsFromReadModel(id)
+activate QueryService
+QueryService -> MongoRepo : findById(id)
+activate MongoRepo
+alt Found in MongoDB read model
+    MongoRepo --> QueryService : PatientDetailsDTO
+    deactivate MongoRepo
+    QueryService --> Controller : PatientDetailsDTO
+    deactivate QueryService
+    Controller --> Admin : 200 OK + JSON (from Mongo read model)
+    deactivate Controller
+    deactivate Admin
+else Not found in MongoDB
+    MongoRepo --> QueryService : (empty)
+    deactivate MongoRepo
+    QueryService --> Controller : (not found)
+    deactivate QueryService
+
+    ' 2) Tentar cache local (DTOs previamente obtidos)
+    Controller -> LocalCache : findById(id)
+    activate LocalCache
+    alt Found in local cache
+        LocalCache --> Controller : PatientDetailsDTO
+        deactivate LocalCache
+        Controller --> Admin : 200 OK + JSON (from local cache)
+        deactivate Controller
+        deactivate Admin
+    else Not in local cache
+        deactivate LocalCache
+
+        ' 3) Tentar BD relacional local via PatientService
+        Controller -> Service : getPatientDetails(id)
+        activate Service
+        Service -> Repo : findById(id)
+        activate Repo
+        alt Found in local H2
+            Repo --> Service : Patient Entity
+            deactivate Repo
+            Service --> Controller : PatientDetailsDTO
+            deactivate Service
+            Controller -> LocalCache : save(dto)
+            activate LocalCache
+            LocalCache --> Controller : (cached)
+            deactivate LocalCache
+            Controller --> Admin : 200 OK + JSON (from local H2)
+            deactivate Controller
+            deactivate Admin
+        else Not found in local H2
+            Repo --> Service : (empty)
+            deactivate Repo
+            deactivate Service
+
+            loop for each configured peer (excluding self)
+                Controller -> Peer : HTTP GET /patients/{id}
+                activate Peer
+                alt Peer returns patient
+                    Peer --> Controller : 200 OK + PatientDetailsDTO
+                    deactivate Peer
+                    Controller -> LocalCache : save(dto)
+                    activate LocalCache
+                    LocalCache --> Controller : (cached)
+                    deactivate LocalCache
+                    Controller --> Admin : 200 OK + JSON (from peer)
+                    deactivate Controller
+                    deactivate Admin
+                    break
+                else Peer 404 / error
+                    Peer --> Controller : 404 Not Found / error
+                    deactivate Peer
+                end
+            end
+
+            Controller --> Admin : 404 Not Found { "error": "Patient not found" }
+            deactivate Controller
+            deactivate Admin
+        end
+    end
+end
+
+@enduml

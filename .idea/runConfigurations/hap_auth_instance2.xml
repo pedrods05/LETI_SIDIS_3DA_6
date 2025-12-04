@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="hap-auth-instance2" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false">
+    <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+    <module name="hap-auth" />
+    <option name="PROGRAM_PARAMETERS" value="--server.port=8089" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapauth.HapAuthApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

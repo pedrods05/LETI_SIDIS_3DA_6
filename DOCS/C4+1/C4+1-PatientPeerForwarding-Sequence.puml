@@ -1,0 +1,53 @@
+@startuml
+' C4+1 — Patient peer forwarding SD (alinhado com implementação atual)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Patient Peer Forwarding (Patients)
+
+actor "Client" as C
+participant "PatientController (inst A)" as PC_A
+participant "PatientService (inst A)" as PS_A
+participant "PatientRepository (inst A)" as PREPO_A
+participant "Peer Patients (inst B)" as PEER
+
+activate C
+autonumber
+C -> PC_A : GET /patients/{id}
+activate PC_A
+PC_A -> PS_A : getPatientDetails(id)
+activate PS_A
+PS_A -> PREPO_A : findById(id)
+activate PREPO_A
+alt Found locally (inst A)
+  PREPO_A --> PS_A : Patient entity
+  deactivate PREPO_A
+  PS_A --> PC_A : PatientDetailsDTO
+  deactivate PS_A
+  PC_A --> C : 200 OK + PatientDetailsDTO
+  deactivate PC_A
+else Not found locally (inst A)
+  deactivate PREPO_A
+  deactivate PS_A
+  ' Try peers sequentially using INTERNAL endpoint
+  loop for each peer
+    PC_A -> PEER : HTTP GET /internal/patients/{id}\n(forward Authorization)
+    activate PEER
+    alt Peer returns 200
+      PEER --> PC_A : 200 OK + PatientDetailsDTO
+      deactivate PEER
+      PC_A --> C : 200 OK + PatientDetailsDTO
+      deactivate PC_A
+      break
+    else Peer returns 404 / error
+      PEER --> PC_A : 404 Not Found / error
+      deactivate PEER
+      ' continue loop
+    end
+  end
+  PC_A --> C : 404 Not Found
+  deactivate PC_A
+end
+
+@enduml

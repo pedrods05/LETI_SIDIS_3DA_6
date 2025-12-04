@@ -1,0 +1,81 @@
+@startuml
+' C4+1 — Appointment peer forwarding SD (layered)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Appointment Peer Forwarding (Physicians)
+
+actor Client
+participant "AppointmentController (Instance1)" as C1
+participant "AppointmentService (Instance1)" as S1
+participant "AppointmentRepository (Instance1)" as R1
+participant "Appointment Records (hap-appointmentrecords)" as Records
+participant "AppointmentController (Instance2)" as C2
+participant "AppointmentService (Instance2)" as S2
+participant "AppointmentRepository (Instance2)" as R2
+
+activate Client
+autonumber
+Client -> C1 : GET /appointments/{id}
+activate C1
+C1 -> S1 : getAppointmentById(id)
+activate S1
+S1 -> R1 : findById(id)
+activate R1
+alt Found locally (instance1)
+  R1 --> S1 : Appointment (local)
+  deactivate R1
+  S1 --> C1 : Appointment
+  deactivate S1
+  C1 --> Client : 200 OK { appointment }
+  deactivate C1
+else Not found in instance1
+  ' no explicit null return from R1
+  deactivate R1
+  S1 -> Records : GET /api/appointments/{id}
+  activate S1
+  activate Records
+  alt Found in records
+    Records --> S1 : Appointment JSON
+    deactivate Records
+    S1 --> C1 : Appointment (mapped)
+    activate C1
+    deactivate S1
+    C1 --> Client : 200 OK { appointment }
+    deactivate C1
+  else Not in records
+    ' close records and service without explicit NotFound arrows
+    deactivate Records
+    deactivate S1
+    C1 -> C2 : HTTP GET /internal/appointments/{id}
+    activate C1
+    activate C2
+    C2 -> S2 : getAppointmentById(id)
+    activate S2
+    S2 -> R2 : findById(id)
+    activate R2
+    alt Found in instance2
+      R2 --> S2 : Appointment (local)
+      deactivate R2
+      S2 --> C2 : Appointment
+      deactivate S2
+      C2 --> C1 : 200 OK { appointment }
+      deactivate C2
+      C1 --> Client : 200 OK { appointment }
+      deactivate C1
+    else Not found anywhere
+      ' close R2/S2/C2 without explicit NotFound arrows
+      deactivate R2
+      deactivate S2
+      activate C2
+      C2 --> C1 : 404 Not Found
+      deactivate C2
+      activate C1
+      C1 --> Client : 404 Not Found
+      deactivate C1
+    end
+  end
+end
+
+@enduml

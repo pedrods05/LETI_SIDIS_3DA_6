@@ -4,35 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientRegistrationController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/ContactDetailsUpdateDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/HealthConcernDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PatientDetailsDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PatientRegistrationDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PatientRegistrationDTOV2.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/dto/PhotoDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/Address.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/HealthConcern.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/InsuranceInfo.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/Patient.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/model/Photo.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/AddressRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/InsuranceInfoRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/PatientRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/repository/PhotoRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientIdGenerator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientRegistrationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/service/PatientService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+    <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="updated maven version">
+      <change afterPath="$PROJECT_DIR$/.idea/copilotDiffState.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,30 +15,30 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="pedro" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
-    &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;pedrocunha4&quot;
-  }
-}</component>
+        &quot;lastFilter&quot;: {
+        &quot;state&quot;: &quot;OPEN&quot;,
+        &quot;assignee&quot;: &quot;pedrocunha4&quot;
+        }
+        }</component>
   <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/pedrods05/LETI_SIDIS_3DA_6.git&quot;,
-    &quot;accountId&quot;: &quot;8d59ecb3-d26e-4eef-b16d-368cfb6d257b&quot;
-  }
-}</component>
+        &quot;selectedUrlAndAccountId&quot;: {
+        &quot;url&quot;: &quot;https://github.com/pedrods05/LET_SIDIS_3DA_6.git&quot;,
+        &quot;accountId&quot;: &quot;7d51d996-4996-4ed9-9c35-f10b71549cea&quot;
+        }
+        }</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 7
-}</component>
+        &quot;customColor&quot;: &quot;&quot;,
+        &quot;associatedIndex&quot;: 7
+        }</component>
   <component name="ProjectId" id="33hgN3jV9pHTdHIiAYcHXNXPSKU" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -78,11 +51,19 @@
     "RequestMappingsPanelWidth0": "75",
     "RequestMappingsPanelWidth1": "75",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.HapClientsApplication.executor": "Run",
-    "Spring Boot.HapConsultationApplication.executor": "Run",
-    "Spring Boot.HapDoctorsApplication.executor": "Run",
-    "git-widget-placeholder": "pedro",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Spring Boot.HapAppointmentrecordsApplication.executor": "Run",
+    "Spring Boot.HapAuthApplication.executor": "Run",
+    "Spring Boot.HapPatientsApplication.executor": "Run",
+    "Spring Boot.HapPhysiciansApplication.executor": "Run",
+    "Spring Boot.hap-appointmentrecords-instance1.executor": "Run",
+    "Spring Boot.hap-appointmentrecords-instance2.executor": "Run",
+    "Spring Boot.hap-auth-instance1.executor": "Run",
+    "Spring Boot.hap-patients-instance1.executor": "Run",
+    "Spring Boot.hap-physicians-instance1.executor": "Run",
+    "git-widget-placeholder": "luis",
     "jdk.selected.JAVA_MODULE": "openjdk-23",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service",
@@ -95,6 +76,7 @@
     "project.structure.proportion": "0.17",
     "project.structure.side.proportion": "0.2",
     "run.configurations.included.in.services": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -103,6 +85,9 @@
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\service" />
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\usermanagement" />
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\louis\Documents\GitHub\pcmclinic-api\hap-appointmentrecords\src\main\java\leti_sisdis_6\hapappointmentrecords" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -114,16 +99,23 @@
         <option value="SpringBootApplicationConfigurationType" />
       </set>
     </option>
+    <option name="configurationStatuses">
+      <map>
+        <entry key="SpringBootApplicationConfigurationType">
+          <value>
+            <map>
+              <entry key="HapAppointmentrecordsApplication" value="STOPPED" />
+              <entry key="hap-appointmentrecords-instance1" value="STOPPED" />
+              <entry key="hap-appointmentrecords-instance2" value="STOPPED" />
+              <entry key="hap-auth-instance1" value="STOPPED" />
+              <entry key="hap-patients-instance1" value="FAILED" />
+            </map>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.HapAppointmentrecordsApplication">
-    <configuration name="HapAppointmentrecordsApplication (1)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
-      <module name="hap-appointmentrecords" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapappointmentrecords.HapAppointmentrecordsApplication" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Spring Boot.hap-appointmentrecords-instance1">
     <configuration name="HapAppointmentrecordsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="hap-appointmentrecords" />
@@ -157,9 +149,16 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Spring Boot.HapAppointmentrecordsApplication (1)" />
-      <item itemvalue="Spring Boot.HapAuthApplication" />
+      <item itemvalue="Spring Boot.hap-physicians-instance1" />
+      <item itemvalue="Spring Boot.hap-physicians-instance2" />
+      <item itemvalue="Spring Boot.hap-appointmentrecords-instance1" />
+      <item itemvalue="Spring Boot.hap-appointmentrecords-instance2" />
+      <item itemvalue="Spring Boot.hap-auth-instance1" />
+      <item itemvalue="Spring Boot.hap-auth-instance2" />
+      <item itemvalue="Spring Boot.hap-patients-instance1" />
+      <item itemvalue="Spring Boot.hap-patients-instance2" />
       <item itemvalue="Spring Boot.HapAppointmentrecordsApplication" />
+      <item itemvalue="Spring Boot.HapAuthApplication" />
       <item itemvalue="Spring Boot.HapPatientsApplication" />
       <item itemvalue="Spring Boot.HapPhysiciansApplication" />
     </list>
@@ -167,8 +166,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.25557.131" />
-        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-IU-252.25557.131" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26830.84" />
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.26830.84" />
       </set>
     </attachedChunks>
   </component>
@@ -182,7 +181,18 @@
       <updated>1759774680499</updated>
       <workItem from="1759774683360" duration="616000" />
       <workItem from="1760109781364" duration="479000" />
+      <workItem from="1760542102600" duration="338000" />
+      <workItem from="1760732535112" duration="865000" />
     </task>
+    <task id="LOCAL-00001" summary="updated maven version">
+      <option name="closed" value="true" />
+      <created>1761755672380</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1761755672380</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -190,7 +200,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="new modules name" />
-    <option name="LAST_COMMIT_MESSAGE" value="new modules name" />
+    <MESSAGE value="updated maven version" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated maven version" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

@@ -1,15 +1,22 @@
 package leti_sisdis_6.hapappointmentrecords;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
-@Import(TestcontainersConfiguration.class)
-@SpringBootTest
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.NONE,
+    classes = HapAppointmentrecordsApplication.class
+)
+@ActiveProfiles("test")
 class HapAppointmentrecordsApplicationTests {
 
     @Test
+    @DisplayName("Deve carregar contexto da aplicação")
     void contextLoads() {
+        // Este teste verifica se o contexto Spring carrega corretamente
+        // Se o contexto carregar sem exceções, o teste passa
     }
 
 }

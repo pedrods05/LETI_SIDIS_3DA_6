@@ -1,0 +1,78 @@
+[
+  {
+    "id": "cmhi296p20fkyeo1kg53npyu3",
+    "v": 2,
+    "name": "AppointmentRecords",
+    "variables": [
+      {
+        "key": "instance 1",
+        "secret": false,
+        "initialValue": "http://localhost:8083",
+        "currentValue": ""
+      },
+      {
+        "key": "instance 2",
+        "secret": false,
+        "initialValue": "http://localhost:8090",
+        "currentValue": ""
+      }
+    ]
+  },
+  {
+    "id": "cmhi2a4o70l4ti01kzq3npd1x",
+    "v": 2,
+    "name": "Auth",
+    "variables": [
+      {
+        "key": "instance 1",
+        "secret": false,
+        "initialValue": "http://localhost:8084",
+        "currentValue": ""
+      },
+      {
+        "key": "instance 2",
+        "secret": false,
+        "initialValue": "http://localhost:8089",
+        "currentValue": ""
+      }
+    ]
+  },
+  {
+    "id": "cmhi28hbl0l4qi01ku5fweds7",
+    "v": 2,
+    "name": "Patients",
+    "variables": [
+      {
+        "key": "instance 1",
+        "secret": false,
+        "initialValue": "http://localhost:8082",
+        "currentValue": ""
+      },
+      {
+        "key": "instance 2",
+        "secret": false,
+        "initialValue": "http://localhost:8088",
+        "currentValue": ""
+      }
+    ]
+  },
+  {
+    "id": "cmhi26k1a0l4li01kpppyr8gt",
+    "v": 2,
+    "name": "Physicians/Appointments",
+    "variables": [
+      {
+        "key": "instance 1",
+        "secret": false,
+        "initialValue": "http://localhost:8081",
+        "currentValue": ""
+      },
+      {
+        "key": "instance 2",
+        "secret": false,
+        "initialValue": "http://localhost:8087",
+        "currentValue": ""
+      }
+    ]
+  }
+]

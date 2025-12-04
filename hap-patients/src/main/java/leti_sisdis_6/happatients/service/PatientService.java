@@ -1,10 +1,9 @@
 package leti_sisdis_6.happatients.service;
 
+import jakarta.annotation.PostConstruct;
 import leti_sisdis_6.happatients.exceptions.EmailAlreadyExistsException;
-import leti_sisdis_6.happatients.model.Address;
-import leti_sisdis_6.happatients.model.InsuranceInfo;
-import leti_sisdis_6.happatients.model.Patient;
-import leti_sisdis_6.happatients.model.Photo;
+import leti_sisdis_6.happatients.exceptions.NotFoundException;
+import leti_sisdis_6.happatients.model.*;
 import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
 import leti_sisdis_6.happatients.dto.PatientRegistrationDTO;
 import leti_sisdis_6.happatients.dto.ContactDetailsUpdateDTO;
@@ -13,19 +12,23 @@ import leti_sisdis_6.happatients.repository.PatientRepository;
 import leti_sisdis_6.happatients.repository.PhotoRepository;
 import leti_sisdis_6.happatients.repository.AddressRepository;
 import leti_sisdis_6.happatients.repository.InsuranceInfoRepository;
-import leti_sisdis_6.hapauth.usermanagement.Role;
-import leti_sisdis_6.hapauth.usermanagement.User;
-import leti_sisdis_6.hapauth.usermanagement.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import leti_sisdis_6.happatients.dto.PatientProfileDTO;
+import leti_sisdis_6.happatients.http.ResilientRestTemplate;
 
 @Service
 @RequiredArgsConstructor
@@ -34,128 +37,139 @@ public class PatientService {
     private final PhotoRepository photoRepository;
     private final AddressRepository addressRepository;
     private final InsuranceInfoRepository insuranceInfoRepository;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final PatientMapper patientMapper;
+    private final ResilientRestTemplate resilientRestTemplate;
 
-    @Transactional
-    public String registerPatient(PatientRegistrationDTO dto) {
-        if (!dto.getDataConsentGiven()) {
-            throw new IllegalArgumentException("Data consent is required");
+    @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
+    private String appointmentRecordsBaseUrl;
+
+    @Value("${hap.patients.peers:}")
+    private String patientPeersProp;
+
+    private List<String> patientPeers = new ArrayList<>();
+
+    @PostConstruct
+    void initPatientPeers() {
+        if (patientPeersProp != null && !patientPeersProp.isBlank()) {
+            for (String s : patientPeersProp.split(",")) {
+                String v = s.trim();
+                if (!v.isEmpty()) patientPeers.add(v);
+            }
         }
-
-        if (patientRepository.existsByEmail(dto.getEmail())) {
-            throw new EmailAlreadyExistsException("Email already in use");
-        }
-
-        String patientId = generatePatientId();
-
-        User user = new User();
-        user.setId(patientId);
-        user.setUsername(dto.getEmail());
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRole(Role.PATIENT);
-        userRepository.save(user);
-
-        Address address = Address.builder()
-                .id(generateAddressId())
-                .street(dto.getAddress().getStreet())
-                .city(dto.getAddress().getCity())
-                .postalCode(dto.getAddress().getPostalCode())
-                .country(dto.getAddress().getCountry())
-                .build();
-
-        InsuranceInfo insuranceInfo = null;
-        if (dto.getInsuranceInfo() != null) {
-            insuranceInfo = InsuranceInfo.builder()
-                    .id(generateInsuranceId())
-                    .policyNumber(dto.getInsuranceInfo().getPolicyNumber())
-                    .provider(dto.getInsuranceInfo().getProvider())
-                    .coverageType(dto.getInsuranceInfo().getCoverageType())
-                    .build();
-        }
-
-        Patient patient = Patient.builder()
-                .patientId(patientId)
-                .fullName(dto.getFullName())
-                .email(dto.getEmail())
-                .phoneNumber(dto.getPhoneNumber())
-                .birthDate(dto.getBirthDate())
-                .address(address)
-                .insuranceInfo(insuranceInfo)
-                .dataConsentGiven(true)
-                .dataConsentDate(LocalDate.now())
-                .build();
-
-        Patient savedPatient = patientRepository.save(patient);
-        return savedPatient.getPatientId();
     }
 
     @Transactional(readOnly = true)
     public PatientDetailsDTO getPatientDetails(String patientId) {
         Patient patient = patientRepository.findById(patientId)
             .orElseThrow(() -> new EntityNotFoundException("Patient not found with id: " + patientId));
-
         return patientMapper.toDetailsDTO(patient);
     }
 
     @Transactional(readOnly = true)
     public List<PatientDetailsDTO> searchPatientsByName(String name) {
         List<Patient> patients = patientRepository.findByFullNameContainingIgnoreCase(name);
-
         if (patients.isEmpty()) {
             throw new EntityNotFoundException("No patients found with name containing: " + name);
         }
-
-        return patients.stream()
-                .map(patientMapper::toDetailsDTO)
-                .toList();
+        return patients.stream().map(patientMapper::toDetailsDTO).toList();
     }
 
     @Transactional
     public String updateContactDetails(String email, ContactDetailsUpdateDTO dto) {
-        System.out.println("Searching for patient with email: " + email);
-        // Get patient from email
         Patient patient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Patient not found with email: " + email));
-
-        // Update phone number if provided
         if (dto.getPhoneNumber() != null) {
             patient.setPhoneNumber(dto.getPhoneNumber());
         }
-
-        // Update address if provided
         if (dto.getAddress() != null) {
             patient.getAddress().setStreet(dto.getAddress().getStreet());
             patient.getAddress().setCity(dto.getAddress().getCity());
             patient.getAddress().setPostalCode(dto.getAddress().getPostalCode());
             patient.getAddress().setCountry(dto.getAddress().getCountry());
         }
-
-        // Update photo if provided
         if (dto.getPhoto() != null) {
             Photo photo = Photo.builder()
-                    .id(patient.getPhoto().getId())
+                    .id(patient.getPhoto() != null ? patient.getPhoto().getId() : null)
                     .url(dto.getPhoto().getUrl())
-                    .uploadedAt(LocalDateTime.parse(dto.getPhoto().getUploadedAt(), 
-                            DateTimeFormatter.ISO_DATE_TIME))
+                    .uploadedAt(LocalDateTime.parse(dto.getPhoto().getUploadedAt(), DateTimeFormatter.ISO_DATE_TIME))
                     .build();
             photo = photoRepository.save(photo);
             patient.setPhoto(photo);
         }
-
         patientRepository.save(patient);
         return "Contact details updated successfully.";
     }
 
-    private String generatePatientId() {
-        List<String> existingIds = userRepository.findAll().stream()
-                .map(User::getId)
-                .filter(id -> id.startsWith("PAT"))
-                .toList();
+    @Transactional(readOnly = true)
+    public List<JsonNode> getPatientAppointmentHistory(String patientId, String bearerToken) {
+        HttpHeaders headers = new HttpHeaders();
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
+        }
+        JsonNode[] body = tryGet(appointmentRecordsBaseUrl, "/api/appointment-records/patient/" + patientId, headers, JsonNode[].class);
+        return body != null ? java.util.Arrays.asList(body) : java.util.Collections.emptyList();
+    }
 
+    @Transactional(readOnly = true)
+    public List<JsonNode> getMyAppointmentHistory(String bearerToken) {
+        HttpHeaders headers = new HttpHeaders();
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            headers.set(HttpHeaders.AUTHORIZATION, bearerToken.startsWith("Bearer ") ? bearerToken : ("Bearer " + bearerToken));
+        }
+        JsonNode[] body = tryGet(appointmentRecordsBaseUrl, "/api/appointment-records/patient/mine", headers, JsonNode[].class);
+        return body != null ? java.util.Arrays.asList(body) : java.util.Collections.emptyList();
+    }
+
+    @Transactional(readOnly = true)
+    public PatientProfileDTO getPatientProfile(String id, String authorizationHeader) {
+        Patient patient = patientRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Patient not found with ID: " + id));
+
+
+        return PatientProfileDTO.builder()
+                .patientId(patient.getPatientId())
+                .fullName(patient.getFullName())
+                .email(patient.getEmail())
+                .phoneNumber(patient.getPhoneNumber())
+                .birthDate(patient.getBirthDate())
+                .dataConsentGiven(patient.isDataConsentGiven())
+                .dataConsentDate(patient.getDataConsentDate())
+
+                .address(PatientProfileDTO.AddressDTO.builder()
+                        .street(patient.getAddress().getStreet())
+                        .city(patient.getAddress().getCity())
+                        .postalCode(patient.getAddress().getPostalCode())
+                        .country(patient.getAddress().getCountry())
+                        .build())
+
+                .insuranceInfo(PatientProfileDTO.InsuranceInfoDTO.builder()
+                        .policyNumber(patient.getInsuranceInfo().getPolicyNumber())
+                        .provider(patient.getInsuranceInfo().getProvider())
+                        .coverageType(patient.getInsuranceInfo().getCoverageType())
+                        .build())
+
+                .healthConcerns(patient.getHealthConcerns() != null
+                        ? patient.getHealthConcerns().stream()
+                        .map(HealthConcern::getDescription)
+                        .toList()
+                        : Collections.emptyList())
+
+                .build();
+
+    }
+    @Transactional(readOnly = true)
+    public List<PatientDetailsDTO> listAllPatients() {
+        return patientRepository.findAll().stream().map(patientMapper::toDetailsDTO).toList();
+    }
+
+    private String generatePatientId() {
+        List<String> existingIds = patientRepository.findAll().stream()
+                .map(Patient::getPatientId)
+                .filter(id -> id != null && id.startsWith("PAT"))
+                .toList();
         int max = existingIds.stream()
                 .map(id -> id.substring(3))
+                .filter(s -> s.matches("\\d+"))
                 .mapToInt(Integer::parseInt)
                 .max()
                 .orElse(0);
@@ -171,5 +185,44 @@ public class PatientService {
     private String generateInsuranceId() {
         long count = insuranceInfoRepository.count();
         return String.format("INS%02d", count + 1);
+    }
+
+    private <T> T tryGet(String baseUrl, String path, HttpHeaders headers, Class<T> clazz) {
+        String url = baseUrl + (path.startsWith("/") ? path : ("/" + path));
+        try {
+            if (headers != null) {
+                return resilientRestTemplate.getForObjectWithFallback(url, headers, clazz);
+            } else {
+                return resilientRestTemplate.getForObjectWithFallback(url, clazz);
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public PatientProfileDTO getPatientProfileWithPeers(String id) {
+        // 1) tentar localmente (read model relacional)
+        try {
+            return getPatientProfile(id, null);
+        } catch (NotFoundException | EntityNotFoundException ex) {
+            // ignorar e tentar peers
+        }
+
+        // 2) tentar sequencialmente em cada peer pela rota pública GET /patients/{id}
+        for (String base : patientPeers) {
+            String url = base + "/patients/" + id;
+            try {
+                PatientProfileDTO dto = resilientRestTemplate.getForObjectWithFallback(url, PatientProfileDTO.class);
+                if (dto != null) {
+                    return dto;
+                }
+            } catch (Exception ignored) {
+                // tenta próximo peer
+            }
+        }
+
+        // 3) nenhum peer devolveu o paciente
+        throw new NotFoundException("Patient not found with ID: " + id);
     }
 }

@@ -1,0 +1,78 @@
+@startuml
+' C4+1 — Appointment fetch SD (alinhado com implementação atual)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Appointment Fetch (Remote-first with Fallback + Peer Forwarding)
+
+actor Client
+participant "AppointmentController" as Controller
+participant "AppointmentService" as Service
+participant "Appointment Records API" as Records
+participant "AppointmentRepository" as Repo
+participant "Patients Service" as Patients
+participant "Peer Physicians Instance" as Peer
+
+autonumber
+Client -> Controller : GET /appointments/{id}
+activate Controller
+Controller -> Service : getAppointmentById(id)
+activate Service
+' Remote-first attempt
+Service -> Records : GET /api/appointments/{id}\n(forward Authorization)
+activate Records
+alt Remote found
+  Records --> Service : Appointment JSON
+  deactivate Records
+  Service -> Service : mapRemoteAppointment(json)
+  Service --> Controller : Optional(Appointment)
+  deactivate Service
+  Controller --> Client : 200 OK { appointment }
+  deactivate Controller
+else Remote not found / error
+  Records --> Service : exception
+  deactivate Records
+  ' Fallback local
+  Service -> Repo : findById(id)
+  activate Repo
+  alt Local found
+    Repo --> Service : Appointment entity
+    deactivate Repo
+    alt Missing patient details
+      Service -> Patients : GET /patients/{patientId}
+      activate Patients
+      Patients --> Service : { fullName, email, phone }
+      deactivate Patients
+    else Already enriched
+    end
+    Service --> Controller : Optional(Appointment)
+    deactivate Service
+    Controller --> Client : 200 OK { appointment }
+    deactivate Controller
+  else Local not found
+    Repo --> Service : null
+    deactivate Repo
+    Service --> Controller : Optional.empty
+    deactivate Service
+    ' Peer forwarding from controller
+    loop each peer
+      Controller -> Peer : HTTP GET /internal/appointments/{id}\n(forward Authorization)
+      activate Peer
+      alt Peer returns 200
+        Peer --> Controller : Appointment
+        deactivate Peer
+        Controller --> Client : 200 OK { appointment }
+        deactivate Controller
+        break
+      else Peer returns 404/error
+        Peer --> Controller : 404 / error
+        deactivate Peer
+      end
+    end
+    Controller --> Client : 404 Not Found
+    deactivate Controller
+  end
+end
+
+@enduml

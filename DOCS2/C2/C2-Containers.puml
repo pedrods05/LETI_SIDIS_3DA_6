@@ -1,0 +1,66 @@
+@startuml
+' C2 - Containers diagram for HAP (Version 2 - CQRS & Messaging)
+skinparam dpi 150
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.2
+skinparam RectangleBorderColor #2E3440
+skinparam RectangleBackgroundColor #ECEFF4
+skinparam DefaultFontName Arial
+skinparam DefaultFontSize 12
+left to right direction
+
+title C2 — Containers (HAP) - Arquitetura v2 (CQRS + RabbitMQ)
+
+rectangle "Physicians Service\n(hap-physicians)\nPorts: 8081, 8087" as Physicians #A3BE8C
+rectangle "Patients Service\n(hap-patients)\nPorts: 8082, 8088" as Patients #88C0D0
+rectangle "Auth Service\n(hap-auth)\nPorts: 8084, 8089" as Auth #EBCB8B
+rectangle "Appointment Records Service\n(hap-appointmentrecords)\nPorts: 8083, 8090" as Records #D08770
+
+rectangle "Message Broker\n(RabbitMQ)\nPorts: 5672, 15672" as Broker #BF616A
+
+Physicians -[hidden]-> Patients
+Patients   -[hidden]-> Auth
+Records    -[hidden]-> Broker
+
+Physicians --> Auth : HTTP/REST (Validação/Login)
+Patients --> Auth : HTTP/REST (Registo de Conta)
+Records --> Auth : HTTP/REST (Validação de Token)
+
+Patients --> Broker : AMQP (Publish: PatientRegistered)
+Physicians --> Broker : AMQP (Publish: AppointmentScheduled, Canceled...)
+Records --> Broker : AMQP (Publish: RecordCreated)
+
+' (Tracejado para diferenciar do fluxo de pedido direto)
+Broker .u.> Patients : AMQP (Consume: Atualizar MongoDB Local)
+Broker .u.> Physicians : AMQP (Consume: Atualizar MongoDB / Saga Compensations)
+Broker .u.> Records : AMQP (Consume: Sincronizar dados)
+
+' Legenda Atualizada
+legend top left
+Protocolos & Padrões (v2):
+- HTTP/REST (Síncrono):
+  Usado para autenticação crítica e APIs externas.
+- AMQP (Assíncrono):
+  Usado para comunicação interna, CQRS e Sagas.
+
+Armazenamento (Implícito):
+- Cada serviço tem:
+  1. Write DB (SQL/H2) para Comandos
+  2. Read DB (MongoDB) para Queries
+endlegend
+
+legend right
+Fluxo de Eventos (Exemplos):
+- Patients → Broker: "Novo Paciente Criado"
+- Broker → Patients: Listener grava no Mongo (CQRS)
+- Broker → Physicians: Listener copia dados para cache local
+- Physicians → Broker: "Consulta Cancelada"
+- Broker → Patients: Atualiza histórico do paciente
+endlegend
+
+note bottom of Broker
+RabbitMQ Cluster
+(Infraestrutura Partilhada)
+end note
+@enduml

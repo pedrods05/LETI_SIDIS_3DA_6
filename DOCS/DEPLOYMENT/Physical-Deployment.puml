@@ -1,0 +1,65 @@
+@startuml
+'
+' Physical Deployment View — Development (Localhost)
+' Shows the two instances (peers) of each container on a single developer machine
+'
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam wrapWidth 180
+skinparam dpi 150
+
+title Physical Deployment View — Dev (Localhost)
+
+legend left
+Containers (services) run as Spring Boot apps on a single machine.
+Each service can run two instances (peers) using different ports.
+Communication is HTTP/REST; peers use the same public endpoints (no /internal).
+endlegend
+
+actor "Client (Browser/Postman)" as CLIENT
+
+node "Developer Machine" as DEV {
+  node "Localhost (127.0.0.1)" as LOCAL {
+    frame "Runtime - instance1 profile" as R1 {
+      component "hap-auth\ninstance1 :8084" as AUTH1
+      component "hap-patients\ninstance1 :8082" as PAT1
+      component "hap-appointmentrecords\ninstance1 :8083" as REC1
+      component "hap-physicians\ninstance1 :8081" as PHY1
+    }
+
+    frame "Runtime - instance2 profile" as R2 {
+      component "hap-auth\ninstance2 :8089" as AUTH2
+      component "hap-patients\ninstance2 :8088" as PAT2
+      component "hap-appointmentrecords\ninstance2 :8090" as REC2
+      component "hap-physicians\ninstance2 :8087" as PHY2
+    }
+
+    database "H2 (in-memory)\n1 DB por serviço (dev)" as H2
+  }
+}
+
+' Client access (example pointing to instance1)
+CLIENT --> PHY1 : HTTP
+CLIENT --> PAT1 : HTTP
+CLIENT --> REC1 : HTTP
+CLIENT --> AUTH1 : HTTP
+
+' Cross-container calls (instance1 examples)
+PHY1 --> PAT1 : HTTP/REST
+PHY1 --> REC1 : HTTP/REST
+PAT1 --> AUTH1 : HTTP/REST
+REC1 --> PAT1 : HTTP/REST
+REC1 --> PHY1 : HTTP/REST
+
+' Peer forwarding between instances (same container)
+PHY1 <--> PHY2 : Peer forwarding
+PAT1 <--> PAT2 : Peer forwarding
+REC1 <--> REC2 : Peer forwarding
+AUTH1 <--> AUTH2 : (redundant endpoints)
+
+' Data stores note
+H2 -[hidden]-> R1
+H2 -[hidden]-> R2
+
+@enduml

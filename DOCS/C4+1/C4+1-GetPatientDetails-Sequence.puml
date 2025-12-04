@@ -1,0 +1,46 @@
+@startuml
+' C4+1 — SD: Get Patient Details (Admin)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+Title C4: Sequence Diagram - Get Patient Details (Admin)
+
+actor Administrator as Admin
+participant "PatientController" as Controller
+participant "PatientService" as Service
+participant "PatientRepository" as Repo
+participant "PatientLocalRepository" as LocalCache
+participant "Peer Instance" as Peer
+activate Admin
+Admin -> Controller : GET /patients/{id}
+activate Controller
+Controller -> LocalCache : findById(id)
+activate LocalCache
+alt Found locally
+    LocalCache --> Controller : PatientDetailsDTO
+    deactivate LocalCache
+else Not found
+    ' do not emit explicit null return to avoid back-to-back return arrows
+    deactivate LocalCache
+    Controller -> Service : getPatientDetails(id)
+    activate Service
+    alt Found in DB
+        Service -> Repo : findById(id)
+        activate Repo
+        Repo --> Service : Patient Entity
+        deactivate Repo
+        Service --> Controller : PatientDetailsDTO
+        deactivate Service
+    else Not found locally
+        ' close service without explicit NotFound return
+        deactivate Service
+        Controller -> Peer : HTTP GET /patients/{id}
+        activate Peer
+        Peer --> Controller : PatientDetailsDTO
+        deactivate Peer
+    end
+end
+Controller --> Admin : 200 OK + JSON
+deactivate Controller
+@enduml
