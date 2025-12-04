@@ -1,0 +1,115 @@
+@startuml GetPhysicianDetails-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Get Physician Details - Sequence Diagram
+
+actor Client
+participant "PhysicianController" as Controller
+participant "PhysicianQueryService" as QueryService
+participant "PhysicianQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+participant "PhysicianRepository\n(Write Model - H2)" as WriteRepo
+participant "SpecialtyRepository" as SpecialtyRepo
+participant "DepartmentRepository" as DepartmentRepo
+participant "RestTemplate" as RestTemplate
+participant "ExternalServiceClient" as ExternalClient
+participant "Peer Instance" as Peer
+
+autonumber
+activate Client
+Client -> Controller: GET /physicians/{physicianId}
+activate Controller
+
+Controller -> QueryService: getPhysicianById(physicianId)
+activate QueryService
+
+QueryService -> ReadRepo: findById(physicianId)
+activate ReadRepo
+ReadRepo --> QueryService: Optional<PhysicianSummary>
+deactivate ReadRepo
+
+alt PhysicianSummary found in MongoDB
+    QueryService -> QueryService: toPhysician(summary)
+
+    QueryService -> SpecialtyRepo: findById(specialtyId)
+    activate SpecialtyRepo
+    SpecialtyRepo --> QueryService: Optional<Specialty>
+    deactivate SpecialtyRepo
+
+    alt Specialty not found
+        QueryService -> QueryService: Create minimal Specialty from summary
+    end
+
+    QueryService -> DepartmentRepo: findById(departmentId)
+    activate DepartmentRepo
+    DepartmentRepo --> QueryService: Optional<Department>
+    deactivate DepartmentRepo
+
+    alt Department not found
+        QueryService -> QueryService: Create minimal Department from summary
+    end
+
+    QueryService -> WriteRepo: findById(physicianId)
+    activate WriteRepo
+    WriteRepo --> QueryService: Optional<Physician>
+    deactivate WriteRepo
+
+    alt Full Physician found in write model
+        QueryService -> QueryService: Enrich with emails, phones, working hours, photo
+        note right of QueryService
+          Preserves specialty and department
+          from read model, enriches with
+          additional fields from write model
+        end note
+    end
+
+    QueryService --> Controller: Physician
+else PhysicianSummary not found in MongoDB
+    QueryService -> WriteRepo: findById(physicianId)
+    activate WriteRepo
+    WriteRepo --> QueryService: Optional<Physician>
+    deactivate WriteRepo
+
+    alt Physician found in write model
+        QueryService --> Controller: Physician
+    else Physician not found
+        QueryService --> Controller: NotFoundException
+    end
+end
+
+deactivate QueryService
+
+alt Physician found locally
+    Controller --> Client: 200 OK\nPhysician
+else Physician not found locally
+    Controller -> ExternalClient: getPeerUrls()
+    activate ExternalClient
+    ExternalClient --> Controller: List<String> peerUrls
+    deactivate ExternalClient
+
+    loop For each peer URL
+        Controller -> RestTemplate: GET {peer}/internal/physicians/{id}
+        activate RestTemplate
+        RestTemplate -> Peer: HTTP GET request
+        activate Peer
+        Peer --> RestTemplate: Physician or 404
+        deactivate Peer
+        RestTemplate --> Controller: Physician or null
+        deactivate RestTemplate
+
+        alt Physician found in peer
+            Controller --> Client: 200 OK\nPhysician (from peer)
+            break
+        end
+    end
+
+    alt Physician not found in any peer
+        Controller --> Client: 404 Not Found
+    end
+end
+
+deactivate Controller
+
+@enduml
+

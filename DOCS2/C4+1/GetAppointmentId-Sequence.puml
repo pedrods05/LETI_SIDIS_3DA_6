@@ -1,0 +1,116 @@
+@startuml GetAppointmentId-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Get Appointment By ID - Sequence Diagram
+
+actor Client
+participant "AppointmentController" as Controller
+participant "AppointmentQueryService" as QueryService
+participant "AppointmentQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+participant "AppointmentRepository\n(Write Model - H2)" as WriteRepo
+participant "ExternalServiceClient" as ExternalClient
+participant "PhysicianRepository" as PhysicianRepo
+participant "RestTemplate" as RestTemplate
+participant "Peer Instance" as Peer
+
+autonumber
+activate Client
+Client -> Controller: GET /appointments/{appointmentId}
+activate Controller
+
+Controller -> QueryService: getAppointmentById(appointmentId)
+activate QueryService
+
+QueryService -> ReadRepo: findById(appointmentId)
+activate ReadRepo
+ReadRepo --> QueryService: Optional<AppointmentSummary>
+deactivate ReadRepo
+
+alt AppointmentSummary found in MongoDB
+    QueryService -> WriteRepo: findById(appointmentId)
+    activate WriteRepo
+    WriteRepo --> QueryService: Optional<Appointment>
+    deactivate WriteRepo
+
+    alt Full Appointment found in write model
+        QueryService -> QueryService: toAppointmentWithFallback(summary)
+        QueryService -> QueryService: Check if patient data is missing
+
+        alt Patient data missing
+            QueryService -> ExternalClient: getPatientById(patientId)
+            activate ExternalClient
+            ExternalClient --> QueryService: Patient data (Map)
+            deactivate ExternalClient
+
+            QueryService -> WriteRepo: save(enriched appointment)
+            activate WriteRepo
+            WriteRepo --> QueryService: Saved
+            deactivate WriteRepo
+        end
+
+        QueryService -> PhysicianRepo: findById(physicianId)
+        activate PhysicianRepo
+        PhysicianRepo --> QueryService: Optional<Physician>
+        deactivate PhysicianRepo
+
+        QueryService --> Controller: Optional<Appointment>
+    else Appointment not in write model
+        QueryService -> QueryService: Build Appointment from summary
+        QueryService -> ExternalClient: getPatientById(patientId)
+        activate ExternalClient
+        ExternalClient --> QueryService: Patient data
+        deactivate ExternalClient
+
+        QueryService -> PhysicianRepo: findById(physicianId)
+        activate PhysicianRepo
+        PhysicianRepo --> QueryService: Optional<Physician>
+        deactivate PhysicianRepo
+
+        QueryService --> Controller: Optional<Appointment>
+    end
+else AppointmentSummary not found in MongoDB
+    QueryService -> WriteRepo: findById(appointmentId)
+    activate WriteRepo
+    WriteRepo --> QueryService: Optional<Appointment>
+    deactivate WriteRepo
+
+    QueryService --> Controller: Optional<Appointment>
+end
+
+deactivate QueryService
+
+alt Appointment found locally
+    Controller --> Client: 200 OK\nAppointment
+else Appointment not found locally
+    Controller -> ExternalClient: getPeerUrls()
+    activate ExternalClient
+    ExternalClient --> Controller: List<String> peerUrls
+    deactivate ExternalClient
+
+    loop For each peer URL
+        Controller -> RestTemplate: GET {peer}/internal/appointments/{id}
+        activate RestTemplate
+        RestTemplate -> Peer: HTTP GET request
+        activate Peer
+        Peer --> RestTemplate: Appointment or 404
+        deactivate Peer
+        RestTemplate --> Controller: Appointment or null
+        deactivate RestTemplate
+
+        alt Appointment found in peer
+            Controller --> Client: 200 OK\nAppointment (from peer)
+            break
+        end
+    end
+
+    alt Appointment not found in any peer
+        Controller --> Client: 404 Not Found
+    end
+end
+
+deactivate Controller
+
+@enduml
+

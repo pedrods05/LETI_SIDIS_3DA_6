@@ -1,0 +1,120 @@
+@startuml AppointmentUpdate-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Appointment Update - Sequence Diagram
+
+actor Client
+participant "AppointmentController" as Controller
+participant "AppointmentCommandService" as CommandService
+participant "AppointmentService" as Service
+participant "ExternalServiceClient" as ExternalClient
+participant "AppointmentRepository\n(Write Model - H2)" as WriteRepo
+participant "RabbitMQ\nExchange" as RabbitMQ
+participant "AppointmentEventHandler" as EventHandler
+participant "AppointmentQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+participant "AppointmentReminderHandler" as ReminderHandler
+
+autonumber
+activate Client
+Client -> Controller: PUT /appointments/{id}\n(UpdateAppointmentRequest)
+activate Controller
+
+Controller -> CommandService: updateAppointment(appointmentId, dto)
+activate CommandService
+
+CommandService -> Service: updateAppointment(appointmentId, dto)
+activate Service
+
+Service -> WriteRepo: findById(appointmentId)
+activate WriteRepo
+WriteRepo --> Service: Optional<Appointment>
+deactivate WriteRepo
+
+Service -> Service: Prepare appointment data
+Service -> ExternalClient: updateAppointmentInRecords(appointmentId, appointmentData)
+activate ExternalClient
+ExternalClient --> Service: Updated (or exception ignored)
+deactivate ExternalClient
+
+Service -> Service: Update appointment fields
+Service -> WriteRepo: save(appointment)
+activate WriteRepo
+WriteRepo --> Service: Appointment (updated)
+deactivate WriteRepo
+
+Service --> CommandService: Appointment
+deactivate Service
+
+alt Status is CANCELED
+    CommandService -> CommandService: publishAppointmentCanceledEvent(appointment)
+    CommandService -> RabbitMQ: convertAndSend("appointment.canceled", event)
+    activate RabbitMQ
+    RabbitMQ --> CommandService: Cancel event published
+    deactivate RabbitMQ
+else Status is NOT CANCELED
+    CommandService -> CommandService: publishAppointmentUpdatedEvent(appointment)
+    CommandService -> RabbitMQ: convertAndSend("appointment.updated", event)
+    activate RabbitMQ
+    RabbitMQ --> CommandService: Update event published
+    deactivate RabbitMQ
+
+    CommandService -> CommandService: publishAppointmentReminderEvent(appointment, "UPDATED")
+    CommandService -> RabbitMQ: convertAndSend("appointment.reminder", event)
+    activate RabbitMQ
+    RabbitMQ --> CommandService: Reminder event published
+    deactivate RabbitMQ
+end
+
+CommandService --> Controller: Appointment
+deactivate CommandService
+
+Controller --> Client: 200 OK\nAppointment
+deactivate Controller
+deactivate Client
+
+note right of RabbitMQ
+  Asynchronous processing:
+  Events are consumed by handlers
+end note
+
+alt Event is appointment.updated
+    RabbitMQ -> EventHandler: AppointmentUpdatedEvent
+    activate RabbitMQ
+    activate EventHandler
+    EventHandler -> ReadRepo: findById(appointmentId)
+    activate ReadRepo
+    ReadRepo --> EventHandler: Optional<AppointmentSummary>
+    deactivate ReadRepo
+
+    EventHandler -> ReadRepo: save(updated AppointmentSummary)
+    activate ReadRepo
+    ReadRepo --> EventHandler: Saved
+    deactivate ReadRepo
+    EventHandler -> EventHandler: Update MongoDB read model
+
+    RabbitMQ -> ReminderHandler: AppointmentReminderEvent
+    deactivate EventHandler
+    activate ReminderHandler
+    ReminderHandler -> ReminderHandler: sendReminderEmail(event)
+else Event is appointment.canceled
+    RabbitMQ -> EventHandler: AppointmentCanceledEvent
+    deactivate ReminderHandler
+    deactivate RabbitMQ
+    activate EventHandler
+    EventHandler -> WriteRepo: findById(appointmentId)
+    activate WriteRepo
+    WriteRepo --> EventHandler: Optional<Appointment>
+    deactivate WriteRepo
+
+    EventHandler -> ReadRepo: save(AppointmentSummary with status CANCELED)
+    activate ReadRepo
+    ReadRepo --> EventHandler: Saved
+    deactivate ReadRepo
+
+    EventHandler -> EventHandler: Update MongoDB read model
+end
+
+@enduml
+
