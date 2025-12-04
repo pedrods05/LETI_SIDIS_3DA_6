@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.6</version>
+        <version>3.3.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>LETI_SISDIS_6</groupId>
@@ -30,7 +30,7 @@
         <java.version>17</java.version>
         <spring-ai.version>1.0.3</spring-ai.version>
         <!-- Align springdoc with Spring Boot 3.5.x / Spring Framework 6.3 -->
-        <springdoc.version>2.7.0</springdoc.version>
+        <springdoc.version>2.6.0</springdoc.version>
         <lombok.version>1.18.34</lombok.version>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
     </properties>
