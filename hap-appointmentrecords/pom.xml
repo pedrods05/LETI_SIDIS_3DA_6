@@ -43,6 +43,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- AMQP / RabbitMQ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
         <!-- AI (mantive, como no teu POM) -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
