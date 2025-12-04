@@ -79,6 +79,24 @@ mvnw.cmd -q -DskipTests package
 - As Queries (ex: GetPatientById) são representadas pelos métodos de leitura no `PatientQueryService`, que consultam o modelo de leitura (`PatientQueryRepository` / projeções de leitura).
 - Os DTOs de entrada (por exemplo `PatientRegistrationDTOV2`) funcionam como objetos de comando.
 
+## Messaging e Tracing no hap-patients
+
+Este módulo usa RabbitMQ para publicar o evento `PatientRegisteredEvent` sempre que um novo paciente é registado.
+O evento é consumido localmente por `PatientEventHandler`, que atualiza o modelo de leitura em MongoDB (`PatientSummary`).
+
+### Correlation IDs (Tracing de ponta a ponta)
+
+Para permitir rastreio de um pedido entre serviços:
+
+- O controlador `PatientRegistrationController` aceita opcionalmente o header HTTP `X-Correlation-Id`.
+    - Se não existir, gera um UUID e coloca-o no MDC (contexto de logging) sob a mesma chave.
+- O `RabbitTemplate` é configurado em `RabbitMQConfig` com um `beforePublishPostProcessor` que lê o `X-Correlation-Id` do MDC
+  e coloca esse valor nos headers AMQP da mensagem.
+- O `PatientEventHandler` lê o header `X-Correlation-Id` da mensagem RabbitMQ, volta a colocá-lo no MDC e inclui o valor nos logs.
+
+Desta forma, é possível seguir nos logs o mesmo `X-Correlation-Id` desde o pedido HTTP de registo de paciente,
+passando pela publicação do evento até ao processamento no lado de leitura (MongoDB) e em quaisquer consumidores adicionais
+que usem o mesmo header.
 ### Perguntas frequentes (Q&A)
 
 **Q1: Onde é que se vê CQRS no módulo hap-patients?**

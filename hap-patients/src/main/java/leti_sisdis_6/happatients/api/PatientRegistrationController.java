@@ -8,8 +8,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+import static leti_sisdis_6.happatients.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @RestController
 @RequestMapping("/api/v2/patients")
@@ -28,7 +33,15 @@ public class PatientRegistrationController {
             @ApiResponse(responseCode = "409", description = "Email already exists")
         }
     )
-    public ResponseEntity<?> registerPatient(@Valid @RequestBody PatientRegistrationDTOV2 request) {
+    public ResponseEntity<?> registerPatient(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @Valid @RequestBody PatientRegistrationDTOV2 request) {
+
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+
         try {
             String patientId = patientRegistrationService.registerPatient(request);
             return ResponseEntity.created(null)
@@ -45,9 +58,11 @@ public class PatientRegistrationController {
                 e.getMessage(),
                 "CONFLICT"
             ));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 
     private record RegistrationResponse(String patientId, String message) {}
     private record ErrorResponse(String error, String message, String status) {}
-} 
+}
