@@ -47,16 +47,24 @@ mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
   - Após um registo bem-sucedido, `PatientRegistrationService` publica `PatientRegisteredEvent` no exchange `hap-exchange`.
   - `PatientEventHandler` consome esses eventos e atualiza o modelo de leitura em MongoDB.
   - Este padrão permite que outros serviços (physicians, appointment-records) também reajam a eventos sem acoplamento forte.
+- **Event log / Event Sourcing light:**
+  - Para cada registo de paciente, o serviço persiste um `PatientEvent` na tabela `patient_events` com tipo de evento, `patientId` e metadados de auditoria.
+  - O estado oficial do paciente continua na entidade JPA `Patient`; o event log funciona como trilho de auditoria (audit trail) e primeiro passo em direção a event sourcing, mas não é usado para reconstruir o estado.
 - **Peer-forwarding HTTP entre instâncias:**
   - Continua ativo mesmo com CQRS/AMQP: se a instância local ainda não conhece o paciente, tenta sequencialmente os peers configurados.
   - Implementado no `PatientController` utilizando `ResilientRestTemplate` para lidar com falhas temporárias de peers.
 - **Isolamento entre serviços:**
   - Não há imports diretos de classes de outros módulos; a integração é sempre via HTTP/REST ou eventos AMQP.
+- **Sagas envolvendo pacientes:**
+  - Não existe uma Saga distribuída formal para o registo de pacientes. A criação de credenciais em `hap-auth` é feita via chamada HTTP síncrona dentro de uma transação local.
+  - Os eventos `PatientRegisteredEvent` ficam disponíveis para que outros serviços possam reagir (coreografia leve), mas sem um orquestrador de Saga nem passos de compensação.
 
 ## Limitações conhecidas
 - Sem service discovery e sem circuit breaker.
 - Sem cache distribuída; consistência eventual entre instâncias.
 - Eventos focados nos cenários principais (por exemplo, `PatientRegisteredEvent`); extensões para outros eventos são possíveis mas não totalmente exploradas aqui.
+- O módulo não aplica event sourcing completo: o estado oficial do paciente está numa base relacional e o event log (`PatientEvent`) não é usado para reconstruir o estado.
+- Não há Saga de registo de paciente com vários passos assíncronos e compensações; optou-se por um fluxo mais simples (transação local + chamada HTTP + eventos de integração).
 
 ## Testes e build
 ```cmd
@@ -88,3 +96,7 @@ mvnw.cmd -q -DskipTests package
 - Assim, temos dois mecanismos complementares:
   - Eventos AMQP para sincronização entre componentes diferentes (patients, physicians, appointments, auth).
   - Peer-forwarding HTTP para leitura entre instâncias do mesmo componente quando o dado não existe localmente.
+
+**Q4: Estão a usar event sourcing completo ou Sagas no hap-patients?**
+- Não. No hap-patients usamos um event log (`PatientEvent`) para auditoria, combinado com CQRS e eventos AMQP, mas o estado oficial do paciente continua na base de dados relacional.
+- Não há uma Saga distribuída formal para o registo de pacientes; em vez disso, optou-se por uma integração síncrona simples com o serviço de autenticação e emissão de eventos para integração assíncrona com outros serviços.
