@@ -1,0 +1,98 @@
+@startuml ViewFutureAppointments-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title View Future Appointments - Sequence Diagram
+
+actor Client
+participant "AppointmentController" as Controller
+participant "AppointmentQueryService" as QueryService
+participant "AppointmentQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+participant "AppointmentRepository\n(Write Model - H2)" as WriteRepo
+participant "AppointmentMapper" as Mapper
+participant "ExternalServiceClient" as ExternalClient
+
+autonumber
+activate Client
+Client -> Controller: GET /appointments/upcoming
+activate Controller
+
+Controller -> QueryService: listUpcomingAppointments()
+activate QueryService
+
+QueryService -> ReadRepo: findByDateTimeAfterOrderByDateTimeAsc(now())
+activate ReadRepo
+ReadRepo --> QueryService: List<AppointmentSummary>
+deactivate ReadRepo
+
+QueryService -> QueryService: Filter by status = "SCHEDULED"
+
+alt Summaries found in MongoDB
+    QueryService -> QueryService: Map summaries to Appointments
+    loop For each AppointmentSummary
+        QueryService -> WriteRepo: findById(appointmentId)
+        activate WriteRepo
+        WriteRepo --> QueryService: Optional<Appointment>
+        deactivate WriteRepo
+
+        alt Full Appointment found
+            QueryService -> QueryService: Check if patient data is missing
+
+            alt Patient data missing
+                QueryService -> ExternalClient: getPatientById(patientId)
+                activate ExternalClient
+                ExternalClient --> QueryService: Patient data
+                deactivate ExternalClient
+
+                QueryService -> WriteRepo: save(enriched appointment)
+                activate WriteRepo
+                WriteRepo --> QueryService: Saved
+                deactivate WriteRepo
+            end
+        else Appointment not in write model
+            QueryService -> QueryService: Build Appointment from summary
+            QueryService -> ExternalClient: getPatientById(patientId)
+            activate ExternalClient
+            ExternalClient --> QueryService: Patient data
+            deactivate ExternalClient
+        end
+    end
+
+    QueryService -> Mapper: toListDTO(appointments)
+    activate Mapper
+    Mapper --> QueryService: List<AppointmentListDTO>
+    deactivate Mapper
+
+    QueryService --> Controller: List<AppointmentListDTO>
+else Summaries not found or empty
+    QueryService -> WriteRepo: findAll()
+    activate WriteRepo
+    WriteRepo --> QueryService: List<Appointment>
+    deactivate WriteRepo
+
+    QueryService -> QueryService: Filter by dateTime > now() and status = SCHEDULED
+    QueryService -> QueryService: Sort by dateTime ascending
+
+    QueryService -> Mapper: toListDTO(upcomingAppointments)
+    activate Mapper
+    Mapper --> QueryService: List<AppointmentListDTO>
+    deactivate Mapper
+
+    QueryService --> Controller: List<AppointmentListDTO>
+end
+
+deactivate QueryService
+
+Controller --> Client: 200 OK\nList<AppointmentListDTO>
+deactivate Controller
+deactivate Client
+
+note right of QueryService
+  Fallback strategy:
+  1. Try MongoDB read model first
+  2. If empty, fallback to H2 write model
+end note
+
+@enduml
+

@@ -1,0 +1,86 @@
+@startuml PhysicianUpdate-Sequence
+
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Physician Update - Sequence Diagram
+
+actor Client
+participant "PhysicianController" as Controller
+participant "PhysicianCommandService" as CommandService
+participant "PhysicianService" as Service
+participant "PhysicianRepository\n(Write Model - H2)" as WriteRepo
+participant "RabbitMQ\nExchange" as RabbitMQ
+participant "PhysicianEventHandler" as EventHandler
+participant "PhysicianQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+
+autonumber
+activate Client
+Client -> Controller: PUT /physicians/{physicianId}\n(UpdatePhysicianRequest)
+activate Controller
+
+Controller -> CommandService: updatePhysician(physicianId, request)
+activate CommandService
+
+CommandService -> Service: partialUpdate(physicianId, request)
+activate Service
+
+Service -> WriteRepo: findById(physicianId)
+activate WriteRepo
+WriteRepo --> Service: Optional<Physician>
+deactivate WriteRepo
+
+Service -> Service: Update physician fields (partial update)
+Service -> WriteRepo: save(physician)
+activate WriteRepo
+WriteRepo --> Service: Physician (updated)
+deactivate WriteRepo
+
+Service --> CommandService: PhysicianFullDTO
+deactivate Service
+
+CommandService -> WriteRepo: findById(physicianId)
+activate WriteRepo
+WriteRepo --> CommandService: Physician
+deactivate WriteRepo
+
+CommandService -> CommandService: publishPhysicianUpdatedEvent(physicianId)
+CommandService -> RabbitMQ: convertAndSend("physician.updated", event)
+activate RabbitMQ
+RabbitMQ --> CommandService: Event published
+
+CommandService --> Controller: PhysicianFullDTO
+deactivate CommandService
+
+Controller --> Client: 200 OK\nPhysicianFullDTO
+deactivate Controller
+
+note right of RabbitMQ
+  Asynchronous processing:
+  Event is consumed by handler
+end note
+
+RabbitMQ -> EventHandler: PhysicianUpdatedEvent
+deactivate RabbitMQ
+activate EventHandler
+
+EventHandler -> ReadRepo: findById(physicianId)
+activate ReadRepo
+ReadRepo --> EventHandler: Optional<PhysicianSummary>
+deactivate ReadRepo
+
+alt PhysicianSummary exists
+    EventHandler -> EventHandler: Update existing summary
+else PhysicianSummary doesn't exist
+    EventHandler -> EventHandler: Create new summary
+end
+
+EventHandler -> ReadRepo: save(updated PhysicianSummary)
+activate ReadRepo
+ReadRepo --> EventHandler: Saved
+deactivate ReadRepo
+EventHandler -> EventHandler: Update MongoDB read model
+
+@enduml
+

@@ -1,0 +1,91 @@
+@startuml ViewSlotsPhysician-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title View Physician Slots - Sequence Diagram
+
+actor Client
+participant "PhysicianController" as Controller
+participant "PhysicianQueryService" as QueryService
+participant "PhysicianQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+participant "PhysicianRepository\n(Write Model - H2)" as WriteRepo
+participant "AppointmentRepository\n(Write Model - H2)" as AppointmentRepo
+participant "SlotCalculator" as Calculator
+
+autonumber
+activate Client
+Client -> Controller: GET /physicians/{physicianId}/slots\n?startDate=2025-12-01&endDate=2025-12-31
+activate Controller
+
+Controller -> QueryService: getPhysicianById(physicianId)
+activate QueryService
+
+QueryService -> ReadRepo: findById(physicianId)
+activate ReadRepo
+ReadRepo --> QueryService: Optional<PhysicianSummary>
+deactivate ReadRepo
+
+alt PhysicianSummary found
+    QueryService -> QueryService: Convert summary to Physician
+    QueryService -> WriteRepo: findById(physicianId)
+    activate WriteRepo
+    WriteRepo --> QueryService: Optional<Physician>
+    deactivate WriteRepo
+
+    QueryService -> QueryService: Enrich with additional data
+    QueryService --> Controller: Physician
+else PhysicianSummary not found
+    QueryService -> WriteRepo: findById(physicianId)
+    activate WriteRepo
+    WriteRepo --> QueryService: Optional<Physician>
+    deactivate WriteRepo
+
+    QueryService --> Controller: Physician or null
+end
+
+deactivate QueryService
+
+alt Physician not found
+    Controller --> Client: 404 Not Found
+else Physician found
+    Controller -> Controller: Parse startDate and endDate\n(or use defaults)
+
+    Controller -> AppointmentRepo: findByPhysicianPhysicianIdAndDateTimeBetween(\nphysicianId, start, end)
+    activate AppointmentRepo
+    AppointmentRepo --> Controller: List<Appointment>
+    deactivate AppointmentRepo
+
+    Controller -> Calculator: generateAvailableSlots(\nphysician, appointments, start, end)
+    activate Calculator
+
+    Calculator -> Calculator: Group appointments by date
+    Calculator -> Calculator: Calculate working hours
+
+    loop For each date in range
+        Calculator -> Calculator: Generate time slots\n(slot duration: 20 min, interval: 5 min)
+        Calculator -> Calculator: Check for overlaps with existing appointments
+        Calculator -> Calculator: Filter future slots only
+    end
+
+    Calculator -> Calculator: Limit to 3 months in future
+    Calculator --> Controller: List<AppointmentSlotDto>
+    deactivate Calculator
+
+    Controller --> Client: 200 OK\nList<AppointmentSlotDto>
+end
+
+deactivate Controller
+deactivate Client
+
+note right of Calculator
+  Slot calculation logic:
+  - Slot duration: 20 minutes
+  - Slot interval: 5 minutes
+  - Only future slots (not past)
+  - Excludes overlapping appointments
+  - Limited to 3 months ahead
+end note
+
+@enduml
+

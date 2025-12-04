@@ -1,0 +1,81 @@
+@startuml RegisterPhysician-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Register Physician - Sequence Diagram
+
+actor Client
+participant "PhysicianController" as Controller
+participant "PhysicianCommandService" as CommandService
+participant "PhysicianService" as Service
+participant "ExternalServiceClient" as ExternalClient
+participant "PhysicianRepository\n(Write Model - H2)" as WriteRepo
+participant "RabbitMQ\nExchange" as RabbitMQ
+participant "PhysicianEventHandler" as EventHandler
+participant "PhysicianQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+
+autonumber
+activate Client
+Client -> Controller: POST /physicians/register\n(RegisterPhysicianRequest)
+activate Controller
+
+Controller -> CommandService: registerPhysician(request)
+activate CommandService
+
+CommandService -> Service: register(request)
+activate Service
+
+Service -> Service: Validate physician data
+Service -> Service: Generate physicianId
+
+Service -> ExternalClient: registerUser(username, password, "PHYSICIAN")
+activate ExternalClient
+ExternalClient --> Service: User registered in auth service
+deactivate ExternalClient
+
+Service -> Service: Create Physician entity
+Service -> WriteRepo: save(physician)
+activate WriteRepo
+WriteRepo --> Service: Physician (saved)
+deactivate WriteRepo
+
+Service --> CommandService: PhysicianIdResponse
+deactivate Service
+
+CommandService -> WriteRepo: findById(physicianId)
+activate WriteRepo
+WriteRepo --> CommandService: Physician
+deactivate WriteRepo
+
+CommandService -> CommandService: publishPhysicianRegisteredEvent(physicianId)
+CommandService -> RabbitMQ: convertAndSend("physician.registered", event)
+activate RabbitMQ
+RabbitMQ --> CommandService: Event published
+
+CommandService --> Controller: PhysicianIdResponse
+deactivate CommandService
+
+Controller --> Client: 200 OK\nPhysicianIdResponse
+deactivate Controller
+deactivate Client
+
+note right of RabbitMQ
+  Asynchronous processing:
+  Event is consumed by handler
+end note
+
+RabbitMQ -> EventHandler: PhysicianRegisteredEvent
+deactivate RabbitMQ
+activate EventHandler
+
+EventHandler -> EventHandler: Create PhysicianSummary from event
+EventHandler -> ReadRepo: save(PhysicianSummary)
+activate ReadRepo
+ReadRepo --> EventHandler: Saved
+deactivate ReadRepo
+
+EventHandler -> EventHandler: Update MongoDB read model
+
+@enduml
+
