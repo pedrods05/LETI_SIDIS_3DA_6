@@ -4,6 +4,7 @@ import leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest;
 import leti_sisdis_6.happhysicians.events.AppointmentCanceledEvent;
 import leti_sisdis_6.happhysicians.events.AppointmentCreatedEvent;
+import leti_sisdis_6.happhysicians.events.AppointmentReminderEvent;
 import leti_sisdis_6.happhysicians.events.AppointmentUpdatedEvent;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
@@ -30,8 +31,9 @@ public class AppointmentCommandService {
         // Delegate to existing service
         Appointment appointment = appointmentService.createAppointment(dto);
         
-        // Publish event
+        // Publish events
         publishAppointmentCreatedEvent(appointment);
+        publishAppointmentReminderEvent(appointment, "CREATED");
         
         return appointment;
     }
@@ -55,6 +57,7 @@ public class AppointmentCommandService {
                 // Normal update - publish UpdatedEvent
                 System.out.println("✅ [Command] Publishing AppointmentUpdatedEvent for appointment: " + appointmentId);
                 publishAppointmentUpdatedEvent(appointment);
+                publishAppointmentReminderEvent(appointment, "UPDATED");
             }
         }
         
@@ -122,6 +125,28 @@ public class AppointmentCommandService {
             System.out.println("⚡ Evento AppointmentCanceledEvent enviado para o RabbitMQ: " + appointment.getAppointmentId());
         } catch (Exception e) {
             System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+        }
+    }
+
+    private void publishAppointmentReminderEvent(Appointment appointment, String reminderType) {
+        try {
+            AppointmentReminderEvent event = new AppointmentReminderEvent(
+                    appointment.getAppointmentId(),
+                    appointment.getPatientId(),
+                    appointment.getPatientName(),
+                    appointment.getPatientEmail(),
+                    appointment.getPatientPhone(),
+                    appointment.getPhysician().getPhysicianId(),
+                    appointment.getPhysician().getFullName(),
+                    appointment.getDateTime(),
+                    appointment.getConsultationType().toString(),
+                    reminderType
+            );
+
+            rabbitTemplate.convertAndSend(exchangeName, "appointment.reminder", event);
+            System.out.println("⚡ Evento AppointmentReminderEvent enviado para o RabbitMQ: " + appointment.getAppointmentId() + " (tipo: " + reminderType + ")");
+        } catch (Exception e) {
+            System.err.println("⚠️ FALHA ao enviar evento AppointmentReminderEvent: " + e.getMessage());
         }
     }
 }
