@@ -4,10 +4,7 @@ import leti_sisdis_6.happatients.exceptions.EmailAlreadyExistsException;
 import leti_sisdis_6.happatients.dto.PatientRegistrationDTOV2;
 import leti_sisdis_6.happatients.dto.HealthConcernDTO;
 import leti_sisdis_6.happatients.model.*;
-import leti_sisdis_6.happatients.repository.PatientRepository;
-import leti_sisdis_6.happatients.repository.PhotoRepository;
-import leti_sisdis_6.happatients.repository.AddressRepository;
-import leti_sisdis_6.happatients.repository.InsuranceInfoRepository;
+import leti_sisdis_6.happatients.repository.*;
 import leti_sisdis_6.happatients.event.PatientRegisteredEvent;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +31,7 @@ public class PatientRegistrationService {
     private final InsuranceInfoRepository insuranceInfoRepository;
     private final PasswordEncoder passwordEncoder;
     private final RabbitTemplate rabbitTemplate;
+    private final PatientEventRepository patientEventRepository;
 
 
     @Autowired(required = false)
@@ -142,6 +140,21 @@ public class PatientRegistrationService {
 
         patient = patientRepository.save(patient);
         log.info("Paciente persistido localmente (SQL). ID: {}", patient.getPatientId());
+
+        // Audit event (event sourcing light)
+        try {
+            PatientEvent auditEvent = new PatientEvent(
+                    "PATIENT_REGISTERED",
+                    patient.getPatientId(),
+                    "Patient registered with email=" + patient.getEmail(),
+                    java.time.LocalDateTime.now()
+            );
+            patientEventRepository.save(auditEvent);
+            log.info("[AUDIT] PatientEvent persistido para patientId={}", patient.getPatientId());
+        } catch (Exception e) {
+            log.error("[AUDIT] Falha ao persistir PatientEvent para patientId={}", patient.getPatientId(), e);
+        }
+
         publishPatientRegisteredEvent(patient);
         return patient.getPatientId();
     }

@@ -19,7 +19,6 @@ public class AppointmentEventsListener {
 
     // Método público que processa eventos; pode ser anotado com @RabbitListener em runtime/config se necessário
     public void onAppointmentCreated(AppointmentCreatedEvent event) {
-        // Create or update projection based on incoming event
         if (event == null || event.getAppointmentId() == null) return;
 
         AppointmentProjection projection = AppointmentProjection.builder()
