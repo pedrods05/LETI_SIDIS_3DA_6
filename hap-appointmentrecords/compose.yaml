@@ -1,12 +1,19 @@
 services:
+  zipkin:
+    image: 'openzipkin/zipkin:latest'
+    container_name: hap-zipkin-appointmentrecords
+    ports:
+      - '9411:9411'
   mongodb:
     image: 'mongo:latest'
+    container_name: hap-mongorecords
     environment:
-      - 'MONGO_INITDB_DATABASE=mydatabase'
       - 'MONGO_INITDB_ROOT_PASSWORD=secret'
       - 'MONGO_INITDB_ROOT_USERNAME=root'
     ports:
-      - '27017'
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
   mysql:
     image: 'mysql:latest'
     environment:
@@ -30,3 +37,15 @@ services:
       - 'POSTGRES_USER=myuser'
     ports:
       - '5432'
+  rabbitmq:
+    image: 'rabbitmq:3.12-management'
+    container_name: hap-rabbitmq-appointmentrecords
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+volumes:
+  mongo_data:
+    driver: local
