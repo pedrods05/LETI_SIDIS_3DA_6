@@ -1,40 +1,27 @@
 services:
+  # 1. O Broker de Mensagens (Essencial para enviar eventos CQRS)
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: hap-rabbitmq-physicians
+    ports:
+      - "5672:5672"   # Porta AMQP (Java)
+      - "15672:15672" # Porta Dashboard Web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  # 2. A Base de Dados de Leitura (Essencial para o CQRS/Query - Read Model)
   mongodb:
-    image: 'mongo:latest'
-    environment:
-      - 'MONGO_INITDB_DATABASE=mydatabase'
-      - 'MONGO_INITDB_ROOT_PASSWORD=secret'
-      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    image: mongo:6.0
+    container_name: hap-mongophysicians
     ports:
-      - '27017'
-  mysql:
-    image: 'mysql:latest'
+      - "27017:27017" # Porta MongoDB
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
-    ports:
-      - '3306'
-  oracle:
-    image: 'gvenzl/oracle-free:latest'
-    environment:
-      - 'ORACLE_PASSWORD=secret'
-    ports:
-      - '1521'
-  postgres:
-    image: 'postgres:latest'
-    environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
-    ports:
-      - '5432'
-  sqlserver:
-    image: 'mcr.microsoft.com/mssql/server:latest'
-    environment:
-      - 'ACCEPT_EULA=yes'
-      - 'MSSQL_PID=express'
-      - 'MSSQL_SA_PASSWORD=verYs3cret'
-    ports:
-      - '1433'
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: secretpassword
+    volumes:
+      - mongo_data:/data/db
+
+# Volume para não perder os dados do Mongo se reiniciares o PC
+volumes:
+  mongo_data:

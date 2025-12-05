@@ -81,7 +81,7 @@ public class AppointmentEventHandler {
             key = "appointment.updated"
     ))
     public void handleAppointmentUpdated(AppointmentUpdatedEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento AppointmentUpdated: " + event.getAppointmentId());
+        System.out.println("📥 [Query Side] Recebi evento AppointmentUpdated: " + event.getAppointmentId() + " (Status: " + event.getStatus() + ")");
 
         // Buscar summary existente ou criar novo
         AppointmentSummary summary = queryRepository.findById(event.getAppointmentId())
@@ -93,11 +93,11 @@ public class AppointmentEventHandler {
         summary.setPhysicianId(event.getPhysicianId());
         summary.setDateTime(event.getDateTime());
         summary.setConsultationType(event.getConsultationType());
-        summary.setStatus(event.getStatus());
+        summary.setStatus(event.getStatus()); // ✅ Atualiza o status (incluindo COMPLETED)
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Appointment atualizado no MongoDB: " + summary.getId());
+        System.out.println("✅ [Query Side] Appointment atualizado no MongoDB: " + summary.getId() + " (Status: " + summary.getStatus() + ")");
     }
 
     @RabbitListener(bindings = @QueueBinding(
