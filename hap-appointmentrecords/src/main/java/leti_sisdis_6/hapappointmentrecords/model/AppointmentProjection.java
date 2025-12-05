@@ -1,12 +1,17 @@
 package leti_sisdis_6.hapappointmentrecords.model;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
+import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
+import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "appointments_projection")
+@Document(collection = "appointment_projections")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -15,26 +20,17 @@ import java.time.LocalDateTime;
 public class AppointmentProjection {
 
     @Id
-    @Column(name = "appointment_id", length = 32, nullable = false, updatable = false)
     private String appointmentId;
 
-    @Column(name = "patient_id", length = 32, nullable = false)
     private String patientId;
 
-    @Column(name = "physician_id", length = 32, nullable = false)
     private String physicianId;
 
-    @Column(nullable = false)
     private LocalDateTime dateTime;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private ConsultationType consultationType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
     private AppointmentStatus status;
 
-    @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
 }

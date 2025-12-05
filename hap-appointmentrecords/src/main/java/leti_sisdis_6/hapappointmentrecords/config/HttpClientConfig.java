@@ -9,9 +9,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
+import org.slf4j.MDC;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static leti_sisdis_6.hapappointmentrecords.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @Configuration
 @EnableRetry
@@ -36,6 +39,11 @@ public class HttpClientConfig {
                 if (token != null && !token.isBlank()) {
                     request.getHeaders().set("Authorization", "Bearer " + token);
                 }
+            }
+
+            String correlationId = MDC.get(CORRELATION_ID_HEADER);
+            if (correlationId != null && !correlationId.isBlank()) {
+                request.getHeaders().set(CORRELATION_ID_HEADER, correlationId);
             }
             return execution.execute(request, body);
         });

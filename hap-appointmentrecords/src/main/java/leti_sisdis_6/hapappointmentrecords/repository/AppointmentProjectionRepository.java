@@ -1,8 +1,13 @@
 package leti_sisdis_6.hapappointmentrecords.repository;
 
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentProjection;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface AppointmentProjectionRepository extends JpaRepository<AppointmentProjection, String> {
+import java.time.LocalDateTime;
+import java.util.List;
+
+public interface AppointmentProjectionRepository extends MongoRepository<AppointmentProjection, String> {
+    List<AppointmentProjection> findByPatientId(String patientId);
+    List<AppointmentProjection> findByPhysicianId(String physicianId);
+    List<AppointmentProjection> findByPhysicianIdAndDateTime(String physicianId, LocalDateTime dateTime);
 }
-

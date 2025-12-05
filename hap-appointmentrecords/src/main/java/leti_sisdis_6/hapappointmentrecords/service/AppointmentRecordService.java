@@ -9,17 +9,27 @@ import leti_sisdis_6.hapappointmentrecords.exceptions.UnauthorizedException;
 import leti_sisdis_6.hapappointmentrecords.http.ExternalServiceClient;
 import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecord;
+import leti_sisdis_6.hapappointmentrecords.model.AppointmentProjection;
+import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecordProjection;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
+import leti_sisdis_6.hapappointmentrecords.repository.AppointmentProjectionRepository;
+import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordProjectionRepository;
+import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentCreatedEvent;
+import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentEventsPublisher;
+import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentRecordCreatedEvent;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static leti_sisdis_6.hapappointmentrecords.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +38,9 @@ public class AppointmentRecordService {
     private final AppointmentRecordRepository recordRepository;
     private final AppointmentRepository appointmentRepository;
     private final ExternalServiceClient externalServiceClient;
+    private final AppointmentEventsPublisher eventsPublisher;
+    private final AppointmentProjectionRepository projectionRepository; // appointment info projections (by appointmentId)
+    private final AppointmentRecordProjectionRepository recordProjectionRepository; // record read-model (by recordId)
 
     @Transactional
     public AppointmentRecordResponse createRecord(String appointmentId,
@@ -79,6 +92,30 @@ public class AppointmentRecordService {
 
         recordRepository.save(record);
 
+        // Persist read-model projection for fast queries by recordId
+        AppointmentRecordProjection recordProjection = AppointmentRecordProjection.builder()
+                .recordId(recordId)
+                .appointmentId(appointment.getAppointmentId())
+                .patientId(appointment.getPatientId())
+                .physicianId(appointment.getPhysicianId())
+                .diagnosis(record.getDiagnosis())
+                .treatmentRecommendations(record.getTreatmentRecommendations())
+                .prescriptions(record.getPrescriptions())
+                .duration(record.getDuration())
+                .build();
+        recordProjectionRepository.save(recordProjection);
+
+        // Optional event for record creation (disabled by default)
+        eventsPublisher.publishAppointmentRecordCreated(new AppointmentRecordCreatedEvent(
+                recordId,
+                appointment.getAppointmentId(),
+                appointment.getPatientId(),
+                appointment.getPhysicianId(),
+                LocalDateTime.now()
+        ));
+
+        publishAppointmentCreatedEvent(appointment, LocalDateTime.now());
+
         // 6) Resposta
         return AppointmentRecordResponse.builder()
                 .message("Appointment record created successfully.")
@@ -89,89 +126,76 @@ public class AppointmentRecordService {
 
     @Transactional(readOnly = true)
     public AppointmentRecordViewDTO getAppointmentRecord(String recordId, UserDTO currentUser) {
-        AppointmentRecord record = recordRepository.findById(recordId)
+        // Use record projection read model (Mongo) keyed by recordId
+        AppointmentRecordProjection projection = recordProjectionRepository.findById(recordId)
                 .orElseThrow(() -> new NotFoundException("Appointment record not found with id: " + recordId));
 
-        String appointmentId = record.getAppointment().getAppointmentId();
-
-        // Dados da consulta via serviço externo
-        Map<String, Object> appointmentData = externalServiceClient.getAppointmentById(appointmentId);
-        String patientId = (String) appointmentData.get("patientId");
-        if (patientId == null) {
-            throw new NotFoundException("Appointment data is incomplete");
-        }
-
-        // Autorização para pacientes
-        if ("PATIENT".equals(currentUser.getRole()) && !patientId.equals(currentUser.getId())) {
+        // Autorização para pacientes (usa projection.patientId)
+        if ("PATIENT".equals(currentUser.getRole()) && !projection.getPatientId().equals(currentUser.getId())) {
             throw new UnauthorizedException("You are not authorized to view this appointment record");
         }
 
-        // Nome do médico (serviço externo)
-        String physicianId = (String) appointmentData.get("physicianId");
+        // Nome do médico (serviço externo) — opcional, mantemos para enriquecer a resposta
         String physicianName = "Unknown Physician";
+        String physicianId = projection.getPhysicianId();
         if (physicianId != null) {
             try {
                 Map<String, Object> physicianData = externalServiceClient.getPhysicianById(physicianId);
-                physicianName = physicianData != null ? (String) physicianData.get("fullName") : "Unknown Physician";
+                physicianName = physicianData != null ? (String) physicianData.getOrDefault("fullName", physicianName) : physicianName;
             } catch (Exception ignored) {}
         }
 
         return AppointmentRecordViewDTO.builder()
-                .recordId(record.getRecordId())
-                .appointmentId(appointmentId)
+                .recordId(projection.getRecordId())
+                .appointmentId(projection.getAppointmentId())
                 .physicianName(physicianName)
-                .diagnosis(record.getDiagnosis())
-                .treatmentRecommendations(record.getTreatmentRecommendations())
-                .prescriptions(record.getPrescriptions())
-                .duration(record.getDuration())
+                .diagnosis(projection.getDiagnosis())
+                .treatmentRecommendations(projection.getTreatmentRecommendations())
+                .prescriptions(projection.getPrescriptions())
+                .duration(projection.getDuration())
                 .build();
     }
 
     @Transactional(readOnly = true)
     public List<AppointmentRecordViewDTO> getPatientRecords(String patientId) {
-        // Estratégia simples: obter todos os records e filtrar pelos que pertencem ao patient
-        // (usamos serviço externo para ler patientId da consulta)
-        return recordRepository.findAll().stream()
-                .map(record -> {
-                    String appointmentId = record.getAppointment().getAppointmentId();
-                    try {
-                        Map<String, Object> appointmentData = externalServiceClient.getAppointmentById(appointmentId);
-                        String apptPatientId = (String) appointmentData.get("patientId");
-                        if (!patientId.equals(apptPatientId)) {
-                            return null; // não é deste paciente
-                        }
-
-                        // nome do médico
-                        String physicianName = "Unknown Physician";
-                        String physicianId = (String) appointmentData.get("physicianId");
-                        if (physicianId != null) {
-                            try {
-                                Map<String, Object> physicianData = externalServiceClient.getPhysicianById(physicianId);
-                                physicianName = physicianData != null ? (String) physicianData.get("fullName") : "Unknown Physician";
-                            } catch (Exception ignored) {}
-                        }
-
-                        return AppointmentRecordViewDTO.builder()
-                                .recordId(record.getRecordId())
-                                .appointmentId(appointmentId)
-                                .physicianName(physicianName)
-                                .diagnosis(record.getDiagnosis())
-                                .treatmentRecommendations(record.getTreatmentRecommendations())
-                                .prescriptions(record.getPrescriptions())
-                                .duration(record.getDuration())
-                                .build();
-
-                    } catch (Exception e) {
-                        // Se o serviço externo falhar, ignoramos este registo
-                        return null;
-                    }
-                })
-                .filter(dto -> dto != null)
-                .collect(Collectors.toList());
+        // Ler todas as projeções de records e filtrar por patientId
+        return recordProjectionRepository.findByPatientId(patientId).stream()
+                 .map(p -> {
+                     String physicianName = "Unknown Physician";
+                     String physicianId = p.getPhysicianId();
+                     if (physicianId != null) {
+                         try {
+                             Map<String, Object> physicianData = externalServiceClient.getPhysicianById(physicianId);
+                             physicianName = physicianData != null ? (String) physicianData.getOrDefault("fullName", physicianName) : physicianName;
+                         } catch (Exception ignored) {}
+                     }
+                     return AppointmentRecordViewDTO.builder()
+                            .recordId(p.getRecordId())
+                            .appointmentId(p.getAppointmentId())
+                            .physicianName(physicianName)
+                            .diagnosis(p.getDiagnosis())
+                            .treatmentRecommendations(p.getTreatmentRecommendations())
+                            .prescriptions(p.getPrescriptions())
+                            .duration(p.getDuration())
+                            .build();
+                 })
+                 .collect(Collectors.toList());
     }
 
     private String generateRecordId() {
         // usa UUID para evitar colisão quando há deletes
         return "REC" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+    }
+
+    private void publishAppointmentCreatedEvent(Appointment appointment, LocalDateTime occurredAt) {
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent(
+                appointment.getAppointmentId(),
+                appointment.getPatientId(),
+                appointment.getPhysicianId(),
+                appointment.getDateTime(),
+                appointment.getConsultationType(),
+                appointment.getStatus(),
+                occurredAt);
+        eventsPublisher.publishAppointmentCreated(event);
     }
 }
