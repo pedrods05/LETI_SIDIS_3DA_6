@@ -4,6 +4,7 @@ import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentProjection;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentProjectionRepository;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,7 +18,8 @@ public class AppointmentEventsListener {
         this.appointmentRepository = appointmentRepository;
     }
 
-    // Método público que processa eventos; pode ser anotado com @RabbitListener em runtime/config se necessário
+    // Método público que processa eventos; anotado com @RabbitListener para consumo direto
+    @RabbitListener(queues = "${hap.rabbitmq.queue:appointment.record.created}")
     public void onAppointmentCreated(AppointmentCreatedEvent event) {
         if (event == null || event.getAppointmentId() == null) return;
 
