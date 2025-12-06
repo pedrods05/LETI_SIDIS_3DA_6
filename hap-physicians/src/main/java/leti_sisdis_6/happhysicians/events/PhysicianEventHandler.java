@@ -18,7 +18,7 @@ public class PhysicianEventHandler {
     private final PhysicianQueryRepository queryRepository;
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.physician.summary.updater", durable = "true"),
+            value = @Queue(value = "q.physician.summary.updater.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "physician.registered"
     ))
@@ -42,7 +42,7 @@ public class PhysicianEventHandler {
     }
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.physician.summary.updater", durable = "true"),
+            value = @Queue(value = "q.physician.summary.updater.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "physician.updated"
     ))

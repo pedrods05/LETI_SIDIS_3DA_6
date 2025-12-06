@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class AppointmentReminderHandler {
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.appointment.reminders", durable = "true"),
+            value = @Queue(value = "q.appointment.reminders.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "appointment.reminder"
     ))

@@ -23,7 +23,7 @@ public class AppointmentEventHandler {
     private final AppointmentRepository appointmentRepository;
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.appointment.summary.updater", durable = "true"),
+            value = @Queue(value = "q.appointment.summary.updater.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "appointment.created"
     ))
@@ -77,7 +77,7 @@ public class AppointmentEventHandler {
     }
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.appointment.summary.updater", durable = "true"),
+            value = @Queue(value = "q.appointment.summary.updater.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "appointment.updated"
     ))
@@ -102,7 +102,7 @@ public class AppointmentEventHandler {
     }
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.appointment.summary.updater", durable = "true"),
+            value = @Queue(value = "q.appointment.summary.updater.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "appointment.canceled"
     ))
