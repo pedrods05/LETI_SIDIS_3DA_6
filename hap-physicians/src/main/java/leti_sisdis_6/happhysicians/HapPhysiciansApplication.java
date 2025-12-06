@@ -11,14 +11,16 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
         "leti_sisdis_6.happhysicians"
 })
 @EnableJpaRepositories(basePackages = {
-        "leti_sisdis_6.happhysicians.repository"
+        "leti_sisdis_6.happhysicians.repository",
+        "leti_sisdis_6.happhysicians.eventsourcing"
 })
 @EnableMongoRepositories(basePackages = {
         "leti_sisdis_6.happhysicians.query"
 })
 @EnableRabbit
 @EntityScan(basePackages = {
-        "leti_sisdis_6.happhysicians.model"
+        "leti_sisdis_6.happhysicians.model",
+        "leti_sisdis_6.happhysicians.eventsourcing"
 })
 public class HapPhysiciansApplication {
 

@@ -2,8 +2,12 @@ package leti_sisdis_6.happhysicians.api;
 
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentListDTO;
+import leti_sisdis_6.happhysicians.dto.output.AuditTrailDTO;
+import leti_sisdis_6.happhysicians.eventsourcing.EventStore;
+import leti_sisdis_6.happhysicians.eventsourcing.EventStoreService;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
@@ -40,6 +44,12 @@ public class AppointmentController {
 
     @Autowired
     private AppointmentQueryService appointmentQueryService;
+    
+    @Autowired
+    private EventStoreService eventStoreService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @GetMapping("/{appointmentId}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'PATIENT')")
@@ -190,5 +200,81 @@ public class AppointmentController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Appointment not found"));
     }
 
+    @GetMapping("/{appointmentId}/audit-trail")
+    @Operation(
+            summary = "Get appointment audit trail",
+            description = "Retrieves the complete event history (audit trail) for an appointment using Event Sourcing. Returns all events: ConsultationScheduled, NoteAdded, ConsultationCompleted, etc."
+    )
+    public ResponseEntity<List<AuditTrailDTO>> getAuditTrail(@PathVariable String appointmentId) {
+        try {
+            List<EventStore> events = eventStoreService.getEventHistory(appointmentId);
+            List<AuditTrailDTO> auditTrail = events.stream()
+                    .map(event -> {
+                        try {
+                            // Parse JSON strings to objects for better readability
+                            Object eventDataObj = event.getEventData() != null 
+                                    ? objectMapper.readValue(event.getEventData(), Object.class)
+                                    : null;
+                            Object metadataObj = event.getMetadata() != null 
+                                    ? objectMapper.readValue(event.getMetadata(), Object.class)
+                                    : null;
+                            
+                            return AuditTrailDTO.builder()
+                                    .eventId(event.getEventId())
+                                    .aggregateId(event.getAggregateId())
+                                    .eventType(event.getEventType())
+                                    .timestamp(event.getTimestamp())
+                                    .eventData(eventDataObj)
+                                    .aggregateVersion(event.getAggregateVersion())
+                                    .correlationId(event.getCorrelationId())
+                                    .userId(event.getUserId())
+                                    .metadata(metadataObj)
+                                    .build();
+                        } catch (Exception e) {
+                            // If parsing fails, return as string
+                            return AuditTrailDTO.builder()
+                                    .eventId(event.getEventId())
+                                    .aggregateId(event.getAggregateId())
+                                    .eventType(event.getEventType())
+                                    .timestamp(event.getTimestamp())
+                                    .eventData(event.getEventData())
+                                    .aggregateVersion(event.getAggregateVersion())
+                                    .correlationId(event.getCorrelationId())
+                                    .userId(event.getUserId())
+                                    .metadata(event.getMetadata())
+                                    .build();
+                        }
+                    })
+                    .toList();
+            return ResponseEntity.ok(auditTrail);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/{appointmentId}/notes")
+    @Operation(
+            summary = "Add note to appointment",
+            description = "Adds a note to an appointment and generates a NoteAdded event in the Event Store"
+    )
+    public ResponseEntity<?> addNoteToAppointment(
+            @PathVariable String appointmentId,
+            @RequestBody Map<String, String> request) {
+        try {
+            String note = request.get("note");
+            String userId = request.get("userId"); // Opcional
+            
+            if (note == null || note.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Note is required"));
+            }
+            
+            appointmentCommandService.addNoteToAppointment(appointmentId, note, userId);
+            return ResponseEntity.ok(Map.of("message", "Note added successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 
 }

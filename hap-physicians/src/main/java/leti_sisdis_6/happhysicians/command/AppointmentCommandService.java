@@ -6,7 +6,10 @@ import leti_sisdis_6.happhysicians.events.AppointmentCanceledEvent;
 import leti_sisdis_6.happhysicians.events.AppointmentCreatedEvent;
 import leti_sisdis_6.happhysicians.events.AppointmentReminderEvent;
 import leti_sisdis_6.happhysicians.events.AppointmentUpdatedEvent;
+import leti_sisdis_6.happhysicians.eventsourcing.EventStoreService;
+import leti_sisdis_6.happhysicians.eventsourcing.EventType;
 import leti_sisdis_6.happhysicians.model.Appointment;
+import leti_sisdis_6.happhysicians.model.AppointmentStatus;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class AppointmentCommandService {
@@ -22,6 +29,7 @@ public class AppointmentCommandService {
     private final AppointmentService appointmentService;
     private final AppointmentRepository appointmentRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final EventStoreService eventStoreService;
 
     @Value("${hap.rabbitmq.exchange:hap-exchange}")
     private String exchangeName;
@@ -30,6 +38,9 @@ public class AppointmentCommandService {
     public Appointment createAppointment(ScheduleAppointmentRequest dto) {
         // Delegate to existing service
         Appointment appointment = appointmentService.createAppointment(dto);
+        
+        // Save to Event Store (Event Sourcing)
+        saveEventToStore(appointment, EventType.CONSULTATION_SCHEDULED, appointment);
         
         // Publish events
         publishAppointmentCreatedEvent(appointment);
@@ -42,15 +53,37 @@ public class AppointmentCommandService {
     public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto) {
         System.out.println("🔍 [Command] Updating appointment: " + appointmentId + " with status: " + (dto.getStatus() != null ? dto.getStatus() : "null"));
         
+        // Get previous state for comparison
+        Appointment previousAppointment = appointmentRepository.findById(appointmentId).orElse(null);
+        
         // Delegate to existing service
         Appointment appointment = appointmentService.updateAppointment(appointmentId, dto);
         
         if (appointment != null) {
             System.out.println("🔍 [Command] Appointment after update - Status: " + appointment.getStatus());
             
+            // Determine event type based on what changed
+            EventType eventType;
+            if (appointment.getStatus() == AppointmentStatus.CANCELED) {
+                eventType = EventType.CONSULTATION_CANCELED;
+            } else if (appointment.getStatus() == AppointmentStatus.COMPLETED && 
+                       previousAppointment != null && 
+                       previousAppointment.getStatus() != AppointmentStatus.COMPLETED) {
+                // Status changed to COMPLETED
+                eventType = EventType.CONSULTATION_COMPLETED;
+            } else if (appointment.isWasRescheduled() && previousAppointment != null && 
+                       !appointment.getDateTime().equals(previousAppointment.getDateTime())) {
+                eventType = EventType.CONSULTATION_RESCHEDULED;
+            } else {
+                eventType = EventType.CONSULTATION_UPDATED;
+            }
+            
+            // Save to Event Store (Event Sourcing)
+            saveEventToStore(appointment, eventType, appointment);
+            
             // Only publish UpdatedEvent if status is NOT CANCELED
             // If status is CANCELED, it means the update actually canceled it, so we should publish CanceledEvent
-            if (appointment.getStatus() == leti_sisdis_6.happhysicians.model.AppointmentStatus.CANCELED) {
+            if (appointment.getStatus() == AppointmentStatus.CANCELED) {
                 System.out.println("⚠️ WARNING: Update resulted in CANCELED status for appointment: " + appointmentId + ". This should not happen during a normal update!");
                 publishAppointmentCanceledEvent(appointment);
             } else {
@@ -70,11 +103,74 @@ public class AppointmentCommandService {
         Appointment appointment = appointmentService.cancelAppointment(appointmentId);
         
         if (appointment != null) {
+            // Save to Event Store (Event Sourcing)
+            saveEventToStore(appointment, EventType.CONSULTATION_CANCELED, appointment);
+            
             // Publish event
             publishAppointmentCanceledEvent(appointment);
         }
         
         return appointment;
+    }
+    
+    /**
+     * Adiciona uma nota a uma consulta (gera evento NoteAdded)
+     * 
+     * @param appointmentId ID da consulta
+     * @param note Conteúdo da nota
+     * @param userId ID do usuário que adicionou a nota (opcional)
+     */
+    @Transactional
+    public void addNoteToAppointment(String appointmentId, String note, String userId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found: " + appointmentId));
+        
+        // Criar objeto com a nota
+        Map<String, Object> noteData = new HashMap<>();
+        noteData.put("appointmentId", appointmentId);
+        noteData.put("note", note);
+        noteData.put("addedAt", LocalDateTime.now().toString());
+        noteData.put("appointment", appointment);
+        
+        // Salvar evento NoteAdded no Event Store
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("source", "hap-physicians");
+        metadata.put("operation", "NoteAdded");
+        
+        eventStoreService.saveEvent(
+                appointmentId,
+                EventType.NOTE_ADDED,
+                noteData,
+                null, // correlationId
+                userId,
+                metadata
+        );
+        
+        System.out.println("📝 [Event Store] NoteAdded event saved for appointment: " + appointmentId);
+    }
+    
+    /**
+     * Helper method to save events to Event Store (Event Sourcing)
+     */
+    private void saveEventToStore(Appointment appointment, EventType eventType, Object eventData) {
+        try {
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("source", "hap-physicians");
+            metadata.put("operation", eventType.getValue());
+            
+            eventStoreService.saveEvent(
+                    appointment.getAppointmentId(),
+                    eventType,
+                    eventData,
+                    null, // correlationId (pode ser adicionado depois)
+                    null, // userId (pode ser adicionado depois)
+                    metadata
+            );
+            System.out.println("📝 [Event Store] Event saved: " + eventType.getValue() + " for appointment: " + appointment.getAppointmentId());
+        } catch (Exception e) {
+            System.err.println("⚠️ [Event Store] Failed to save event: " + e.getMessage());
+            // Não lança exceção para não quebrar o fluxo principal
+        }
     }
 
     private void publishAppointmentCreatedEvent(Appointment appointment) {
