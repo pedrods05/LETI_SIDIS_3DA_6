@@ -1,22 +1,49 @@
 services:
-
+  # ==========================================
+  # 1. RabbitMQ (Broker de Mensagens)
+  # ==========================================
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.12-management
+    container_name: hap-rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"   # Porta para o Java
+      - "15672:15672" # Porta para o Dashboard Web
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # 2. MongoDB (Base de Dados Partilhada)
+  # ==========================================
   mongodb:
     image: mongo:6.0
     container_name: hap-mongo
     ports:
-      - "27017:27017"
+      - "27017:27017" # Porta padrão
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: secretpassword
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # 3. Zipkin (Distributed Tracing)
+  # ==========================================
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: hap-zipkin
+    ports:
+      - "9411:9411"
+
 volumes:
-      mongo_data:
+  mongo_data:
