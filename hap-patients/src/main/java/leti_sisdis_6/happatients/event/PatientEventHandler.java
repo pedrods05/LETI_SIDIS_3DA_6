@@ -23,7 +23,7 @@ public class PatientEventHandler {
     private final PatientQueryRepository queryRepository;
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.patient.summary.updater", durable = "true"),
+            value = @Queue(value = "q.patient.summary.updater.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "patient.registered"
     ))
