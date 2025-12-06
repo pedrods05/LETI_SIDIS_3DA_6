@@ -3,6 +3,7 @@ package leti_sisdis_6.happhysicians.services;
 import leti_sisdis_6.happhysicians.exceptions.AppointmentRecordNotFoundException;
 import leti_sisdis_6.happhysicians.exceptions.MicroserviceCommunicationException;
 import leti_sisdis_6.happhysicians.exceptions.PatientNotFoundException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -125,6 +126,7 @@ public class ExternalServiceClient {
     }
 
     // Auth Service calls
+    @CircuitBreaker(name = "authService", fallbackMethod = "getUserByIdFallback")
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     public Map<String, Object> getUserById(String userId) {
         String url = authServiceUrl + "/users/" + userId;
@@ -142,6 +144,7 @@ public class ExternalServiceClient {
         }
     }
 
+    @CircuitBreaker(name = "authService", fallbackMethod = "validateTokenFallback")
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     public Map<String, Object> validateToken(String token) {
         String url = authServiceUrl + "/auth/validate";
@@ -361,5 +364,16 @@ public class ExternalServiceClient {
         } catch (Exception e) {
             throw new MicroserviceCommunicationException("AppointmentRecords", "deleteAppointment", e.getMessage(), e);
         }
+    }
+
+    // Fallback methods for CircuitBreaker
+    private Map<String, Object> getUserByIdFallback(String userId, Exception e) {
+        throw new MicroserviceCommunicationException("Auth", "getUserById", 
+            "Circuit breaker opened - Auth service unavailable", e);
+    }
+
+    private Map<String, Object> validateTokenFallback(String token, Exception e) {
+        throw new MicroserviceCommunicationException("Auth", "validateToken", 
+            "Circuit breaker opened - Auth service unavailable", e);
     }
 }

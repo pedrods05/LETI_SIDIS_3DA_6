@@ -5,10 +5,10 @@ services:
     ports:
       - '9411:9411'
   mongodb:
-    image: 'mongo:latest'
+    image: 'mongo:6.0'
     container_name: hap-mongorecords
     environment:
-      - 'MONGO_INITDB_ROOT_PASSWORD=secret'
+      - 'MONGO_INITDB_ROOT_PASSWORD=secretpassword'
       - 'MONGO_INITDB_ROOT_USERNAME=root'
     ports:
       - '27017:27017'
