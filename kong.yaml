@@ -37,17 +37,28 @@ services:
           - /api/appointment-records
         strip_path: false
 
-  # Auth Service (short external path)
+  # Auth Service (mirror external path)
   - name: auth-service
     host: auth-upstream
     port: 80
     protocol: http
     routes:
-      - name: auth-route
+      - name: auth-route-mirror
+        paths:
+          - /api/public
+        strip_path: false
+
+  # Auth Service (short external path -> upstream /api/public)
+  - name: auth-service-short
+    host: auth-upstream
+    port: 80
+    protocol: http
+    path: /api/public
+    routes:
+      - name: auth-route-short
         paths:
           - /auth
         strip_path: true
-    path: /api/public
 
 upstreams:
   - name: patients-upstream
@@ -77,4 +88,3 @@ upstreams:
         weight: 100
       - target: host.docker.internal:8089
         weight: 100
-
