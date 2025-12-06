@@ -97,7 +97,8 @@ public class PhysicianController {
     @GetMapping
     @Operation(summary = "Get all physicians")
     public List<Physician> getAllPhysicians() {
-        return physicianRepository.findAll();
+        // Use Query Service (reads from MongoDB read model with fallback to write model)
+        return physicianQueryService.getAllPhysicians();
     }
 
     @PutMapping("/{physicianId}")

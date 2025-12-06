@@ -76,6 +76,34 @@ public class AppointmentQueryService {
         return appointmentMapper.toListDTO(upcomingAppointments);
     }
 
+    public List<Appointment> getAppointmentsByPhysician(String physicianId) {
+        // Try read model first
+        List<AppointmentSummary> summaries = appointmentQueryRepository.findByPhysicianId(physicianId);
+        
+        if (!summaries.isEmpty()) {
+            return summaries.stream()
+                    .map(this::toAppointmentWithFallback)
+                    .collect(Collectors.toList());
+        }
+        
+        // Fallback to write model if read model is empty
+        return appointmentRepository.findByPhysicianPhysicianId(physicianId);
+    }
+
+    public List<Appointment> getAppointmentsByPatient(String patientId) {
+        // Try read model first
+        List<AppointmentSummary> summaries = appointmentQueryRepository.findByPatientId(patientId);
+        
+        if (!summaries.isEmpty()) {
+            return summaries.stream()
+                    .map(this::toAppointmentWithFallback)
+                    .collect(Collectors.toList());
+        }
+        
+        // Fallback to write model if read model is empty
+        return appointmentRepository.findByPatientId(patientId);
+    }
+
     private Appointment toAppointmentWithFallback(AppointmentSummary summary) {
         // Always try to get full appointment from write model first (has all fields)
         Optional<Appointment> fullAppointment = appointmentRepository.findById(summary.getId());

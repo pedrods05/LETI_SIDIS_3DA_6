@@ -114,13 +114,15 @@ public class AppointmentController {
     @GetMapping("/physician/{physicianId}")
     @Operation(summary = "Get appointments by physician")
     public List<Appointment> getAppointmentsByPhysician(@PathVariable String physicianId) {
-        return appointmentService.getAppointmentsByPhysician(physicianId);
+        // Use Query Service (reads from MongoDB read model with fallback to write model)
+        return appointmentQueryService.getAppointmentsByPhysician(physicianId);
     }
 
     @GetMapping("/patient/{patientId}")
     @Operation(summary = "Get appointments by patient")
     public List<Appointment> getAppointmentsByPatient(@PathVariable String patientId) {
-        return appointmentService.getAppointmentsByPatient(patientId);
+        // Use Query Service (reads from MongoDB read model with fallback to write model)
+        return appointmentQueryService.getAppointmentsByPatient(patientId);
     }
 
     @PutMapping("/{appointmentId}")

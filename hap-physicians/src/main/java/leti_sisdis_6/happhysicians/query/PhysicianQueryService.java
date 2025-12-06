@@ -10,7 +10,9 @@ import leti_sisdis_6.happhysicians.repository.SpecialtyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,21 @@ public class PhysicianQueryService {
     private final SpecialtyRepository specialtyRepository;
     private final DepartmentRepository departmentRepository;
 
+    public List<Physician> getAllPhysicians() {
+        // Try read model first (MongoDB - optimized for queries)
+        List<PhysicianSummary> summaries = physicianQueryRepository.findAll();
+        
+        if (!summaries.isEmpty()) {
+            return summaries.stream()
+                    .map(this::toPhysician)
+                    .map(this::enrichPhysician)
+                    .collect(Collectors.toList());
+        }
+        
+        // Fallback to write model if read model is empty
+        return physicianRepository.findAll();
+    }
+
     public Physician getPhysicianById(String physicianId) {
         // Try to get from read model first (MongoDB - optimized for queries)
         Optional<PhysicianSummary> summaryOpt = physicianQueryRepository.findById(physicianId);
@@ -29,27 +46,29 @@ public class PhysicianQueryService {
             PhysicianSummary summary = summaryOpt.get();
             // Convert read model to domain model, enriching with write model data if needed
             Physician physician = toPhysician(summary);
-            
-            // Try to enrich with additional data from write model (emails, phones, working hours, etc.)
-            Optional<Physician> writeModelPhysician = physicianRepository.findById(physicianId);
-            if (writeModelPhysician.isPresent()) {
-                Physician fullPhysician = writeModelPhysician.get();
-                // Preserve specialty and department from read model (they're already set)
-                // But enrich with other fields from write model
-                physician.setEmails(fullPhysician.getEmails());
-                physician.setPhoneNumbers(fullPhysician.getPhoneNumbers());
-                physician.setWorkingHourStart(fullPhysician.getWorkingHourStart());
-                physician.setWorkingHourEnd(fullPhysician.getWorkingHourEnd());
-                physician.setPhoto(fullPhysician.getPhoto());
-                // Don't overwrite password for security
-            }
-            
-            return physician;
+            return enrichPhysician(physician);
         }
         
         // If not in read model, fallback to write model
         return physicianRepository.findById(physicianId)
                 .orElseThrow(() -> new NotFoundException("Physician not found with ID: " + physicianId));
+    }
+
+    private Physician enrichPhysician(Physician physician) {
+        // Enrich with additional data from write model (emails, phones, working hours, etc.)
+        Optional<Physician> writeModelPhysician = physicianRepository.findById(physician.getPhysicianId());
+        if (writeModelPhysician.isPresent()) {
+            Physician fullPhysician = writeModelPhysician.get();
+            // Preserve specialty and department from read model (they're already set)
+            // But enrich with other fields from write model
+            physician.setEmails(fullPhysician.getEmails());
+            physician.setPhoneNumbers(fullPhysician.getPhoneNumbers());
+            physician.setWorkingHourStart(fullPhysician.getWorkingHourStart());
+            physician.setWorkingHourEnd(fullPhysician.getWorkingHourEnd());
+            physician.setPhoto(fullPhysician.getPhoto());
+            // Don't overwrite password for security
+        }
+        return physician;
     }
 
     private Physician toPhysician(PhysicianSummary summary) {
