@@ -10,6 +10,7 @@ import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.services.PhysicianService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PhysicianCommandService {
 
     private final PhysicianService physicianService;
@@ -75,9 +77,9 @@ public class PhysicianCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "physician.registered", event);
-            System.out.println("⚡ Evento PhysicianRegisteredEvent enviado para o RabbitMQ: " + physicianId);
+            log.info("⚡ Evento PhysicianRegisteredEvent enviado para o RabbitMQ: {}", physicianId);
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento RabbitMQ: {}", e.getMessage(), e);
         }
     }
 
@@ -98,9 +100,9 @@ public class PhysicianCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "physician.updated", event);
-            System.out.println("⚡ Evento PhysicianUpdatedEvent enviado para o RabbitMQ: " + physicianId);
+            log.info("⚡ Evento PhysicianUpdatedEvent enviado para o RabbitMQ: {}", physicianId);
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento RabbitMQ: {}", e.getMessage(), e);
         }
     }
 }

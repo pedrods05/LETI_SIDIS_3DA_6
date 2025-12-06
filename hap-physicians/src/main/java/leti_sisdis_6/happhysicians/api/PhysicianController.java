@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.MDC;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.springframework.web.client.RestTemplate;
 import static leti_sisdis_6.happhysicians.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @RestController
+@Slf4j
 @RequestMapping("/physicians")
 @Tag(name = "Physician", description = "Physician management endpoints")
 public class PhysicianController {
@@ -76,7 +78,7 @@ public class PhysicianController {
                         return ResponseEntity.ok(remotePhysician);
                     }
                 } catch (Exception ex) {
-                    System.out.println("Failed to query peer " + peer + ": " + ex.getMessage());
+                    log.debug("Failed to query peer {}: {}", peer, ex.getMessage());
                 }
             }
             return ResponseEntity.notFound().build();

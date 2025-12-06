@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.MDC;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import static leti_sisdis_6.happhysicians.config.RabbitMQConfig.CORRELATION_ID_H
 @RestController
 @RequestMapping("/appointments")
 @Tag(name = "Appointment", description = "Appointment management endpoints")
+@Slf4j
 public class AppointmentController {
 
    @Autowired
@@ -77,22 +79,22 @@ public class AppointmentController {
         }
 
         // Fallback to peer forwarding if not found
-        System.out.println("Appointment not found locally, querying peers");
+        log.debug("Appointment not found locally, querying peers");
         List<String> peers = externalServiceClient.getPeerUrls();
         for (String peer : peers) {
             String url = peer + "/internal/appointments/" + appointmentId;
-            System.out.println("Querying peer: " + url);
+            log.debug("Querying peer: {}", url);
             try {
                 Appointment remoteAppointment = restTemplate.getForObject(url, Appointment.class);
                 if (remoteAppointment != null) {
-                    System.out.println("Found appointment in peer: " + url);
+                    log.info("Found appointment in peer: {}", url);
                     return ResponseEntity.ok(remoteAppointment);
                 }
             } catch (Exception e) {
-                System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
+                log.debug("Failed to query peer {}: {}", peer, e.getMessage());
             }
         }
-        System.out.println("Appointment not found in any peer");
+        log.debug("Appointment not found in any peer");
         return ResponseEntity.notFound().build();
     }
 

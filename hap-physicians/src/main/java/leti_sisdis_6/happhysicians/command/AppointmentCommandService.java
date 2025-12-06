@@ -13,6 +13,7 @@ import leti_sisdis_6.happhysicians.model.AppointmentStatus;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ import static leti_sisdis_6.happhysicians.config.RabbitMQConfig.CORRELATION_ID_H
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentCommandService {
 
     private final AppointmentService appointmentService;
@@ -64,7 +66,7 @@ public class AppointmentCommandService {
 
     @Transactional
     public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto, String correlationId) {
-        System.out.println("🔍 [Command] Updating appointment: " + appointmentId + " with status: " + (dto.getStatus() != null ? dto.getStatus() : "null"));
+        log.debug("🔍 [Command] Updating appointment: {} with status: {}", appointmentId, dto.getStatus() != null ? dto.getStatus() : "null");
         
         // Get previous state for comparison
         Appointment previousAppointment = appointmentRepository.findById(appointmentId).orElse(null);
@@ -73,7 +75,7 @@ public class AppointmentCommandService {
         Appointment appointment = appointmentService.updateAppointment(appointmentId, dto);
         
         if (appointment != null) {
-            System.out.println("🔍 [Command] Appointment after update - Status: " + appointment.getStatus());
+            log.debug("🔍 [Command] Appointment after update - Status: {}", appointment.getStatus());
             
             // Determine event type based on what changed
             EventType eventType;
@@ -97,11 +99,11 @@ public class AppointmentCommandService {
             // Only publish UpdatedEvent if status is NOT CANCELED
             // If status is CANCELED, it means the update actually canceled it, so we should publish CanceledEvent
             if (appointment.getStatus() == AppointmentStatus.CANCELED) {
-                System.out.println("⚠️ WARNING: Update resulted in CANCELED status for appointment: " + appointmentId + ". This should not happen during a normal update!");
+                log.warn("⚠️ WARNING: Update resulted in CANCELED status for appointment: {}. This should not happen during a normal update!", appointmentId);
                 publishAppointmentCanceledEvent(appointment);
             } else {
                 // Normal update - publish UpdatedEvent
-                System.out.println("✅ [Command] Publishing AppointmentUpdatedEvent for appointment: " + appointmentId);
+                log.info("✅ [Command] Publishing AppointmentUpdatedEvent for appointment: {}", appointmentId);
                 publishAppointmentUpdatedEvent(appointment);
                 publishAppointmentReminderEvent(appointment, "UPDATED");
             }
@@ -172,7 +174,7 @@ public class AppointmentCommandService {
                 metadata
         );
         
-        System.out.println("📝 [Event Store] NoteAdded event saved for appointment: " + appointmentId);
+        log.info("📝 [Event Store] NoteAdded event saved for appointment: {}", appointmentId);
     }
     
     /**
@@ -199,9 +201,9 @@ public class AppointmentCommandService {
                     null, // userId (pode ser adicionado depois)
                     metadata
             );
-            System.out.println("📝 [Event Store] Event saved: " + eventType.getValue() + " for appointment: " + appointment.getAppointmentId() + " | correlationId: " + correlationId);
+            log.info("📝 [Event Store] Event saved: {} for appointment: {} | correlationId: {}", eventType.getValue(), appointment.getAppointmentId(), correlationId);
         } catch (Exception e) {
-            System.err.println("⚠️ [Event Store] Failed to save event: " + e.getMessage());
+            log.error("⚠️ [Event Store] Failed to save event: {}", e.getMessage(), e);
             // Não lança exceção para não quebrar o fluxo principal
         }
     }
@@ -218,9 +220,9 @@ public class AppointmentCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "appointment.created", event);
-            System.out.println("⚡ Evento AppointmentCreatedEvent enviado para o RabbitMQ: " + appointment.getAppointmentId());
+            log.info("⚡ Evento AppointmentCreatedEvent enviado para o RabbitMQ: {}", appointment.getAppointmentId());
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento RabbitMQ: {}", e.getMessage(), e);
         }
     }
 
@@ -236,9 +238,9 @@ public class AppointmentCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "appointment.updated", event);
-            System.out.println("⚡ Evento AppointmentUpdatedEvent enviado para o RabbitMQ: " + appointment.getAppointmentId());
+            log.info("⚡ Evento AppointmentUpdatedEvent enviado para o RabbitMQ: {}", appointment.getAppointmentId());
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento RabbitMQ: {}", e.getMessage(), e);
         }
     }
 
@@ -251,9 +253,9 @@ public class AppointmentCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "appointment.canceled", event);
-            System.out.println("⚡ Evento AppointmentCanceledEvent enviado para o RabbitMQ: " + appointment.getAppointmentId());
+            log.info("⚡ Evento AppointmentCanceledEvent enviado para o RabbitMQ: {}", appointment.getAppointmentId());
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento RabbitMQ: {}", e.getMessage(), e);
         }
     }
 
@@ -273,9 +275,9 @@ public class AppointmentCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "appointment.reminder", event);
-            System.out.println("⚡ Evento AppointmentReminderEvent enviado para o RabbitMQ: " + appointment.getAppointmentId() + " (tipo: " + reminderType + ")");
+            log.info("⚡ Evento AppointmentReminderEvent enviado para o RabbitMQ: {} (tipo: {})", appointment.getAppointmentId(), reminderType);
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento AppointmentReminderEvent: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento AppointmentReminderEvent: {}", e.getMessage(), e);
         }
     }
 }

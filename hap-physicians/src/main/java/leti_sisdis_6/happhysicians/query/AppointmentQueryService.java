@@ -10,6 +10,7 @@ import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentQueryService {
 
     private final AppointmentQueryRepository appointmentQueryRepository;
@@ -119,10 +121,10 @@ public class AppointmentQueryService {
                         appointment.setPatientPhone((String) patientData.get("phoneNumber"));
                         // Save enriched data back to write model for future queries
                         appointmentRepository.save(appointment);
-                        System.out.println("✅ Enriched patient data for appointment: " + appointment.getAppointmentId());
+                        log.debug("✅ Enriched patient data for appointment: {}", appointment.getAppointmentId());
                     }
                 } catch (Exception e) {
-                    System.out.println("⚠️ Warning: Could not enrich patient data for appointment " + appointment.getAppointmentId() + ": " + e.getMessage());
+                    log.warn("⚠️ Warning: Could not enrich patient data for appointment {}: {}", appointment.getAppointmentId(), e.getMessage());
                 }
             }
             return appointment;
@@ -138,7 +140,7 @@ public class AppointmentQueryService {
         if (summary.getDateTime() != null) {
             builder.dateTime(summary.getDateTime());
         } else {
-            System.out.println("⚠️ Warning: dateTime is null for appointment " + summary.getId() + ", using current time");
+            log.warn("⚠️ Warning: dateTime is null for appointment {}, using current time", summary.getId());
             builder.dateTime(java.time.LocalDateTime.now());
         }
         
@@ -147,12 +149,11 @@ public class AppointmentQueryService {
             try {
                 builder.consultationType(ConsultationType.valueOf(summary.getConsultationType()));
             } catch (IllegalArgumentException e) {
-                System.out.println("⚠️ Warning: Invalid consultationType '" + summary.getConsultationType() + 
-                    "' for appointment " + summary.getId() + ", defaulting to FIRST_TIME");
+                log.warn("⚠️ Warning: Invalid consultationType '{}' for appointment {}, defaulting to FIRST_TIME", summary.getConsultationType(), summary.getId());
                 builder.consultationType(ConsultationType.FIRST_TIME);
             }
         } else {
-            System.out.println("⚠️ Warning: consultationType is null for appointment " + summary.getId() + ", defaulting to FIRST_TIME");
+            log.warn("⚠️ Warning: consultationType is null for appointment {}, defaulting to FIRST_TIME", summary.getId());
             builder.consultationType(ConsultationType.FIRST_TIME);
         }
         
@@ -161,12 +162,11 @@ public class AppointmentQueryService {
             try {
                 builder.status(AppointmentStatus.valueOf(summary.getStatus()));
             } catch (IllegalArgumentException e) {
-                System.out.println("⚠️ Warning: Invalid status '" + summary.getStatus() + 
-                    "' for appointment " + summary.getId() + ", defaulting to SCHEDULED");
+                log.warn("⚠️ Warning: Invalid status '{}' for appointment {}, defaulting to SCHEDULED", summary.getStatus(), summary.getId());
                 builder.status(AppointmentStatus.SCHEDULED);
             }
         } else {
-            System.out.println("⚠️ Warning: status is null for appointment " + summary.getId() + ", defaulting to SCHEDULED");
+            log.warn("⚠️ Warning: status is null for appointment {}, defaulting to SCHEDULED", summary.getId());
             builder.status(AppointmentStatus.SCHEDULED);
         }
 
@@ -179,7 +179,7 @@ public class AppointmentQueryService {
                 builder.patientPhone((String) patientData.get("phoneNumber"));
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Warning: Could not fetch patient data: " + e.getMessage());
+            log.warn("⚠️ Warning: Could not fetch patient data: {}", e.getMessage());
         }
 
         // Load physician if available

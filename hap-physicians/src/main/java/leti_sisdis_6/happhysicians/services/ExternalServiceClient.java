@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.annotation.PostConstruct;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ExternalServiceClient {
 
     @Autowired
@@ -50,8 +52,8 @@ public class ExternalServiceClient {
 
     @PostConstruct
     void init() {
-        System.out.println("Physicians peers configured for port " + currentPort + ": " + peers);
-        System.out.println("Active peers (excluding self): " + getPeerUrls());
+        log.info("Physicians peers configured for port {}: {}", currentPort, peers);
+        log.info("Active peers (excluding self): {}", getPeerUrls());
     }
 
     // Helper: forward caller identity to downstream services
@@ -84,7 +86,7 @@ public class ExternalServiceClient {
                 return resp.getBody();
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Internal endpoint failed, trying public endpoint: " + e.getMessage());
+            log.debug("⚠️ Internal endpoint failed, trying public endpoint: {}", e.getMessage());
         }
         
         // Fallback to public endpoint
@@ -300,21 +302,36 @@ public class ExternalServiceClient {
     }
 
     // ===== Write operations: create, update, delete appointments =====
-    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
+    @CircuitBreaker(name = "appointmentRecordsService", fallbackMethod = "createAppointmentInRecordsFallback")
+    @Retryable(maxAttempts = 2, backoff = @Backoff(delay = 500, multiplier = 1.5))
     public Map<String, Object> createAppointmentInRecords(Map<String, Object> appointmentData) {
         String url = appointmentRecordsServiceUrl + "/api/appointments";
+        log.debug("Creating appointment in AppointmentRecords service: {}", url);
         try {
             HttpHeaders headers = buildForwardHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             ResponseEntity<Map<String, Object>> resp = restTemplate.exchange(
                     url, HttpMethod.POST, new HttpEntity<>(appointmentData, headers),
                     new ParameterizedTypeReference<Map<String, Object>>(){});
+            log.info("Successfully created appointment in AppointmentRecords service");
             return resp.getBody();
         } catch (HttpClientErrorException.Conflict e) {
+            log.warn("Conflict creating appointment in AppointmentRecords: {}", e.getMessage());
             throw new MicroserviceCommunicationException("AppointmentRecords", "createAppointment", "Appointment already exists or time conflict", e);
+        } catch (org.springframework.web.client.ResourceAccessException e) {
+            log.error("Timeout or connection error calling AppointmentRecords service: {}", e.getMessage());
+            throw new MicroserviceCommunicationException("AppointmentRecords", "createAppointment", "Service unavailable or timeout: " + e.getMessage(), e);
         } catch (Exception e) {
+            log.error("Error creating appointment in AppointmentRecords: {}", e.getMessage());
             throw new MicroserviceCommunicationException("AppointmentRecords", "createAppointment", e.getMessage(), e);
         }
+    }
+
+    // Fallback method for circuit breaker
+    public Map<String, Object> createAppointmentInRecordsFallback(Map<String, Object> appointmentData, Exception e) {
+        log.warn("Circuit breaker opened for AppointmentRecords service. Fallback: returning empty map. Error: {}", e.getMessage());
+        // Return empty map as fallback - the appointment will still be created locally
+        return new HashMap<>();
     }
 
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))

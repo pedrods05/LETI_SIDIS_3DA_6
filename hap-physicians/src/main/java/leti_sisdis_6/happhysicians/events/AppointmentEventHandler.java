@@ -5,6 +5,7 @@ import leti_sisdis_6.happhysicians.query.AppointmentQueryRepository;
 import leti_sisdis_6.happhysicians.query.AppointmentSummary;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
@@ -15,6 +16,7 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentEventHandler {
 
     private final AppointmentQueryRepository queryRepository;
@@ -26,7 +28,7 @@ public class AppointmentEventHandler {
             key = "appointment.created"
     ))
     public void handleAppointmentCreated(AppointmentCreatedEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento AppointmentCreated: " + event.getAppointmentId());
+        log.info("📥 [Query Side] Recebi evento AppointmentCreated: {}", event.getAppointmentId());
 
         // Verificar se o summary já existe
         Optional<AppointmentSummary> existingSummary = queryRepository.findById(event.getAppointmentId());
@@ -40,13 +42,12 @@ public class AppointmentEventHandler {
                 Appointment appointment = appointmentOpt.get();
                 // Se o appointment no write model está cancelado, não vamos sobrescrever com um evento de criação antigo
                 if (appointment.getStatus() == leti_sisdis_6.happhysicians.model.AppointmentStatus.CANCELED) {
-                    System.out.println("⚠️ [Query Side] Ignorando evento AppointmentCreated - Appointment está CANCELED no write model. Appointment ID: " + event.getAppointmentId());
+                    log.warn("⚠️ [Query Side] Ignorando evento AppointmentCreated - Appointment está CANCELED no write model. Appointment ID: {}", event.getAppointmentId());
                     return;
                 }
                 // Se o status no write model é diferente do evento, usar o status do write model (mais atualizado)
                 if (!appointment.getStatus().toString().equals(event.getStatus())) {
-                    System.out.println("⚠️ [Query Side] Status no write model (" + appointment.getStatus() + 
-                        ") diferente do evento (" + event.getStatus() + "). Usando status do write model.");
+                    log.warn("⚠️ [Query Side] Status no write model ({}) diferente do evento ({}). Usando status do write model.", appointment.getStatus(), event.getStatus());
                     // Atualizar summary com dados do write model
                     summary.setId(appointment.getAppointmentId());
                     summary.setPatientId(appointment.getPatientId());
@@ -55,7 +56,7 @@ public class AppointmentEventHandler {
                     summary.setConsultationType(appointment.getConsultationType().toString());
                     summary.setStatus(appointment.getStatus().toString());
                     queryRepository.save(summary);
-                    System.out.println("✅ [Query Side] Appointment atualizado no MongoDB com status do write model: " + summary.getId());
+                    log.info("✅ [Query Side] Appointment atualizado no MongoDB com status do write model: {}", summary.getId());
                     return;
                 }
             }
@@ -72,7 +73,7 @@ public class AppointmentEventHandler {
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Appointment guardado no MongoDB: " + summary.getId());
+        log.info("✅ [Query Side] Appointment guardado no MongoDB: {}", summary.getId());
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -81,7 +82,7 @@ public class AppointmentEventHandler {
             key = "appointment.updated"
     ))
     public void handleAppointmentUpdated(AppointmentUpdatedEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento AppointmentUpdated: " + event.getAppointmentId() + " (Status: " + event.getStatus() + ")");
+        log.info("📥 [Query Side] Recebi evento AppointmentUpdated: {} (Status: {})", event.getAppointmentId(), event.getStatus());
 
         // Buscar summary existente ou criar novo
         AppointmentSummary summary = queryRepository.findById(event.getAppointmentId())
@@ -97,7 +98,7 @@ public class AppointmentEventHandler {
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Appointment atualizado no MongoDB: " + summary.getId() + " (Status: " + summary.getStatus() + ")");
+        log.info("✅ [Query Side] Appointment atualizado no MongoDB: {} (Status: {})", summary.getId(), summary.getStatus());
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -106,7 +107,7 @@ public class AppointmentEventHandler {
             key = "appointment.canceled"
     ))
     public void handleAppointmentCanceled(AppointmentCanceledEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento AppointmentCanceled: " + event.getAppointmentId() + " (PatientId: " + event.getPatientId() + ", PhysicianId: " + event.getPhysicianId() + ")");
+        log.info("📥 [Query Side] Recebi evento AppointmentCanceled: {} (PatientId: {}, PhysicianId: {})", event.getAppointmentId(), event.getPatientId(), event.getPhysicianId());
 
         // Buscar summary existente ou criar novo
         AppointmentSummary summary = queryRepository.findById(event.getAppointmentId())
@@ -118,8 +119,7 @@ public class AppointmentEventHandler {
         if (summary.getId() != null && summary.getStatus() != null) {
             String currentStatus = summary.getStatus();
             if ("SCHEDULED".equals(currentStatus) || "COMPLETED".equals(currentStatus)) {
-                System.out.println("⚠️ [Query Side] Ignorando evento de cancelamento - Summary tem status " + currentStatus + 
-                    " (pode ser um evento antigo). Appointment ID: " + event.getAppointmentId());
+                log.warn("⚠️ [Query Side] Ignorando evento de cancelamento - Summary tem status {} (pode ser um evento antigo). Appointment ID: {}", currentStatus, event.getAppointmentId());
                 return; // Ignorar evento antigo
             }
         }
@@ -142,12 +142,12 @@ public class AppointmentEventHandler {
             summary.setPatientId(event.getPatientId());
             summary.setPhysicianId(event.getPhysicianId());
             summary.setStatus("CANCELED");
-            System.out.println("⚠️ [Query Side] Appointment não encontrado no write model, usando apenas dados do evento");
+            log.warn("⚠️ [Query Side] Appointment não encontrado no write model, usando apenas dados do evento");
         }
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Appointment cancelado no MongoDB: " + summary.getId() + " (status: CANCELED, preservando todos os campos)");
+        log.info("✅ [Query Side] Appointment cancelado no MongoDB: {} (status: CANCELED, preservando todos os campos)", summary.getId());
     }
 }
 

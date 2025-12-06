@@ -23,8 +23,8 @@ public class HttpClientConfig {
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         // Create custom request factory with timeouts
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(3000); // 3 seconds
-        factory.setReadTimeout(5000);    // 5 seconds
+        factory.setConnectTimeout(5000); // 5 seconds
+        factory.setReadTimeout(15000);   // 15 seconds (increased for AppointmentRecords service)
 
         RestTemplate restTemplate = builder
                 .requestFactory(() -> factory)

@@ -3,6 +3,7 @@ package leti_sisdis_6.happhysicians.events;
 import leti_sisdis_6.happhysicians.query.PhysicianQueryRepository;
 import leti_sisdis_6.happhysicians.query.PhysicianSummary;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class PhysicianEventHandler {
 
     private final PhysicianQueryRepository queryRepository;
@@ -21,7 +23,7 @@ public class PhysicianEventHandler {
             key = "physician.registered"
     ))
     public void handlePhysicianRegistered(PhysicianRegisteredEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento: " + event.getFullName());
+        log.info("📥 [Query Side] Recebi evento: {}", event.getFullName());
 
         PhysicianSummary summary = new PhysicianSummary(
                 event.getPhysicianId(),
@@ -36,7 +38,7 @@ public class PhysicianEventHandler {
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Guardado no MongoDB: " + summary.getId());
+        log.info("✅ [Query Side] Guardado no MongoDB: {}", summary.getId());
     }
 
     @RabbitListener(bindings = @QueueBinding(
@@ -45,7 +47,7 @@ public class PhysicianEventHandler {
             key = "physician.updated"
     ))
     public void handlePhysicianUpdated(PhysicianUpdatedEvent event) {
-        System.out.println("📥 [Query Side] Recebi evento PhysicianUpdated: " + event.getPhysicianId());
+        log.info("📥 [Query Side] Recebi evento PhysicianUpdated: {}", event.getPhysicianId());
 
         // Buscar summary existente ou criar novo
         PhysicianSummary summary = queryRepository.findById(event.getPhysicianId())
@@ -63,7 +65,7 @@ public class PhysicianEventHandler {
 
         queryRepository.save(summary);
 
-        System.out.println("✅ [Query Side] Physician atualizado no MongoDB: " + summary.getId());
+        log.info("✅ [Query Side] Physician atualizado no MongoDB: {}", summary.getId());
     }
 }
 
