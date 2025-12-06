@@ -1,0 +1,91 @@
+_format_version: "3.0"
+services:
+  - name: doctors-service
+    url: http://hap-physicians:8080
+    routes:
+      - name: doctors-route
+        paths:
+          - /api/v1/doctors
+        methods:
+          - GET
+          - POST
+    plugins:
+      - name: jwt
+        config:
+          secret_is_base64: false
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 2000
+      - name: cors
+        config:
+          origins:
+            - https://hap.example.com
+      - name: prometheus
+
+  - name: patients-service
+    url: http://hap-patients:8080
+    routes:
+      - name: patients-route
+        paths:
+          - /api/v1/patients
+        methods:
+          - GET
+          - POST
+    plugins:
+      - name: jwt
+        config:
+          secret_is_base64: false
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 2000
+      - name: cors
+        config:
+          origins:
+            - https://hap.example.com
+      - name: prometheus
+
+  - name: appointmentrecords-service
+    url: http://hap-appointmentrecords:8080
+    routes:
+      - name: appointmentrecords-route
+        paths:
+          - /api/v1/appointments
+        methods:
+          - GET
+          - POST
+          - PUT
+    plugins:
+      - name: jwt
+        config:
+          secret_is_base64: false
+      - name: rate-limiting
+        config:
+          minute: 100
+          hour: 2000
+      - name: cors
+        config:
+          origins:
+            - https://hap.example.com
+      - name: prometheus
+
+  - name: auth-service
+    url: http://hap-auth:8080
+    routes:
+      - name: auth-route
+        paths:
+          - /api/v1/auth
+        methods:
+          - POST
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - https://hap.example.com
+      - name: prometheus
+
+plugins:
+  - name: prometheus
+    config: {}
+
