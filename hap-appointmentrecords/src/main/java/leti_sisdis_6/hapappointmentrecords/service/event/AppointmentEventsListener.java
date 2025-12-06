@@ -81,6 +81,90 @@ public class AppointmentEventsListener {
         }
     }
 
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(value = "q.appointmentrecords.projection", durable = "true"),
+            exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
+            key = "appointment.updated"
+    ))
+    public void onAppointmentUpdated(AppointmentUpdatedEvent event,
+                                     Message message,
+                                     @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {
+        String correlationId = extractCorrelationId(message, correlationIdHeader);
+        if (correlationId != null) {
+            MDC.put(CORRELATION_ID_HEADER, correlationId);
+        }
+
+        log.info("📥 Evento AppointmentUpdatedEvent recebido | correlationId={} | appointmentId={} | status={}→{}",
+                correlationId,
+                event != null ? event.getAppointmentId() : "null",
+                event != null ? event.getPreviousStatus() : "null",
+                event != null ? event.getNewStatus() : "null");
+
+        try {
+            if (event == null || event.getAppointmentId() == null) return;
+
+            AppointmentProjection projection = projectionRepository
+                    .findById(event.getAppointmentId())
+                    .orElseGet(() -> AppointmentProjection.builder()
+                            .appointmentId(event.getAppointmentId())
+                            .patientId(event.getPatientId())
+                            .physicianId(event.getPhysicianId())
+                            .build());
+
+            projection.setDateTime(event.getDateTime());
+            projection.setConsultationType(event.getConsultationType());
+            projection.setStatus(event.getNewStatus());
+            projection.setLastUpdated(event.getOccurredAt());
+
+            projectionRepository.save(projection);
+
+            appointmentRepository.findById(event.getAppointmentId()).ifPresent(appointment -> {
+                appointment.setDateTime(event.getDateTime());
+                appointment.setConsultationType(event.getConsultationType());
+                appointment.setStatus(event.getNewStatus());
+                appointmentRepository.save(appointment);
+            });
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
+        }
+    }
+
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(value = "q.appointmentrecords.projection", durable = "true"),
+            exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
+            key = "appointment.canceled"
+    ))
+    public void onAppointmentCanceled(AppointmentCanceledEvent event,
+                                      Message message,
+                                      @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {
+        String correlationId = extractCorrelationId(message, correlationIdHeader);
+        if (correlationId != null) {
+            MDC.put(CORRELATION_ID_HEADER, correlationId);
+        }
+
+        log.info("📥 Evento AppointmentCanceledEvent recebido | correlationId={} | appointmentId={} | reason={}",
+                correlationId,
+                event != null ? event.getAppointmentId() : "null",
+                event != null ? event.getReason() : "null");
+
+        try {
+            if (event == null || event.getAppointmentId() == null) return;
+
+            projectionRepository.findById(event.getAppointmentId()).ifPresent(projection -> {
+                projection.setStatus(event.getNewStatus());
+                projection.setLastUpdated(event.getOccurredAt());
+                projectionRepository.save(projection);
+            });
+
+            appointmentRepository.findById(event.getAppointmentId()).ifPresent(appointment -> {
+                appointment.setStatus(event.getNewStatus());
+                appointmentRepository.save(appointment);
+            });
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
+        }
+    }
+
     private String extractCorrelationId(Message message, String headerValue) {
         if (headerValue != null && !headerValue.isBlank()) {
             return headerValue;
