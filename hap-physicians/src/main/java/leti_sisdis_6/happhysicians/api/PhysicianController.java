@@ -18,12 +18,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.MDC;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.web.client.RestTemplate;
+
+import static leti_sisdis_6.happhysicians.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @RestController
 @RequestMapping("/physicians")
@@ -82,15 +86,25 @@ public class PhysicianController {
 
     @PostMapping("/register")
     @Operation(summary = "Register a new physician")
-    public ResponseEntity<?> registerPhysician(@RequestBody RegisterPhysicianRequest request) {
+    public ResponseEntity<?> registerPhysician(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @RequestBody RegisterPhysicianRequest request) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             // Use Command Service (writes to write model and publishes event)
-            PhysicianIdResponse response = physicianCommandService.registerPhysician(request);
+            PhysicianIdResponse response = physicianCommandService.registerPhysician(request, correlationId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 
@@ -103,15 +117,26 @@ public class PhysicianController {
 
     @PutMapping("/{physicianId}")
     @Operation(summary = "Update physician by ID")
-    public ResponseEntity<?> updatePhysician(@PathVariable String physicianId, @RequestBody UpdatePhysicianRequest request) {
+    public ResponseEntity<?> updatePhysician(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @PathVariable String physicianId, 
+            @RequestBody UpdatePhysicianRequest request) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             // Use Command Service (writes to write model and publishes event)
-            PhysicianFullDTO updatedPhysician = physicianCommandService.updatePhysician(physicianId, request);
+            PhysicianFullDTO updatedPhysician = physicianCommandService.updatePhysician(physicianId, request, correlationId);
             return ResponseEntity.ok(updatedPhysician);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 

@@ -22,10 +22,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.MDC;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+
+import static leti_sisdis_6.happhysicians.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @RestController
 @RequestMapping("/appointments")
@@ -94,13 +98,23 @@ public class AppointmentController {
 
     @PostMapping
     @Operation(summary = "Create a new appointment")
-    public ResponseEntity<?> createAppointment(@RequestBody leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest appointmentDTO) {
+    public ResponseEntity<?> createAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @RequestBody leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest appointmentDTO) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             // Use Command Service (writes to write model and publishes event)
-            Appointment createdAppointment = appointmentCommandService.createAppointment(appointmentDTO);
+            Appointment createdAppointment = appointmentCommandService.createAppointment(appointmentDTO, correlationId);
             return ResponseEntity.ok(createdAppointment);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 
@@ -127,10 +141,19 @@ public class AppointmentController {
 
     @PutMapping("/{appointmentId}")
     @Operation(summary = "Update appointment by ID")
-    public ResponseEntity<?> updateAppointment(@PathVariable String appointmentId, @RequestBody leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest updateDTO) {
+    public ResponseEntity<?> updateAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @PathVariable String appointmentId, 
+            @RequestBody leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest updateDTO) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             // Use Command Service (writes to write model and publishes event)
-            Appointment updatedAppointment = appointmentCommandService.updateAppointment(appointmentId, updateDTO);
+            Appointment updatedAppointment = appointmentCommandService.updateAppointment(appointmentId, updateDTO, correlationId);
             if (updatedAppointment != null) {
                 return ResponseEntity.ok(updatedAppointment);
             } else {
@@ -138,6 +161,8 @@ public class AppointmentController {
             }
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 
@@ -193,13 +218,25 @@ public class AppointmentController {
 
     @PutMapping("/{appointmentId}/cancel")
     @Operation(summary = "Cancel appointment by ID")
-    public ResponseEntity<?> cancelAppointment(@PathVariable String appointmentId) {
-        // Use Command Service (writes to write model and publishes event)
-        Appointment updated = appointmentCommandService.cancelAppointment(appointmentId);
-        if (updated != null) {
-            return ResponseEntity.ok(updated);
+    public ResponseEntity<?> cancelAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @PathVariable String appointmentId) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
+        try {
+            // Use Command Service (writes to write model and publishes event)
+            Appointment updated = appointmentCommandService.cancelAppointment(appointmentId, correlationId);
+            if (updated != null) {
+                return ResponseEntity.ok(updated);
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Appointment not found"));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Appointment not found"));
     }
 
     @GetMapping("/{appointmentId}/audit-trail")
@@ -260,8 +297,15 @@ public class AppointmentController {
             description = "Adds a note to an appointment and generates a NoteAdded event in the Event Store"
     )
     public ResponseEntity<?> addNoteToAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
             @PathVariable String appointmentId,
             @RequestBody Map<String, String> request) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             String note = request.get("note");
             String userId = request.get("userId"); // Opcional
@@ -276,6 +320,8 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 

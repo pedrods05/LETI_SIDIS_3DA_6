@@ -1,5 +1,6 @@
 package leti_sisdis_6.happhysicians.api;
 
+import leti_sisdis_6.happhysicians.command.PhysicianCommandService;
 import leti_sisdis_6.happhysicians.dto.request.RegisterPhysicianRequest;
 import leti_sisdis_6.happhysicians.dto.response.PhysicianIdResponse;
 import leti_sisdis_6.happhysicians.model.Department;
@@ -36,6 +37,9 @@ class PhysicianControllerTest {
 
     @Mock
     private PhysicianService physicianService;
+
+    @Mock
+    private PhysicianCommandService physicianCommandService;
 
     @Mock
     private ExternalServiceClient externalServiceClient;
@@ -147,31 +151,32 @@ class PhysicianControllerTest {
         request.setSpecialtyId("SPEC01");
 
         PhysicianIdResponse response = new PhysicianIdResponse("PHY02", "Success", null);
-        when(physicianService.register(request)).thenReturn(response);
+        when(physicianCommandService.registerPhysician(any(RegisterPhysicianRequest.class), anyString()))
+                .thenReturn(response);
 
         // Act
-        ResponseEntity<?> result = physicianController.registerPhysician(request);
+        ResponseEntity<?> result = physicianController.registerPhysician(null, request);
 
         // Assert
         assertNotNull(result);
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        verify(physicianService, times(1)).register(request);
+        verify(physicianCommandService, times(1)).registerPhysician(any(RegisterPhysicianRequest.class), anyString());
     }
 
     @Test
     void testRegisterPhysician_IllegalArgument() {
         // Arrange
         RegisterPhysicianRequest request = new RegisterPhysicianRequest();
-        when(physicianService.register(request))
+        when(physicianCommandService.registerPhysician(any(RegisterPhysicianRequest.class), anyString()))
                 .thenThrow(new IllegalArgumentException("Username already in use"));
 
         // Act
-        ResponseEntity<?> result = physicianController.registerPhysician(request);
+        ResponseEntity<?> result = physicianController.registerPhysician(null, request);
 
         // Assert
         assertNotNull(result);
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
-        verify(physicianService, times(1)).register(request);
+        verify(physicianCommandService, times(1)).registerPhysician(any(RegisterPhysicianRequest.class), anyString());
     }
 
 }

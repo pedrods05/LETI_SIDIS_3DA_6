@@ -28,10 +28,15 @@ public class PhysicianCommandService {
 
     @Transactional
     public PhysicianIdResponse registerPhysician(RegisterPhysicianRequest request) {
+        return registerPhysician(request, null);
+    }
+
+    @Transactional
+    public PhysicianIdResponse registerPhysician(RegisterPhysicianRequest request, String correlationId) {
         // Delegate to existing service
         PhysicianIdResponse response = physicianService.register(request);
         
-        // Publish event
+        // Publish event (correlation ID is automatically propagated via MDC in RabbitTemplate)
         publishPhysicianRegisteredEvent(response.getPhysicianId());
         
         return response;
@@ -39,10 +44,15 @@ public class PhysicianCommandService {
 
     @Transactional
     public PhysicianFullDTO updatePhysician(String physicianId, UpdatePhysicianRequest request) {
+        return updatePhysician(physicianId, request, null);
+    }
+
+    @Transactional
+    public PhysicianFullDTO updatePhysician(String physicianId, UpdatePhysicianRequest request, String correlationId) {
         // Delegate to existing service
         PhysicianFullDTO response = physicianService.partialUpdate(physicianId, request);
         
-        // Publish event
+        // Publish event (correlation ID is automatically propagated via MDC in RabbitTemplate)
         publishPhysicianUpdatedEvent(physicianId);
         
         return response;

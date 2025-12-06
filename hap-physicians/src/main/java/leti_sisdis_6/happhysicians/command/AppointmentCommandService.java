@@ -13,6 +13,7 @@ import leti_sisdis_6.happhysicians.model.AppointmentStatus;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+
+import static leti_sisdis_6.happhysicians.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @Service
 @RequiredArgsConstructor
@@ -36,11 +39,16 @@ public class AppointmentCommandService {
 
     @Transactional
     public Appointment createAppointment(ScheduleAppointmentRequest dto) {
+        return createAppointment(dto, null);
+    }
+
+    @Transactional
+    public Appointment createAppointment(ScheduleAppointmentRequest dto, String correlationId) {
         // Delegate to existing service
         Appointment appointment = appointmentService.createAppointment(dto);
         
         // Save to Event Store (Event Sourcing)
-        saveEventToStore(appointment, EventType.CONSULTATION_SCHEDULED, appointment);
+        saveEventToStore(appointment, EventType.CONSULTATION_SCHEDULED, appointment, correlationId);
         
         // Publish events
         publishAppointmentCreatedEvent(appointment);
@@ -51,6 +59,11 @@ public class AppointmentCommandService {
 
     @Transactional
     public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto) {
+        return updateAppointment(appointmentId, dto, null);
+    }
+
+    @Transactional
+    public Appointment updateAppointment(String appointmentId, UpdateAppointmentRequest dto, String correlationId) {
         System.out.println("🔍 [Command] Updating appointment: " + appointmentId + " with status: " + (dto.getStatus() != null ? dto.getStatus() : "null"));
         
         // Get previous state for comparison
@@ -79,7 +92,7 @@ public class AppointmentCommandService {
             }
             
             // Save to Event Store (Event Sourcing)
-            saveEventToStore(appointment, eventType, appointment);
+            saveEventToStore(appointment, eventType, appointment, correlationId);
             
             // Only publish UpdatedEvent if status is NOT CANCELED
             // If status is CANCELED, it means the update actually canceled it, so we should publish CanceledEvent
@@ -99,12 +112,17 @@ public class AppointmentCommandService {
 
     @Transactional
     public Appointment cancelAppointment(String appointmentId) {
+        return cancelAppointment(appointmentId, null);
+    }
+
+    @Transactional
+    public Appointment cancelAppointment(String appointmentId, String correlationId) {
         // Delegate to existing service
         Appointment appointment = appointmentService.cancelAppointment(appointmentId);
         
         if (appointment != null) {
             // Save to Event Store (Event Sourcing)
-            saveEventToStore(appointment, EventType.CONSULTATION_CANCELED, appointment);
+            saveEventToStore(appointment, EventType.CONSULTATION_CANCELED, appointment, correlationId);
             
             // Publish event
             publishAppointmentCanceledEvent(appointment);
@@ -137,11 +155,19 @@ public class AppointmentCommandService {
         metadata.put("source", "hap-physicians");
         metadata.put("operation", "NoteAdded");
         
+        // Try to get correlation ID from MDC if available
+        String correlationId = null;
+        try {
+            correlationId = org.slf4j.MDC.get("X-Correlation-Id");
+        } catch (Exception e) {
+            // Ignore if MDC is not available
+        }
+        
         eventStoreService.saveEvent(
                 appointmentId,
                 EventType.NOTE_ADDED,
                 noteData,
-                null, // correlationId
+                correlationId, // correlationId from MDC if available
                 userId,
                 metadata
         );
@@ -153,6 +179,13 @@ public class AppointmentCommandService {
      * Helper method to save events to Event Store (Event Sourcing)
      */
     private void saveEventToStore(Appointment appointment, EventType eventType, Object eventData) {
+        saveEventToStore(appointment, eventType, eventData, null);
+    }
+
+    /**
+     * Helper method to save events to Event Store (Event Sourcing) with correlation ID
+     */
+    private void saveEventToStore(Appointment appointment, EventType eventType, Object eventData, String correlationId) {
         try {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("source", "hap-physicians");
@@ -162,11 +195,11 @@ public class AppointmentCommandService {
                     appointment.getAppointmentId(),
                     eventType,
                     eventData,
-                    null, // correlationId (pode ser adicionado depois)
+                    correlationId, // correlationId from HTTP header
                     null, // userId (pode ser adicionado depois)
                     metadata
             );
-            System.out.println("📝 [Event Store] Event saved: " + eventType.getValue() + " for appointment: " + appointment.getAppointmentId());
+            System.out.println("📝 [Event Store] Event saved: " + eventType.getValue() + " for appointment: " + appointment.getAppointmentId() + " | correlationId: " + correlationId);
         } catch (Exception e) {
             System.err.println("⚠️ [Event Store] Failed to save event: " + e.getMessage());
             // Não lança exceção para não quebrar o fluxo principal
