@@ -1,5 +1,6 @@
 package leti_sisdis_6.hapappointmentrecords.service.event;
 
+import io.micrometer.core.annotation.Counted;
 import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentProjection;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentProjectionRepository;
@@ -39,6 +40,7 @@ public class AppointmentEventsListener {
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
             key = "appointment.created"
     ))
+    @Counted(value = "saga.appointment.created.consumed", description = "Count of appointment created events consumed")
     public void onAppointmentCreated(AppointmentCreatedEvent event,
                                      Message message,
                                      @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {
@@ -86,6 +88,7 @@ public class AppointmentEventsListener {
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
             key = "appointment.updated"
     ))
+    @Counted(value = "saga.appointment.updated.consumed", description = "Count of appointment updated events consumed")
     public void onAppointmentUpdated(AppointmentUpdatedEvent event,
                                      Message message,
                                      @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {
@@ -134,6 +137,7 @@ public class AppointmentEventsListener {
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
             key = "appointment.canceled"
     ))
+    @Counted(value = "saga.appointment.canceled.consumed", description = "Count of appointment canceled events consumed")
     public void onAppointmentCanceled(AppointmentCanceledEvent event,
                                       Message message,
                                       @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {

@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.extern.slf4j.Slf4j;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 
 import java.util.Arrays;
 import java.util.List;
@@ -75,6 +76,7 @@ public class ExternalServiceClient {
     // Physician Service calls
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     @CircuitBreaker(name = "physicians", fallbackMethod = "fallbackPhysicians")
+    @Bulkhead(name = "physicians")
     public Map<String, Object> getPhysicianById(String physicianId) {
         String url = physiciansServiceUrl + "/physicians/" + physicianId;
         try {
@@ -101,6 +103,7 @@ public class ExternalServiceClient {
 
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     @CircuitBreaker(name = "physicians", fallbackMethod = "fallbackPhysicians")
+    @Bulkhead(name = "physicians")
     public Map<String, Object> getAppointmentById(String appointmentId) {
         String url = physiciansServiceUrl + "/appointments/" + appointmentId;
         try {
@@ -146,6 +149,7 @@ public class ExternalServiceClient {
     // Patient Service calls
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     @CircuitBreaker(name = "patients", fallbackMethod = "fallbackPatients")
+    @Bulkhead(name = "patients")
     public Map<String, Object> getPatientById(String patientId) {
         String url = patientsServiceUrl + "/patients/" + patientId;
         try {
@@ -173,6 +177,7 @@ public class ExternalServiceClient {
     // Auth Service calls
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 200, multiplier = 2.0))
     @CircuitBreaker(name = "auth", fallbackMethod = "fallbackAuth")
+    @Bulkhead(name = "auth")
     public Map<String, Object> validateToken(String token) {
         String url = authServiceUrl + "/api/auth/validate";
         try {

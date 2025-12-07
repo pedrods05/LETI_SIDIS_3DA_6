@@ -1,5 +1,7 @@
 package leti_sisdis_6.hapappointmentrecords.service;
 
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
 import leti_sisdis_6.hapappointmentrecords.dto.input.AppointmentRecordRequest;
 import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentRecordResponse;
 import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentRecordViewDTO;
@@ -43,6 +45,8 @@ public class AppointmentRecordService {
     private final AppointmentRecordProjectionRepository recordProjectionRepository; // record read-model (by recordId)
 
     @Transactional
+    @Timed(value = "appointment.record.create.time", description = "Time taken to create an appointment record")
+    @Counted(value = "appointment.record.create.count", description = "Number of appointment records created")
     public AppointmentRecordResponse createRecord(String appointmentId,
                                                   AppointmentRecordRequest request,
                                                   String physicianId) {
@@ -160,16 +164,16 @@ public class AppointmentRecordService {
     public List<AppointmentRecordViewDTO> getPatientRecords(String patientId) {
         // Ler todas as projeções de records e filtrar por patientId
         return recordProjectionRepository.findByPatientId(patientId).stream()
-                 .map(p -> {
-                     String physicianName = "Unknown Physician";
-                     String physicianId = p.getPhysicianId();
-                     if (physicianId != null) {
-                         try {
-                             Map<String, Object> physicianData = externalServiceClient.getPhysicianById(physicianId);
-                             physicianName = physicianData != null ? (String) physicianData.getOrDefault("fullName", physicianName) : physicianName;
-                         } catch (Exception ignored) {}
-                     }
-                     return AppointmentRecordViewDTO.builder()
+                .map(p -> {
+                    String physicianName = "Unknown Physician";
+                    String physicianId = p.getPhysicianId();
+                    if (physicianId != null) {
+                        try {
+                            Map<String, Object> physicianData = externalServiceClient.getPhysicianById(physicianId);
+                            physicianName = physicianData != null ? (String) physicianData.getOrDefault("fullName", physicianName) : physicianName;
+                        } catch (Exception ignored) {}
+                    }
+                    return AppointmentRecordViewDTO.builder()
                             .recordId(p.getRecordId())
                             .appointmentId(p.getAppointmentId())
                             .physicianName(physicianName)
@@ -178,8 +182,8 @@ public class AppointmentRecordService {
                             .prescriptions(p.getPrescriptions())
                             .duration(p.getDuration())
                             .build();
-                 })
-                 .collect(Collectors.toList());
+                })
+                .collect(Collectors.toList());
     }
 
     private String generateRecordId() {
