@@ -7,15 +7,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:testdb",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
+})
 class AppointmentRecordRepositoryTest {
 
     @Autowired
@@ -24,101 +28,152 @@ class AppointmentRecordRepositoryTest {
     @Autowired
     private AppointmentRecordRepository repository;
 
-    private AppointmentRecord record1;
-    private AppointmentRecord record2;
+    private AppointmentRecord testRecord1;
+    private AppointmentRecord testRecord2;
 
     @BeforeEach
     void setUp() {
-        // Note: Appointments now live in physicians service
-        // We only store appointmentId references
+        repository.deleteAll();
 
-        record1 = AppointmentRecord.builder()
-                .recordId("REC001")
-                .appointmentId("APT001") // reference to appointment in physicians service
-                .diagnosis("Gripe comum")
-                .treatmentRecommendations("Repouso e hidratação")
-                .prescriptions("Paracetamol 500mg")
-                .duration(LocalTime.of(0, 30))
-                .build();
+        testRecord1 = new AppointmentRecord();
+        testRecord1.setRecordId("REC001");
+        testRecord1.setAppointmentId("APT001");
+        testRecord1.setDiagnosis("Gripe comum");
+        testRecord1.setTreatmentRecommendations("Repouso e hidratação");
+        testRecord1.setPrescriptions("Paracetamol 500mg");
+        testRecord1.setDuration(LocalTime.of(0, 30));
 
-        record2 = AppointmentRecord.builder()
-                .recordId("REC002")
-                .appointmentId("APT002")
-                .diagnosis("Pressão alta")
-                .treatmentRecommendations("Dieta com baixo teor de sódio")
-                .prescriptions("Losartana 50mg")
-                .duration(LocalTime.of(0, 45))
-                .build();
-
-        entityManager.persistAndFlush(record1);
-        entityManager.persistAndFlush(record2);
-        entityManager.clear();
+        testRecord2 = new AppointmentRecord();
+        testRecord2.setRecordId("REC002");
+        testRecord2.setAppointmentId("APT002");
+        testRecord2.setDiagnosis("Hipertensão");
+        testRecord2.setTreatmentRecommendations("Dieta e exercício");
+        testRecord2.setPrescriptions("Enalapril 10mg");
+        testRecord2.setDuration(LocalTime.of(0, 45));
     }
 
     @Test
-    @DisplayName("Deve salvar e recuperar AppointmentRecord")
-    void shouldSaveAndRetrieveAppointmentRecord() {
+    @DisplayName("Should save appointment record successfully")
+    void shouldSaveAppointmentRecord() {
+        // When
+        AppointmentRecord saved = repository.save(testRecord1);
+
+        // Then
+        assertThat(saved).isNotNull();
+        assertThat(saved.getRecordId()).isEqualTo("REC001");
+        assertThat(saved.getAppointmentId()).isEqualTo("APT001");
+        assertThat(saved.getDiagnosis()).isEqualTo("Gripe comum");
+    }
+
+    @Test
+    @DisplayName("Should find appointment record by ID")
+    void shouldFindAppointmentRecordById() {
         // Given
-        AppointmentRecord newRecord = AppointmentRecord.builder()
-                .recordId("REC003")
-                .appointmentId("APT003")
-                .diagnosis("Diabetes tipo 2")
-                .treatmentRecommendations("Controle glicêmico")
-                .prescriptions("Metformina 850mg")
-                .duration(LocalTime.of(1, 0))
-                .build();
+        entityManager.persist(testRecord1);
+        entityManager.flush();
 
         // When
-        AppointmentRecord saved = repository.save(newRecord);
-        Optional<AppointmentRecord> retrieved = repository.findById(saved.getRecordId());
+        Optional<AppointmentRecord> found = repository.findById("REC001");
 
         // Then
-        assertThat(retrieved).isPresent();
-        assertThat(retrieved.get().getRecordId()).isEqualTo("REC003");
-        assertThat(retrieved.get().getDiagnosis()).isEqualTo("Diabetes tipo 2");
-        assertThat(retrieved.get().getAppointmentId()).isEqualTo("APT003");
+        assertThat(found).isPresent();
+        assertThat(found.get().getRecordId()).isEqualTo("REC001");
+        assertThat(found.get().getAppointmentId()).isEqualTo("APT001");
     }
 
     @Test
-    @DisplayName("Deve encontrar record por appointment ID")
-    void shouldFindRecordByAppointmentId() {
+    @DisplayName("Should return empty when appointment record not found by ID")
+    void shouldReturnEmptyWhenNotFoundById() {
         // When
-        Optional<AppointmentRecord> record = repository.findByAppointmentId("APT001");
+        Optional<AppointmentRecord> found = repository.findById("NON_EXISTENT");
 
         // Then
-        assertThat(record).isPresent();
-        assertThat(record.get().getRecordId()).isEqualTo("REC001");
-        assertThat(record.get().getDiagnosis()).isEqualTo("Gripe comum");
+        assertThat(found).isEmpty();
     }
 
     @Test
-    @DisplayName("Deve retornar empty para appointment ID inexistente")
-    void shouldReturnEmptyForNonExistentAppointmentId() {
+    @DisplayName("Should find appointment record by appointmentId")
+    void shouldFindAppointmentRecordByAppointmentId() {
+        // Given
+        entityManager.persist(testRecord1);
+        entityManager.flush();
+
         // When
-        Optional<AppointmentRecord> record = repository.findByAppointmentId("APT999");
+        Optional<AppointmentRecord> found = repository.findByAppointmentId("APT001");
 
         // Then
-        assertThat(record).isEmpty();
+        assertThat(found).isPresent();
+        assertThat(found.get().getRecordId()).isEqualTo("REC001");
+        assertThat(found.get().getAppointmentId()).isEqualTo("APT001");
     }
 
     @Test
-    @DisplayName("Deve buscar records por múltiplos appointment IDs")
-    void shouldFindRecordsByMultipleAppointmentIds() {
+    @DisplayName("Should return empty when appointment record not found by appointmentId")
+    void shouldReturnEmptyWhenNotFoundByAppointmentId() {
         // When
-        Optional<AppointmentRecord> record1 = repository.findByAppointmentId("APT001");
-        Optional<AppointmentRecord> record2 = repository.findByAppointmentId("APT002");
+        Optional<AppointmentRecord> found = repository.findByAppointmentId("NON_EXISTENT");
 
         // Then
-        assertThat(record1).isPresent();
-        assertThat(record1.get().getRecordId()).isEqualTo("REC001");
-
-        assertThat(record2).isPresent();
-        assertThat(record2.get().getRecordId()).isEqualTo("REC002");
+        assertThat(found).isEmpty();
     }
 
     @Test
-    @DisplayName("Deve contar total de records")
-    void shouldCountTotalRecords() {
+    @DisplayName("Should find all appointment records")
+    void shouldFindAllAppointmentRecords() {
+        // Given
+        entityManager.persist(testRecord1);
+        entityManager.persist(testRecord2);
+        entityManager.flush();
+
+        // When
+        List<AppointmentRecord> records = repository.findAll();
+
+        // Then
+        assertThat(records).hasSize(2);
+        assertThat(records).extracting(AppointmentRecord::getRecordId)
+                .containsExactlyInAnyOrder("REC001", "REC002");
+    }
+
+    @Test
+    @DisplayName("Should delete appointment record")
+    void shouldDeleteAppointmentRecord() {
+        // Given
+        entityManager.persist(testRecord1);
+        entityManager.flush();
+
+        // When
+        repository.deleteById("REC001");
+
+        // Then
+        Optional<AppointmentRecord> found = repository.findById("REC001");
+        assertThat(found).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should update appointment record")
+    void shouldUpdateAppointmentRecord() {
+        // Given
+        entityManager.persist(testRecord1);
+        entityManager.flush();
+
+        // When
+        testRecord1.setDiagnosis("Gripe comum - Atualizado");
+        testRecord1.setPrescriptions("Paracetamol 500mg + Vitamina C");
+        AppointmentRecord updated = repository.save(testRecord1);
+
+        // Then
+        assertThat(updated.getDiagnosis()).isEqualTo("Gripe comum - Atualizado");
+        assertThat(updated.getPrescriptions()).isEqualTo("Paracetamol 500mg + Vitamina C");
+    }
+
+    @Test
+    @DisplayName("Should count appointment records")
+    void shouldCountAppointmentRecords() {
+        // Given
+        entityManager.persist(testRecord1);
+        entityManager.persist(testRecord2);
+        entityManager.flush();
+
         // When
         long count = repository.count();
 
@@ -127,63 +182,110 @@ class AppointmentRecordRepositoryTest {
     }
 
     @Test
-    @DisplayName("Deve deletar record por ID")
-    void shouldDeleteRecordById() {
+    @DisplayName("Should check if appointment record exists by ID")
+    void shouldCheckIfExistsById() {
         // Given
+        entityManager.persist(testRecord1);
+        entityManager.flush();
+
+        // When/Then
         assertThat(repository.existsById("REC001")).isTrue();
-
-        // When
-        repository.deleteById("REC001");
-        entityManager.flush();
-
-        // Then
-        assertThat(repository.existsById("REC001")).isFalse();
-        assertThat(repository.count()).isEqualTo(1);
+        assertThat(repository.existsById("NON_EXISTENT")).isFalse();
     }
 
     @Test
-    @DisplayName("Deve atualizar record existente")
-    void shouldUpdateExistingRecord() {
+    @DisplayName("Should delete all appointment records")
+    void shouldDeleteAllAppointmentRecords() {
         // Given
-        Optional<AppointmentRecord> found = repository.findById("REC001");
-        assertThat(found).isPresent();
-
-        AppointmentRecord record = found.get();
-        record.setDiagnosis("Gripe H1N1");
-        record.setPrescriptions("Tamiflu 75mg");
+        entityManager.persist(testRecord1);
+        entityManager.persist(testRecord2);
+        entityManager.flush();
 
         // When
-        AppointmentRecord updated = repository.save(record);
-        entityManager.flush();
-        entityManager.clear();
+        repository.deleteAll();
 
         // Then
-        Optional<AppointmentRecord> retrieved = repository.findById("REC001");
-        assertThat(retrieved).isPresent();
-        assertThat(retrieved.get().getDiagnosis()).isEqualTo("Gripe H1N1");
-        assertThat(retrieved.get().getPrescriptions()).isEqualTo("Tamiflu 75mg");
+        assertThat(repository.count()).isZero();
     }
 
     @Test
-    @DisplayName("Deve validar constraints de campos obrigatórios")
-    void shouldValidateMandatoryFieldConstraints() {
+    @DisplayName("Should handle null values in optional fields")
+    void shouldHandleNullValuesInOptionalFields() {
         // Given
-        AppointmentRecord record = AppointmentRecord.builder()
-                .recordId("REC-CONSTRAINTS")
-                .appointmentId("APT-CONSTRAINTS")
-                .diagnosis("Teste de constraints")
-                .treatmentRecommendations("Teste")
-                .prescriptions("Teste")
-                .duration(LocalTime.of(0, 30))
-                .build();
+        AppointmentRecord record = new AppointmentRecord();
+        record.setRecordId("REC003");
+        record.setAppointmentId("APT003");
+        record.setDiagnosis("Test diagnosis");
+        record.setTreatmentRecommendations("Test treatment");
+        record.setPrescriptions("Test prescription");
+        record.setDuration(LocalTime.of(0, 15));
 
         // When
         AppointmentRecord saved = repository.save(record);
 
         // Then
         assertThat(saved).isNotNull();
-        assertThat(saved.getRecordId()).isEqualTo("REC-CONSTRAINTS");
-        assertThat(saved.getAppointmentId()).isEqualTo("APT-CONSTRAINTS");
-        assertThat(saved.getDiagnosis()).isNotNull();
+        assertThat(saved.getRecordId()).isEqualTo("REC003");
+        assertThat(saved.getDiagnosis()).isEqualTo("Test diagnosis");
+    }
+
+    @Test
+    @DisplayName("Should maintain data integrity when finding by appointmentId")
+    void shouldMaintainDataIntegrityWhenFindingByAppointmentId() {
+        // Given
+        entityManager.persist(testRecord1);
+        entityManager.flush();
+
+        // When
+        Optional<AppointmentRecord> found = repository.findByAppointmentId("APT001");
+
+        // Then
+        assertThat(found).isPresent();
+        AppointmentRecord record = found.get();
+        assertThat(record.getRecordId()).isEqualTo("REC001");
+        assertThat(record.getAppointmentId()).isEqualTo("APT001");
+        assertThat(record.getDiagnosis()).isEqualTo("Gripe comum");
+        assertThat(record.getTreatmentRecommendations()).isEqualTo("Repouso e hidratação");
+        assertThat(record.getPrescriptions()).isEqualTo("Paracetamol 500mg");
+        assertThat(record.getDuration()).isEqualTo(LocalTime.of(0, 30));
+    }
+
+    @Test
+    @DisplayName("Should return only one record when finding by unique appointmentId")
+    void shouldReturnOnlyOneRecordByAppointmentId() {
+        // Given
+        entityManager.persist(testRecord1);
+        entityManager.persist(testRecord2);
+        entityManager.flush();
+
+        // When
+        Optional<AppointmentRecord> found = repository.findByAppointmentId("APT001");
+
+        // Then
+        assertThat(found).isPresent();
+        assertThat(found.get().getRecordId()).isEqualTo("REC001");
+    }
+
+    @Test
+    @DisplayName("Should handle special characters in diagnosis and prescriptions")
+    void shouldHandleSpecialCharacters() {
+        // Given
+        AppointmentRecord record = new AppointmentRecord();
+        record.setRecordId("REC004");
+        record.setAppointmentId("APT004");
+        record.setDiagnosis("Diagnóstico com acentuação e símbolos: @#$%");
+        record.setTreatmentRecommendations("Tratamento recomendado");
+        record.setPrescriptions("Prescrição: 2x/dia após refeições");
+        record.setDuration(LocalTime.of(0, 30));
+
+        // When
+        repository.save(record);
+        Optional<AppointmentRecord> found = repository.findById("REC004");
+
+        // Then
+        assertThat(found).isPresent();
+        assertThat(found.get().getDiagnosis()).isEqualTo("Diagnóstico com acentuação e símbolos: @#$%");
+        assertThat(found.get().getPrescriptions()).isEqualTo("Prescrição: 2x/dia após refeições");
     }
 }
+
