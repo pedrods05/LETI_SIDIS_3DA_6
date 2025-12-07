@@ -7,30 +7,27 @@ import leti_sisdis_6.hapappointmentrecords.dto.local.UserDTO;
 import leti_sisdis_6.hapappointmentrecords.exceptions.NotFoundException;
 import leti_sisdis_6.hapappointmentrecords.exceptions.UnauthorizedException;
 import leti_sisdis_6.hapappointmentrecords.http.ExternalServiceClient;
-import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecord;
-import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
-import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
+import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecordProjection;
+import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordProjectionRepository;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
-
+import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentEventsPublisher;
+import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentRecordCreatedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,393 +37,399 @@ class AppointmentRecordServiceTest {
     private AppointmentRecordRepository recordRepository;
 
     @Mock
-    private AppointmentRepository appointmentRepository;
+    private AppointmentRecordProjectionRepository recordProjectionRepository;
 
     @Mock
     private ExternalServiceClient externalServiceClient;
 
-    @InjectMocks
-    private AppointmentRecordService appointmentRecordService;
+    @Mock
+    private AppointmentEventsPublisher eventsPublisher;
 
-    private AppointmentRecordRequest validRequest;
-    private Appointment testAppointment;
-    private AppointmentRecord testRecord;
-    private UserDTO testUser;
+    private AppointmentRecordService service;
 
     @BeforeEach
     void setUp() {
-        validRequest = new AppointmentRecordRequest();
-        validRequest.setDiagnosis("Gripe comum");
-        validRequest.setTreatmentRecommendations("Repouso e hidratação");
-        validRequest.setPrescriptions("Paracetamol 500mg");
-        validRequest.setDuration(LocalTime.of(0, 30));
-
-        testAppointment = Appointment.builder()
-                .appointmentId("APT001")
-                .patientId("PAT001")
-                .physicianId("PHY001")
-                .dateTime(LocalDateTime.of(2025, 11, 1, 10, 0))
-                .consultationType(ConsultationType.FIRST_TIME)
-                .status(AppointmentStatus.COMPLETED)
-                .build();
-
-        testRecord = AppointmentRecord.builder()
-                .recordId("REC001")
-                .appointment(testAppointment)
-                .diagnosis("Gripe comum")
-                .treatmentRecommendations("Repouso e hidratação")
-                .prescriptions("Paracetamol 500mg")
-                .duration(LocalTime.of(0, 30))
-                .build();
-
-        testUser = UserDTO.builder()
-                .id("PHY001")
-                .email("physician@clinic.com")
-                .role("PHYSICIAN")
-                .build();
+        service = new AppointmentRecordService(
+                recordRepository,
+                externalServiceClient,
+                eventsPublisher,
+                recordProjectionRepository
+        );
     }
 
-    @Nested
-    @DisplayName("Create Record Tests")
-    class CreateRecordTests {
+    @Test
+    @DisplayName("Should create appointment record successfully")
+    void shouldCreateAppointmentRecordSuccessfully() {
+        // Given
+        String appointmentId = "APT001";
+        String physicianId = "PHY001";
+        String patientId = "PAT001";
 
-        @Test
-        @DisplayName("Deve criar record com sucesso quando dados são válidos")
-        void shouldCreateRecordSuccessfullyWhenDataIsValid() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY001";
+        AppointmentRecordRequest request = new AppointmentRecordRequest();
+        request.setDiagnosis("Gripe comum");
+        request.setTreatmentRecommendations("Repouso e hidratação");
+        request.setPrescriptions("Paracetamol 500mg");
+        request.setDuration(LocalTime.of(0, 30));
 
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", appointmentId,
-                    "physicianId", physicianId,
-                    "patientId", "PAT001",
-                    "status", "COMPLETED"
-            );
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("physicianId", physicianId);
+        appointmentData.put("patientId", patientId);
 
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
-            when(recordRepository.findByAppointment_AppointmentId(appointmentId)).thenReturn(Optional.empty());
-            when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(testAppointment));
-            when(recordRepository.save(any(AppointmentRecord.class))).thenReturn(testRecord);
+        when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
+        when(recordRepository.findByAppointmentId(appointmentId)).thenReturn(Optional.empty());
+        when(recordRepository.save(any(AppointmentRecord.class))).thenAnswer(i -> i.getArgument(0));
+        when(recordProjectionRepository.save(any(AppointmentRecordProjection.class))).thenAnswer(i -> i.getArgument(0));
 
-            // When
-            AppointmentRecordResponse response = appointmentRecordService.createRecord(appointmentId, validRequest, physicianId);
+        // When
+        AppointmentRecordResponse response = service.createRecord(appointmentId, request, physicianId);
 
-            // Then
-            assertThat(response).isNotNull();
-            assertThat(response.getMessage()).isEqualTo("Appointment record created successfully.");
-            assertThat(response.getAppointmentId()).isEqualTo(appointmentId);
-            assertThat(response.getRecordId()).isNotNull();
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.getAppointmentId()).isEqualTo(appointmentId);
+        assertThat(response.getRecordId()).isNotNull();
+        assertThat(response.getMessage()).contains("successfully");
 
-            verify(externalServiceClient).getAppointmentById(appointmentId);
-            verify(recordRepository).findByAppointment_AppointmentId(appointmentId);
-            verify(appointmentRepository).findById(appointmentId);
-            verify(recordRepository).save(any(AppointmentRecord.class));
-        }
-
-        @Test
-        @DisplayName("Deve criar record quando physicianId está em objeto aninhado")
-        void shouldCreateRecordWhenPhysicianIdIsInNestedObject() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY001";
-
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", appointmentId,
-                    "physician", Map.of("physicianId", physicianId),
-                    "patientId", "PAT001"
-            );
-
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
-            when(recordRepository.findByAppointment_AppointmentId(appointmentId)).thenReturn(Optional.empty());
-            when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(testAppointment));
-            when(recordRepository.save(any(AppointmentRecord.class))).thenReturn(testRecord);
-
-            // When
-            AppointmentRecordResponse response = appointmentRecordService.createRecord(appointmentId, validRequest, physicianId);
-
-            // Then
-            assertThat(response).isNotNull();
-            assertThat(response.getMessage()).isEqualTo("Appointment record created successfully.");
-        }
-
-        @Test
-        @DisplayName("Deve lançar NotFoundException quando appointment data é incompleto")
-        void shouldThrowNotFoundExceptionWhenAppointmentDataIsIncomplete() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY001";
-
-            Map<String, Object> incompleteData = Map.of(
-                    "appointmentId", appointmentId,
-                    "patientId", "PAT001"
-                    // physicianId ausente
-            );
-
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(incompleteData);
-
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.createRecord(appointmentId, validRequest, physicianId))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessage("Appointment data is incomplete");
-
-            verify(externalServiceClient).getAppointmentById(appointmentId);
-            verifyNoInteractions(recordRepository, appointmentRepository);
-        }
-
-        @Test
-        @DisplayName("Deve lançar UnauthorizedException quando physician não é autorizado")
-        void shouldThrowUnauthorizedExceptionWhenPhysicianNotAuthorized() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY002"; // Diferente do appointment
-
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", appointmentId,
-                    "physicianId", "PHY001", // Physician diferente
-                    "patientId", "PAT001"
-            );
-
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
-
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.createRecord(appointmentId, validRequest, physicianId))
-                    .isInstanceOf(UnauthorizedException.class)
-                    .hasMessage("You are not authorized to record details for this appointment");
-
-            verify(externalServiceClient).getAppointmentById(appointmentId);
-            verifyNoInteractions(recordRepository, appointmentRepository);
-        }
-
-        @Test
-        @DisplayName("Deve lançar IllegalStateException quando record já existe")
-        void shouldThrowIllegalStateExceptionWhenRecordAlreadyExists() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY001";
-
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", appointmentId,
-                    "physicianId", physicianId,
-                    "patientId", "PAT001"
-            );
-
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
-            when(recordRepository.findByAppointment_AppointmentId(appointmentId)).thenReturn(Optional.of(testRecord));
-
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.createRecord(appointmentId, validRequest, physicianId))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("Record already exists for appointment " + appointmentId);
-
-            verify(externalServiceClient).getAppointmentById(appointmentId);
-            verify(recordRepository).findByAppointment_AppointmentId(appointmentId);
-            verifyNoInteractions(appointmentRepository);
-        }
-
-        @Test
-        @DisplayName("Deve lançar NotFoundException quando appointment não encontrado")
-        void shouldThrowNotFoundExceptionWhenAppointmentNotFound() {
-            // Given
-            String appointmentId = "APT999";
-            String physicianId = "PHY001";
-
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", appointmentId,
-                    "physicianId", physicianId,
-                    "patientId", "PAT001"
-            );
-
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
-            when(recordRepository.findByAppointment_AppointmentId(appointmentId)).thenReturn(Optional.empty());
-            when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.empty());
-
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.createRecord(appointmentId, validRequest, physicianId))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessage("Appointment not found: " + appointmentId);
-
-            verify(externalServiceClient).getAppointmentById(appointmentId);
-            verify(recordRepository).findByAppointment_AppointmentId(appointmentId);
-            verify(appointmentRepository).findById(appointmentId);
-        }
+        verify(recordRepository).save(any(AppointmentRecord.class));
+        verify(recordProjectionRepository).save(any(AppointmentRecordProjection.class));
+        verify(eventsPublisher).publishAppointmentRecordCreated(any(AppointmentRecordCreatedEvent.class));
     }
 
-    @Nested
-    @DisplayName("Get Appointment Record Tests")
-    class GetAppointmentRecordTests {
+    @Test
+    @DisplayName("Should throw UnauthorizedException when physician does not match")
+    void shouldThrowUnauthorizedExceptionWhenPhysicianDoesNotMatch() {
+        // Given
+        String appointmentId = "APT001";
+        String requestingPhysicianId = "PHY001";
+        String appointmentPhysicianId = "PHY002";
 
-        @Test
-        @DisplayName("Deve retornar record quando encontrado com sucesso")
-        void shouldReturnRecordWhenFoundSuccessfully() {
-            // Given
-            String recordId = "REC001";
+        AppointmentRecordRequest request = new AppointmentRecordRequest();
+        request.setDiagnosis("Test");
 
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", "APT001",
-                    "physicianId", "PHY001",
-                    "patientId", "PAT001",
-                    "status", "COMPLETED"
-            );
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("physicianId", appointmentPhysicianId);
+        appointmentData.put("patientId", "PAT001");
 
-            Map<String, Object> patientData = Map.of(
-                    "patientId", "PAT001",
-                    "fullName", "João Silva",
-                    "email", "joao@email.com"
-            );
+        when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
 
-            Map<String, Object> physicianData = Map.of(
-                    "physicianId", "PHY001",
-                    "fullName", "Dr. Maria Santos",
-                    "licenseNumber", "12345"
-            );
+        // When/Then
+        assertThatThrownBy(() -> service.createRecord(appointmentId, request, requestingPhysicianId))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("not authorized");
 
-            when(recordRepository.findById(recordId)).thenReturn(Optional.of(testRecord));
-            when(externalServiceClient.getAppointmentById("APT001")).thenReturn(appointmentData);
-            when(externalServiceClient.getPhysicianById("PHY001")).thenReturn(physicianData);
-
-            // When
-            AppointmentRecordViewDTO result = appointmentRecordService.getAppointmentRecord(recordId, testUser);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getRecordId()).isEqualTo(recordId);
-            assertThat(result.getDiagnosis()).isEqualTo("Gripe comum");
-            assertThat(result.getTreatmentRecommendations()).isEqualTo("Repouso e hidratação");
-            assertThat(result.getPrescriptions()).isEqualTo("Paracetamol 500mg");
-
-            verify(recordRepository).findById(recordId);
-            verify(externalServiceClient).getAppointmentById("APT001");
-            verify(externalServiceClient).getPhysicianById("PHY001");
-        }
-
-        @Test
-        @DisplayName("Deve lançar NotFoundException quando record não encontrado")
-        void shouldThrowNotFoundExceptionWhenRecordNotFound() {
-            // Given
-            String recordId = "REC999";
-
-            when(recordRepository.findById(recordId)).thenReturn(Optional.empty());
-
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.getAppointmentRecord(recordId, testUser))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessage("Appointment record not found with id: " + recordId);
-
-            verify(recordRepository).findById(recordId);
-            verifyNoInteractions(externalServiceClient);
-        }
+        verify(recordRepository, never()).save(any());
     }
 
-    @Nested
-    @DisplayName("Validation Tests")
-    class ValidationTests {
+    @Test
+    @DisplayName("Should throw IllegalStateException when record already exists")
+    void shouldThrowIllegalStateExceptionWhenRecordAlreadyExists() {
+        // Given
+        String appointmentId = "APT001";
+        String physicianId = "PHY001";
 
-        @Test
-        @DisplayName("Deve validar request obrigatório")
-        void shouldValidateRequiredRequest() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY001";
-            AppointmentRecordRequest nullRequest = null;
+        AppointmentRecordRequest request = new AppointmentRecordRequest();
+        request.setDiagnosis("Test");
 
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.createRecord(appointmentId, nullRequest, physicianId))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessageContaining("Appointment data is incomplete");
-        }
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("physicianId", physicianId);
+        appointmentData.put("patientId", "PAT001");
 
-        @Test
-        @DisplayName("Deve validar appointmentId obrigatório")
-        void shouldValidateRequiredAppointmentId() {
-            // Given
-            String physicianId = "PHY001";
+        AppointmentRecord existingRecord = new AppointmentRecord();
+        existingRecord.setRecordId("REC001");
 
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.createRecord(null, validRequest, physicianId))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessageContaining("Appointment data is incomplete");
-        }
+        when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
+        when(recordRepository.findByAppointmentId(appointmentId)).thenReturn(Optional.of(existingRecord));
 
-        @Test
-        @DisplayName("Deve validar physicianId obrigatório")
-        void shouldValidateRequiredPhysicianId() {
-            // Given
-            String appointmentId = "APT001";
+        // When/Then
+        assertThatThrownBy(() -> service.createRecord(appointmentId, request, physicianId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already exists");
 
-            // When & Then
-            assertThatThrownBy(() -> appointmentRecordService.createRecord(appointmentId, validRequest, null))
-                    .isInstanceOf(NotFoundException.class)
-                    .hasMessageContaining("Appointment data is incomplete");
-        }
+        verify(recordRepository, never()).save(any());
     }
 
-    @Nested
-    @DisplayName("Business Logic Tests")
-    class BusinessLogicTests {
+    @Test
+    @DisplayName("Should throw NotFoundException when appointment data is incomplete")
+    void shouldThrowNotFoundExceptionWhenAppointmentDataIncomplete() {
+        // Given
+        String appointmentId = "APT001";
+        String physicianId = "PHY001";
 
-        @Test
-        @DisplayName("Deve gerar ID único para record")
-        void shouldGenerateUniqueIdForRecord() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY001";
+        AppointmentRecordRequest request = new AppointmentRecordRequest();
+        request.setDiagnosis("Test");
 
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", appointmentId,
-                    "physicianId", physicianId,
-                    "patientId", "PAT001"
-            );
+        Map<String, Object> appointmentData = new HashMap<>();
+        // Missing physicianId and patientId
 
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
-            when(recordRepository.findByAppointment_AppointmentId(appointmentId)).thenReturn(Optional.empty());
-            when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(testAppointment));
-            when(recordRepository.save(any(AppointmentRecord.class))).thenReturn(testRecord);
+        when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
 
-            // When
-            AppointmentRecordResponse response1 = appointmentRecordService.createRecord(appointmentId, validRequest, physicianId);
-            AppointmentRecordResponse response2 = appointmentRecordService.createRecord(appointmentId, validRequest, physicianId);
+        // When/Then
+        assertThatThrownBy(() -> service.createRecord(appointmentId, request, physicianId))
+                .isInstanceOf(NotFoundException.class);
+    }
 
-            // Then
-            assertThat(response1.getRecordId()).isNotNull();
-            assertThat(response2.getRecordId()).isNotNull();
-            // Note: Como estamos usando mock, os IDs podem ser iguais, mas na implementação real seriam diferentes
-        }
+    @Test
+    @DisplayName("Should extract physicianId from nested physician object")
+    void shouldExtractPhysicianIdFromNestedObject() {
+        // Given
+        String appointmentId = "APT001";
+        String physicianId = "PHY001";
 
-        @Test
-        @DisplayName("Deve salvar todas as informações do request")
-        void shouldSaveAllRequestInformation() {
-            // Given
-            String appointmentId = "APT001";
-            String physicianId = "PHY001";
+        AppointmentRecordRequest request = new AppointmentRecordRequest();
+        request.setDiagnosis("Test");
 
-            AppointmentRecordRequest detailedRequest = new AppointmentRecordRequest();
-            detailedRequest.setDiagnosis("Diabetes tipo 2");
-            detailedRequest.setTreatmentRecommendations("Controle glicêmico rigoroso");
-            detailedRequest.setPrescriptions("Metformina 850mg 2x/dia");
-            detailedRequest.setDuration(LocalTime.of(1, 15));
+        Map<String, Object> physicianMap = new HashMap<>();
+        physicianMap.put("physicianId", physicianId);
 
-            Map<String, Object> appointmentData = Map.of(
-                    "appointmentId", appointmentId,
-                    "physicianId", physicianId,
-                    "patientId", "PAT001"
-            );
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("physician", physicianMap);
+        appointmentData.put("patientId", "PAT001");
 
-            when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
-            when(recordRepository.findByAppointment_AppointmentId(appointmentId)).thenReturn(Optional.empty());
-            when(appointmentRepository.findById(appointmentId)).thenReturn(Optional.of(testAppointment));
-            when(recordRepository.save(any(AppointmentRecord.class))).thenReturn(testRecord);
+        when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
+        when(recordRepository.findByAppointmentId(appointmentId)).thenReturn(Optional.empty());
+        when(recordRepository.save(any(AppointmentRecord.class))).thenAnswer(i -> i.getArgument(0));
+        when(recordProjectionRepository.save(any(AppointmentRecordProjection.class))).thenAnswer(i -> i.getArgument(0));
 
-            // When
-            appointmentRecordService.createRecord(appointmentId, detailedRequest, physicianId);
+        // When
+        AppointmentRecordResponse response = service.createRecord(appointmentId, request, physicianId);
 
-            // Then
-            verify(recordRepository).save(argThat(record ->
-                record.getDiagnosis().equals("Diabetes tipo 2") &&
-                record.getTreatmentRecommendations().equals("Controle glicêmico rigoroso") &&
-                record.getPrescriptions().equals("Metformina 850mg 2x/dia") &&
-                record.getDuration().equals(LocalTime.of(1, 15))
-            ));
-        }
+        // Then
+        assertThat(response).isNotNull();
+        verify(recordRepository).save(any(AppointmentRecord.class));
+    }
+
+    @Test
+    @DisplayName("Should get appointment record successfully")
+    void shouldGetAppointmentRecordSuccessfully() {
+        // Given
+        String recordId = "REC001";
+        UserDTO currentUser = new UserDTO();
+        currentUser.setId("PHY001");
+        currentUser.setRole("PHYSICIAN");
+
+        AppointmentRecordProjection projection = new AppointmentRecordProjection();
+        projection.setRecordId(recordId);
+        projection.setAppointmentId("APT001");
+        projection.setPatientId("PAT001");
+        projection.setPhysicianId("PHY001");
+        projection.setDiagnosis("Gripe comum");
+        projection.setDuration(LocalTime.of(0, 30));
+
+        Map<String, Object> physicianData = new HashMap<>();
+        physicianData.put("fullName", "Dr. Silva");
+
+        when(recordProjectionRepository.findById(recordId)).thenReturn(Optional.of(projection));
+        when(externalServiceClient.getPhysicianById("PHY001")).thenReturn(physicianData);
+
+        // When
+        AppointmentRecordViewDTO result = service.getAppointmentRecord(recordId, currentUser);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getRecordId()).isEqualTo(recordId);
+        assertThat(result.getPhysicianName()).isEqualTo("Dr. Silva");
+        assertThat(result.getDiagnosis()).isEqualTo("Gripe comum");
+    }
+
+    @Test
+    @DisplayName("Should throw NotFoundException when record not found")
+    void shouldThrowNotFoundExceptionWhenRecordNotFound() {
+        // Given
+        String recordId = "NON_EXISTENT";
+        UserDTO currentUser = new UserDTO();
+        currentUser.setRole("PHYSICIAN");
+
+        when(recordProjectionRepository.findById(recordId)).thenReturn(Optional.empty());
+
+        // When/Then
+        assertThatThrownBy(() -> service.getAppointmentRecord(recordId, currentUser))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("not found");
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedException when patient tries to access other patient's record")
+    void shouldThrowUnauthorizedExceptionForPatientAccessingOtherRecord() {
+        // Given
+        String recordId = "REC001";
+        UserDTO currentUser = new UserDTO();
+        currentUser.setId("PAT002");
+        currentUser.setRole("PATIENT");
+
+        AppointmentRecordProjection projection = new AppointmentRecordProjection();
+        projection.setRecordId(recordId);
+        projection.setPatientId("PAT001"); // Different patient
+
+        when(recordProjectionRepository.findById(recordId)).thenReturn(Optional.of(projection));
+
+        // When/Then
+        assertThatThrownBy(() -> service.getAppointmentRecord(recordId, currentUser))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("not authorized");
+    }
+
+    @Test
+    @DisplayName("Should allow patient to access their own record")
+    void shouldAllowPatientToAccessOwnRecord() {
+        // Given
+        String recordId = "REC001";
+        UserDTO currentUser = new UserDTO();
+        currentUser.setId("PAT001");
+        currentUser.setRole("PATIENT");
+
+        AppointmentRecordProjection projection = new AppointmentRecordProjection();
+        projection.setRecordId(recordId);
+        projection.setPatientId("PAT001"); // Same patient
+        projection.setPhysicianId("PHY001");
+        projection.setDiagnosis("Test");
+
+        when(recordProjectionRepository.findById(recordId)).thenReturn(Optional.of(projection));
+        when(externalServiceClient.getPhysicianById(anyString())).thenReturn(Map.of("fullName", "Dr. Test"));
+
+        // When
+        AppointmentRecordViewDTO result = service.getAppointmentRecord(recordId, currentUser);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getRecordId()).isEqualTo(recordId);
+    }
+
+    @Test
+    @DisplayName("Should handle physician service failure gracefully")
+    void shouldHandlePhysicianServiceFailureGracefully() {
+        // Given
+        String recordId = "REC001";
+        UserDTO currentUser = new UserDTO();
+        currentUser.setRole("PHYSICIAN");
+
+        AppointmentRecordProjection projection = new AppointmentRecordProjection();
+        projection.setRecordId(recordId);
+        projection.setPhysicianId("PHY001");
+        projection.setDiagnosis("Test");
+
+        when(recordProjectionRepository.findById(recordId)).thenReturn(Optional.of(projection));
+        when(externalServiceClient.getPhysicianById("PHY001")).thenThrow(new RuntimeException("Service unavailable"));
+
+        // When
+        AppointmentRecordViewDTO result = service.getAppointmentRecord(recordId, currentUser);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getPhysicianName()).isEqualTo("Unknown Physician");
+    }
+
+    @Test
+    @DisplayName("Should get patient records successfully")
+    void shouldGetPatientRecordsSuccessfully() {
+        // Given
+        String patientId = "PAT001";
+
+        AppointmentRecordProjection projection1 = new AppointmentRecordProjection();
+        projection1.setRecordId("REC001");
+        projection1.setPatientId(patientId);
+        projection1.setPhysicianId("PHY001");
+        projection1.setDiagnosis("Gripe");
+
+        AppointmentRecordProjection projection2 = new AppointmentRecordProjection();
+        projection2.setRecordId("REC002");
+        projection2.setPatientId(patientId);
+        projection2.setPhysicianId("PHY002");
+        projection2.setDiagnosis("Check-up");
+
+        when(recordProjectionRepository.findByPatientId(patientId))
+                .thenReturn(Arrays.asList(projection1, projection2));
+        when(externalServiceClient.getPhysicianById(anyString()))
+                .thenReturn(Map.of("fullName", "Dr. Test"));
+
+        // When
+        List<AppointmentRecordViewDTO> results = service.getPatientRecords(patientId);
+
+        // Then
+        assertThat(results).hasSize(2);
+        assertThat(results).extracting(AppointmentRecordViewDTO::getRecordId)
+                .containsExactly("REC001", "REC002");
+    }
+
+    @Test
+    @DisplayName("Should return empty list when patient has no records")
+    void shouldReturnEmptyListWhenPatientHasNoRecords() {
+        // Given
+        String patientId = "PAT001";
+        when(recordProjectionRepository.findByPatientId(patientId)).thenReturn(Collections.emptyList());
+
+        // When
+        List<AppointmentRecordViewDTO> results = service.getPatientRecords(patientId);
+
+        // Then
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should generate unique record IDs")
+    void shouldGenerateUniqueRecordIds() {
+        // Given
+        String appointmentId = "APT001";
+        String physicianId = "PHY001";
+
+        AppointmentRecordRequest request = new AppointmentRecordRequest();
+        request.setDiagnosis("Test");
+
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("physicianId", physicianId);
+        appointmentData.put("patientId", "PAT001");
+
+        when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
+        when(recordRepository.findByAppointmentId(appointmentId)).thenReturn(Optional.empty());
+        when(recordRepository.save(any(AppointmentRecord.class))).thenAnswer(i -> i.getArgument(0));
+        when(recordProjectionRepository.save(any(AppointmentRecordProjection.class))).thenAnswer(i -> i.getArgument(0));
+
+        // When
+        AppointmentRecordResponse response1 = service.createRecord(appointmentId, request, physicianId);
+        AppointmentRecordResponse response2 = service.createRecord(appointmentId, request, physicianId);
+
+        // Then
+        assertThat(response1.getRecordId()).isNotEqualTo(response2.getRecordId());
+        assertThat(response1.getRecordId()).startsWith("REC");
+        assertThat(response2.getRecordId()).startsWith("REC");
+    }
+
+    @Test
+    @DisplayName("Should save both write and read models")
+    void shouldSaveBothWriteAndReadModels() {
+        // Given
+        String appointmentId = "APT001";
+        String physicianId = "PHY001";
+
+        AppointmentRecordRequest request = new AppointmentRecordRequest();
+        request.setDiagnosis("Test diagnosis");
+        request.setTreatmentRecommendations("Test treatment");
+        request.setPrescriptions("Test prescription");
+        request.setDuration(LocalTime.of(0, 30));
+
+        Map<String, Object> appointmentData = new HashMap<>();
+        appointmentData.put("physicianId", physicianId);
+        appointmentData.put("patientId", "PAT001");
+
+        when(externalServiceClient.getAppointmentById(appointmentId)).thenReturn(appointmentData);
+        when(recordRepository.findByAppointmentId(appointmentId)).thenReturn(Optional.empty());
+        when(recordRepository.save(any(AppointmentRecord.class))).thenAnswer(i -> i.getArgument(0));
+        when(recordProjectionRepository.save(any(AppointmentRecordProjection.class))).thenAnswer(i -> i.getArgument(0));
+
+        ArgumentCaptor<AppointmentRecord> recordCaptor = ArgumentCaptor.forClass(AppointmentRecord.class);
+        ArgumentCaptor<AppointmentRecordProjection> projectionCaptor = ArgumentCaptor.forClass(AppointmentRecordProjection.class);
+
+        // When
+        service.createRecord(appointmentId, request, physicianId);
+
+        // Then
+        verify(recordRepository).save(recordCaptor.capture());
+        verify(recordProjectionRepository).save(projectionCaptor.capture());
+
+        AppointmentRecord savedRecord = recordCaptor.getValue();
+        AppointmentRecordProjection savedProjection = projectionCaptor.getValue();
+
+        assertThat(savedRecord.getDiagnosis()).isEqualTo("Test diagnosis");
+        assertThat(savedProjection.getDiagnosis()).isEqualTo("Test diagnosis");
+        assertThat(savedRecord.getRecordId()).isEqualTo(savedProjection.getRecordId());
     }
 }
+

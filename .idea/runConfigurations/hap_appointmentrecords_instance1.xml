@@ -1,5 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="hap-appointmentrecords-instance1" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false">
+    <option name="ACTIVE_PROFILES" value="instance1" />
     <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
     <module name="hap-appointmentrecords" />
     <option name="PROGRAM_PARAMETERS" value="--server.port=8083" />

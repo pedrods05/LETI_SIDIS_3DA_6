@@ -1,110 +1,27 @@
 package leti_sisdis_6.hapappointmentrecords.setup;
 
-import leti_sisdis_6.hapappointmentrecords.model.Appointment;
-import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecord;
-import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
-import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
-
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
-
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
+/**
+ * DataBootstrap for appointment records.
+ * Note: Appointments are NOT stored locally - they come from physicians service.
+ * This bootstrap can be used to seed test appointment records if needed.
+ */
 @Component
 @Profile("seed-appointments")
 @RequiredArgsConstructor
 @Order(2)
+@Slf4j
 public class DataBootstrap implements CommandLineRunner {
-
-    private final AppointmentRepository appointmentRepository;
-    private final AppointmentRecordRepository appointmentRecordRepository;
 
     @Override
     public void run(String... args) {
-        if (appointmentRepository.count() > 0) return;
-
-        // IDs que já semeaste noutros serviços:
-        List<String> patientIds = Arrays.asList("PAT01", "PAT02");
-        List<String> physicianIds = Arrays.asList("PHY01", "PHY02");
-
-        String[] diagnoses = {
-                "Hipertensão arterial", "Diabetes tipo 2", "Artrite reumatoide",
-                "Asma brônquica", "Depressão", "Ansiedade",
-                "Dor lombar crônica", "Enxaqueca", "Gastrite", "Insônia"
-        };
-
-        String[] treatments = {
-                "Losartana 50mg, 1x/dia", "Metformina 850mg, 2x/dia",
-                "Ibuprofeno 600mg, 3x/dia", "Salbutamol conforme necessidade",
-                "Sertralina 50mg, 1x/dia", "Alprazolam 0.25mg, 2x/dia",
-                "Fisioterapia 2x/semana", "Sumatriptana 50mg conforme necessidade",
-                "Omeprazol 20mg, 1x/dia", "Higiene do sono"
-        };
-
-        String[] recommendations = {
-                "Rever em 3 meses", "Rever em 1 mês", "Rever em 2 meses",
-                "Rever em 6 meses", "Acompanhamento em 1 mês", "Avaliar em 2 semanas",
-                "Exercícios + rever em 1 mês", "Diário de crises + 2 meses",
-                "Evitar ácidos + 3 meses", "Diário do sono + 1 mês"
-        };
-
-        AtomicInteger counter = new AtomicInteger(1);
-
-        // Criar 5 appointments passadas (COMPLETED) com records - PAT01
-        String patId1 = patientIds.get(0); // PAT01
-        List<Appointment> toSaveAppointments = new ArrayList<>();
-        List<AppointmentRecord> toSaveRecords = new ArrayList<>();
-
-        for (int i = 0; i < 5; i++) {
-            String phyId = physicianIds.get(i % physicianIds.size());
-
-            LocalDateTime dt = LocalDateTime.now()
-                    .minusMonths(5 - i)
-                    .withHour(9 + (i % 4))
-                    .withMinute(0).withSecond(0).withNano(0);
-
-            int n = counter.getAndIncrement();
-
-            Appointment appt = Appointment.builder()
-                    .appointmentId(String.format("APT%02d", n))
-                    .patientId(patId1)
-                    .physicianId(phyId)
-                    .dateTime(dt)
-                    .consultationType(i == 0 ? ConsultationType.FIRST_TIME : ConsultationType.FOLLOW_UP)
-                    .status(AppointmentStatus.COMPLETED)
-                    .build();
-
-            toSaveAppointments.add(appt);
-
-            int idx = i % diagnoses.length;
-
-            AppointmentRecord rec = AppointmentRecord.builder()
-                    .recordId(String.format("REC%02d", n))
-                    .appointment(appt)
-                    .diagnosis(diagnoses[idx])
-                    .treatmentRecommendations(recommendations[idx])
-                    .prescriptions(treatments[idx])
-                    .duration(LocalTime.of(0, 20))
-                    .build();
-
-            toSaveRecords.add(rec);
-        }
-
-        // Persist in batch to satisfy tests expecting saveAll invocations
-        appointmentRepository.saveAll(toSaveAppointments);
-        appointmentRecordRepository.saveAll(toSaveRecords);
-
-        // Removido: appointments futuras (SCHEDULED) sem records - agora são semeadas em hap-physicians
+        log.info("DataBootstrap: No appointment seeding needed - appointments come from physicians service");
+        // If you need to seed test appointment records, add logic here using appointmentIds from physicians service
     }
 }
