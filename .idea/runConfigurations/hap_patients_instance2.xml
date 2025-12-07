@@ -1,5 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="hap-patients-instance2" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" singleton="false">
+    <option name="ACTIVE_PROFILES" value="instance2" />
     <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
     <module name="hap-patients" />
     <option name="PROGRAM_PARAMETERS" value="--server.port=8088" />
