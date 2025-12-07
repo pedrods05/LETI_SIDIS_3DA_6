@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
 
 import static org.hamcrest.Matchers.*;
@@ -38,8 +37,6 @@ class PeerHealthControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
-    private AppointmentRepository appointmentRepository;
 
     @MockitoBean
     private AppointmentRecordRepository appointmentRecordRepository;

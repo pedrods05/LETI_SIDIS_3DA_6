@@ -228,17 +228,21 @@ Esta secção documenta, de forma explícita, os eventos AMQP que este módulo p
 - Routing key: `appointment.created`
   - Consumer: `AppointmentEventsListener#onAppointmentCreated`
   - Efeito:
-    - Atualiza/insere a projeção de leitura `AppointmentProjection` (Mongo) com os dados do evento.
-    - Mantém uma cópia local do write-model `Appointment` (JPA) para coerência local.
+    - **APENAS LOGGING** - Este evento é monitorizado para tracing/observabilidade.
+    - Os dados de appointments **NÃO são armazenados localmente** - vivem no serviço `hap-physicians`.
+    - Quando necessário, o serviço consulta `hap-physicians` via HTTP (`ExternalServiceClient.getAppointmentById()`).
   - Correlation/tracing:
     - O listener extrai `X-Correlation-Id` dos headers e coloca-o no MDC.
   - Logging na receção (exemplo):
-    - `📥 Evento AppointmentCreatedEvent recebido | correlationId=<uuid> | appointmentId=<id>`
+    - `📥 Evento AppointmentCreatedEvent recebido | correlationId=<uuid> | appointmentId=<id> | patientId=<id> | physicianId=<id>`
 
-- Routing key: `appointment.canceled` (planeado)
-  - Estado: não implementado neste módulo nesta iteração.
-  - Intenção futura:
-    - Marcar `status=CANCELLED` na `AppointmentProjection` (Mongo) e refletir no write-model local se necessário.
+- Routing key: `appointment.updated`
+  - Consumer: `AppointmentEventsListener#onAppointmentUpdated`
+  - Efeito: **APENAS LOGGING** para monitorização do fluxo de negócio.
+
+- Routing key: `appointment.canceled`
+  - Consumer: `AppointmentEventsListener#onAppointmentCanceled`
+  - Efeito: **APENAS LOGGING** para monitorização do fluxo de negócio.
 
 ### Tratamento de Erros no Listener
 - Comportamento atual:
@@ -253,12 +257,22 @@ Esta secção documenta, de forma explícita, os eventos AMQP que este módulo p
   - Adicionar métricas/alertas para falhas no consumo.
 
 ### CQRS: Read vs Write
+
+**Para Appointment Records (domínio deste serviço):**
 - Write-model (JPA/H2):
-  - `Appointment`, `AppointmentRecord` persistidos via repositórios JPA.
-  - Endpoints de escrita continuam a usar JPA para a fonte de verdade.
+  - `AppointmentRecord` persistido via repositório JPA.
+  - Guarda apenas `appointmentId` (String) como referência ao appointment no serviço `hap-physicians`.
+  - Endpoints de escrita usam JPA para a fonte de verdade.
 - Read-model (Mongo):
-  - `AppointmentProjection` e `AppointmentRecordProjection` lidas via repositórios Mongo.
-  - Endpoints de leitura usam exclusivamente as projeções Mongo para respostas rápidas e estáveis.
+  - `AppointmentRecordProjection` lida via repositório Mongo.
+  - Endpoints de leitura usam as projeções Mongo para respostas rápidas.
+
+**Para Appointments (domínio do serviço hap-physicians):**
+- Este serviço **NÃO armazena appointments localmente**.
+- Quando precisa de dados de appointments:
+  - Consulta `hap-physicians` via HTTP (`ExternalServiceClient.getAppointmentById()`).
+  - Circuit breaker e retry policies aplicados.
+- Eventos de appointments (`appointment.created`, etc.) são **monitorizados para logging/tracing**, não para armazenamento.
 
 ### Onde encontrar no código
 - Correlation IDs:
@@ -276,26 +290,84 @@ Esta secção documenta, de forma explícita, os eventos AMQP que este módulo p
 
 Nota: Secções mais antigas deste README que referem handlers/commands com nomes diferentes podem estar desatualizadas; a lista acima reflete o estado real do código nesta iteração.
 
-## Padrão Saga (Coreografia vs. Orquestração)
+## Padrão Saga (Coreografia) - Participante Passivo
 
-Neste módulo, não faz sentido implementar uma Saga complexa por orquestração. O ciclo de marcação/alteração/cancelamento de consultas é liderado por serviços que detêm esse domínio (ex.: physicians) e interagem com patients. O `hap-appointmentrecords` atua como participante passivo numa saga coreografada.
+### ✅ SIM, continuas a realizar Saga coreografada!
 
-- Papel neste serviço (participante passivo):
-  - Consome eventos de negócio (ex.: `appointment.created`; futuramente `appointment.updated`, `appointment.canceled`).
-  - Atualiza o seu próprio estado/read‑model (projeções Mongo) e mantém coerência local com o write‑model quando aplicável.
-  - Não inicia nem coordena transações distribuídas; não chama compensações noutros serviços.
+Este módulo participa na **Saga coreografada** do domínio de consultas hospitalares, mas como **participante passivo/observador**.
 
-- Por que não orquestrar aqui:
-  - Ownership: marcação e ciclo de vida da consulta pertencem ao bounded context de scheduling/physicians; este módulo não deve decidir fluxos globais.
-  - Acoplamento: um orquestrador aqui criaria dependências cruzadas desnecessárias e reduziria a autonomia dos outros serviços.
-  - Requisitos: leitura de registos clínicos tolera consistência eventual; a experiência não exige coordenação síncrona multi-serviço.
+### Papel neste serviço (participante passivo):
+- **Consome eventos de negócio** publicados pelos serviços que detêm o ciclo de vida das consultas:
+  - `appointment.created` (do serviço `hap-physicians`)
+  - `appointment.updated` (do serviço `hap-physicians`)
+  - `appointment.canceled` (do serviço `hap-physicians`)
+- **Objetivo do consumo**: Monitorização, tracing e logging do fluxo de negócio.
+- **NÃO armazena dados de appointments localmente** - apenas reage aos eventos para observabilidade.
+- **Quando precisa de dados de appointments**: Consulta `hap-physicians` via HTTP (não via eventos).
+- **Foco funcional**: Gestão de **registos clínicos** (detalhes pós-consulta), não a marcação de consultas.
 
-- Erros e consistência (estado atual):
-  - Consumo AMQP com pelo menos‑uma‑vez; recomenda‑se upsert idempotente nas projeções (já suportado pelo design atual) e planeamento de DLQ/retry para produção.
-  - Se o listener falhar, o comportamento por omissão pode reentregar; sem DLQ configurada, isto é uma limitação conhecida documentada.
+### Por que não orquestrar aqui:
+- **Ownership**: A marcação e ciclo de vida da consulta pertencem ao bounded context de scheduling/physicians; este módulo não deve decidir fluxos globais.
+- **Acoplamento**: Um orquestrador aqui criaria dependências cruzadas desnecessárias e reduziria a autonomia dos outros serviços.
+- **Requisitos**: Leitura de registos clínicos tolera consistência eventual; a experiência não exige coordenação síncrona multi-serviço.
 
-- Como explicar na defesa (script breve):
-  - "O hap-appointmentrecords funciona como um participante passivo numa Saga coreografada. Ele reage aos eventos publicados pelos serviços que detêm o ciclo de vida da consulta (como o physicians) e atualiza o seu read model (Mongo) para servir consultas rápidas. Não coordena o fluxo global nem executa compensações noutros serviços; isso mantém baixo acoplamento e respeita os bounded contexts. Como as leituras toleram consistência eventual, a coreografia é suficiente e mais simples para este domínio."
+### Fluxo da Saga (exemplo):
+
+```
+┌─────────────────┐
+│ hap-physicians  │ (Orquestra marcação de consulta)
+└────────┬────────┘
+         │
+         │ 1. POST /appointments (criar consulta)
+         │    → Valida, cria appointment
+         │    → Publica: appointment.created
+         │
+         ▼
+    ┌────────────────┐
+    │   RabbitMQ     │
+    │   Exchange     │
+    └────┬───────────┘
+         │
+         ├─────────────────────┐
+         │                     │
+         ▼                     ▼
+┌────────────────┐    ┌───────────────────┐
+│ hap-patients   │    │ hap-appointment   │
+│                │    │     records       │
+│ Consome evento │    │                   │
+│ Atualiza cache │    │ Consome evento    │
+│ de consultas   │    │ APENAS LOGGING    │
+└────────────────┘    │ (monitorização)   │
+                      └───────────────────┘
+                               │
+                               │ Mais tarde...
+                               │
+                               ▼ 2. POST /appointment-records/{id}/record
+                               │    (médico cria registo clínico)
+                               │    → Consulta hap-physicians via HTTP
+                               │    → Cria AppointmentRecord local
+                               │    → Publica (opcional): record.created
+                               │
+```
+
+### Erros e consistência (estado atual):
+- Consumo AMQP com **pelo-menos-uma-vez**; eventos são idempotentes por design (logging).
+- Se o listener falhar:
+  - Mensagem é reenviada automaticamente pelo RabbitMQ.
+  - Como só fazemos logging, não há problema de duplicados.
+  - **Limitação conhecida**: Sem DLQ configurada para cenários mais complexos.
+- Consistência eventual: Este serviço não precisa de dados síncronos de appointments - consulta quando necessário via HTTP.
+
+### Como explicar na defesa:
+
+**Script breve:**
+> "O `hap-appointmentrecords` participa numa **Saga coreografada** como **participante passivo**. Ele **consome eventos** publicados pelo serviço `hap-physicians` (como `appointment.created`) para fins de **monitorização e tracing**, mas **não armazena dados de appointments localmente**.
+>
+> Quando precisa de informações sobre uma consulta (por exemplo, ao criar um registo clínico), **consulta o serviço `hap-physicians` via HTTP** com circuit breaker e retry policies.
+>
+> Esta abordagem mantém **baixo acoplamento**, respeita os **bounded contexts** de DDD, e é suficiente porque a leitura de registos clínicos tolera **consistência eventual**.
+>
+> O serviço foca-se no seu domínio (registos clínicos) e não coordena o fluxo global de marcação de consultas - isso é responsabilidade do serviço `physicians`."
 
 ## Fronteiras e Acesso a Dados (Contracto de Integração)
 
@@ -357,3 +429,72 @@ Nota: Não é obrigatório para esta cadeira usar ficheiros H2 por instância ou
 - Observabilidade:
   - Actuator (health, info, metrics) e traçado via Zipkin configurável (`management.zipkin.tracing.endpoint`).
 
+---
+
+## 🔄 ATUALIZAÇÃO - Refactoring Completo (Dezembro 2025)
+
+### ✅ Modelo Appointment Removido
+
+O refactoring foi completado com sucesso. Principais mudanças:
+
+#### O que foi removido:
+- ❌ Modelo `Appointment` (entidade JPA)
+- ❌ `AppointmentRepository` (JPA)
+- ❌ `AppointmentProjection` (MongoDB)
+- ❌ `AppointmentProjectionRepository` (MongoDB)
+- ❌ `AppointmentQueryController` (endpoints de queries)
+
+#### Por quê?
+**Appointments pertencem ao serviço `hap-physicians`!** 
+
+Este serviço foca-se exclusivamente em **registos clínicos** (clinical records).
+
+#### Como funciona agora:
+
+**Para Appointments (domínio externo):**
+- ✅ Consome eventos `appointment.*` do RabbitMQ **APENAS para logging/tracing**
+- ✅ Quando precisa de dados de appointments, consulta `hap-physicians` via HTTP
+- ✅ Circuit breaker e retry policies implementados
+
+**Para Appointment Records (domínio deste serviço):**
+- ✅ Write model: `AppointmentRecord` (H2/JPA) - guarda apenas `appointmentId` como String
+- ✅ Read model: `AppointmentRecordProjection` (MongoDB)
+- ✅ CQRS aplicado APENAS ao seu domínio
+
+### ✅ Database Per Instance - IMPLEMENTADO
+
+**H2 (Write Model):**
+- Instance 1 (8083): `instance1db`
+- Instance 2 (8090): `instance2db`
+
+**MongoDB (Read Model):**
+- Instance 1 (8083): `hapappointmentrecords_instance1`
+- Instance 2 (8090): `hapappointmentrecords_instance2`
+
+Configuração em `application-instance1.properties` e `application-instance2.properties`.
+
+### ✅ Saga Coreografada - SIM, CONTINUA IMPLEMENTADA!
+
+**Papel:** Participante Passivo
+
+- Consome eventos de appointments (logging/tracing)
+- Não armazena dados de appointments
+- Consulta `hap-physicians` via HTTP quando necessário
+- Foca no seu domínio (registos clínicos)
+
+### 📚 Documentação Adicional Criada:
+
+1. **`REFACTORING-COMPLETE.md`** - Detalhes completos do refactoring
+2. **`DATABASE-PER-INSTANCE.md`** - Como funciona database per instance
+3. **`TESTE-DATABASE-PER-INSTANCE.md`** - Guia de testes
+4. **`DATABASE-PER-INSTANCE-SUMMARY.md`** - Resumo rápido
+
+### 🎯 Para a Defesa:
+
+> "O `hap-appointmentrecords` **participa na Saga coreografada** como **participante passivo**. Consome eventos de `hap-physicians` (como `appointment.created`) para **monitorização e tracing**, mas **não armazena appointments localmente** - isso viola bounded contexts!
+>
+> Quando precisa de dados de appointments, **consulta o serviço owners (`hap-physicians`) via HTTP** com circuit breaker.
+>
+> Cada instância tem **databases isoladas** (H2 in-memory + MongoDB), implementando corretamente o padrão **database per instance/service**.
+>
+> O serviço foca-se exclusivamente no seu domínio: **registos clínicos pós-consulta**."

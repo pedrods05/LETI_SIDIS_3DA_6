@@ -2,35 +2,78 @@ package leti_sisdis_6.hapappointmentrecords.service.event;
 
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
 import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentProjectionRepository;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 
-import static org.mockito.Mockito.*;
-
+/**
+ * Tests for AppointmentEventsListener
+ * Note: Listener now only logs events - no data storage
+ */
+@ExtendWith(MockitoExtension.class)
 class AppointmentEventsListenerTest {
 
-    private AppointmentProjectionRepository projectionRepository;
-    private AppointmentRepository appointmentRepository;
+    @InjectMocks
     private AppointmentEventsListener listener;
 
-    @BeforeEach
-    void setUp() {
-        projectionRepository = mock(AppointmentProjectionRepository.class);
-        appointmentRepository = mock(AppointmentRepository.class);
-        listener = new AppointmentEventsListener(projectionRepository, appointmentRepository);
+    @Test
+    @DisplayName("Deve processar evento de criação de appointment sem erros")
+    void shouldProcessAppointmentCreatedEventWithoutError() {
+        // Given
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent(
+                "APT001",
+                "PAT001",
+                "PHY001",
+                LocalDateTime.of(2025, 11, 1, 10, 0),
+                ConsultationType.FIRST_TIME,
+                AppointmentStatus.SCHEDULED,
+                LocalDateTime.now()
+        );
+
+        // When / Then - should not throw exception
+        listener.onAppointmentCreated(event);
     }
 
     @Test
-    void onAppointmentCreated_savesProjectionAndAppointment() {
-        var event = new AppointmentCreatedEvent("a1", "p1", "d1", LocalDateTime.of(2025,12,10,9,0), ConsultationType.FIRST_TIME, AppointmentStatus.SCHEDULED, LocalDateTime.now());
+    @DisplayName("Deve processar evento de atualização de appointment sem erros")
+    void shouldProcessAppointmentUpdatedEventWithoutError() {
+        // Given
+        AppointmentUpdatedEvent event = new AppointmentUpdatedEvent(
+                "APT001",
+                "PAT001",
+                "PHY001",
+                LocalDateTime.of(2025, 11, 1, 10, 0),
+                ConsultationType.FIRST_TIME,
+                AppointmentStatus.SCHEDULED,
+                AppointmentStatus.COMPLETED,
+                LocalDateTime.now()
+        );
 
-        listener.onAppointmentCreated(event);
+        // When / Then - should not throw exception
+        listener.onAppointmentUpdated(event, null, null);
+    }
 
-        verify(projectionRepository, times(1)).save(any());
-        verify(appointmentRepository, times(1)).save(any());
+    @Test
+    @DisplayName("Deve processar evento de cancelamento de appointment sem erros")
+    void shouldProcessAppointmentCanceledEventWithoutError() {
+        // Given
+        AppointmentCanceledEvent event = new AppointmentCanceledEvent(
+                "APT001",
+                "PAT001",
+                "PHY001",
+                LocalDateTime.of(2025, 11, 1, 10, 0),
+                ConsultationType.FIRST_TIME,
+                AppointmentStatus.SCHEDULED,
+                AppointmentStatus.CANCELLED,
+                "Patient request",
+                LocalDateTime.now()
+        );
+
+        // When / Then - should not throw exception
+        listener.onAppointmentCanceled(event, null, null);
     }
 }

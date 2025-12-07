@@ -9,15 +9,10 @@ import leti_sisdis_6.hapappointmentrecords.dto.local.UserDTO;
 import leti_sisdis_6.hapappointmentrecords.exceptions.NotFoundException;
 import leti_sisdis_6.hapappointmentrecords.exceptions.UnauthorizedException;
 import leti_sisdis_6.hapappointmentrecords.http.ExternalServiceClient;
-import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecord;
-import leti_sisdis_6.hapappointmentrecords.model.AppointmentProjection;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecordProjection;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentProjectionRepository;
 import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordProjectionRepository;
-import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentCreatedEvent;
 import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentEventsPublisher;
 import leti_sisdis_6.hapappointmentrecords.service.event.AppointmentRecordCreatedEvent;
 
@@ -31,17 +26,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static leti_sisdis_6.hapappointmentrecords.config.RabbitMQConfig.CORRELATION_ID_HEADER;
-
 @Service
 @RequiredArgsConstructor
 public class AppointmentRecordService {
 
     private final AppointmentRecordRepository recordRepository;
-    private final AppointmentRepository appointmentRepository;
     private final ExternalServiceClient externalServiceClient;
     private final AppointmentEventsPublisher eventsPublisher;
-    private final AppointmentProjectionRepository projectionRepository; // appointment info projections (by appointmentId)
     private final AppointmentRecordProjectionRepository recordProjectionRepository; // record read-model (by recordId)
 
     @Transactional
@@ -73,21 +64,23 @@ public class AppointmentRecordService {
             throw new UnauthorizedException("You are not authorized to record details for this appointment");
         }
 
-        // 3) Evitar duplicado (via propriedade aninhada)
-        if (recordRepository.findByAppointment_AppointmentId(appointmentId).isPresent()) {
+        // 3) Evitar duplicado
+        if (recordRepository.findByAppointmentId(appointmentId).isPresent()) {
             throw new IllegalStateException("Record already exists for appointment " + appointmentId);
         }
 
-        // 4) Carregar a entidade Appointment (do próprio serviço)
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new NotFoundException("Appointment not found: " + appointmentId));
+        // 4) Extract data from physicians service response
+        String patientId = (String) appointmentData.get("patientId");
+        if (patientId == null) {
+            throw new NotFoundException("Appointment data is incomplete - missing patientId");
+        }
 
-        // 5) Criar o record (ligando a ENTIDADE, não o ID)
+        // 5) Criar o record (usando apenas appointmentId)
         String recordId = generateRecordId();
 
         AppointmentRecord record = AppointmentRecord.builder()
                 .recordId(recordId)
-                .appointment(appointment) // relação 1–1
+                .appointmentId(appointmentId) // store ID, not entity
                 .diagnosis(request.getDiagnosis())
                 .treatmentRecommendations(request.getTreatmentRecommendations())
                 .prescriptions(request.getPrescriptions())
@@ -99,9 +92,9 @@ public class AppointmentRecordService {
         // Persist read-model projection for fast queries by recordId
         AppointmentRecordProjection recordProjection = AppointmentRecordProjection.builder()
                 .recordId(recordId)
-                .appointmentId(appointment.getAppointmentId())
-                .patientId(appointment.getPatientId())
-                .physicianId(appointment.getPhysicianId())
+                .appointmentId(appointmentId)
+                .patientId(patientId)
+                .physicianId(appointmentPhysicianId)
                 .diagnosis(record.getDiagnosis())
                 .treatmentRecommendations(record.getTreatmentRecommendations())
                 .prescriptions(record.getPrescriptions())
@@ -112,18 +105,16 @@ public class AppointmentRecordService {
         // Optional event for record creation (disabled by default)
         eventsPublisher.publishAppointmentRecordCreated(new AppointmentRecordCreatedEvent(
                 recordId,
-                appointment.getAppointmentId(),
-                appointment.getPatientId(),
-                appointment.getPhysicianId(),
+                appointmentId,
+                patientId,
+                appointmentPhysicianId,
                 LocalDateTime.now()
         ));
-
-        publishAppointmentCreatedEvent(appointment, LocalDateTime.now());
 
         // 6) Resposta
         return AppointmentRecordResponse.builder()
                 .message("Appointment record created successfully.")
-                .appointmentId(appointment.getAppointmentId())
+                .appointmentId(appointmentId)
                 .recordId(recordId)
                 .build();
     }
@@ -189,17 +180,5 @@ public class AppointmentRecordService {
     private String generateRecordId() {
         // usa UUID para evitar colisão quando há deletes
         return "REC" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-    }
-
-    private void publishAppointmentCreatedEvent(Appointment appointment, LocalDateTime occurredAt) {
-        AppointmentCreatedEvent event = new AppointmentCreatedEvent(
-                appointment.getAppointmentId(),
-                appointment.getPatientId(),
-                appointment.getPhysicianId(),
-                appointment.getDateTime(),
-                appointment.getConsultationType(),
-                appointment.getStatus(),
-                occurredAt);
-        eventsPublisher.publishAppointmentCreated(event);
     }
 }

@@ -1,9 +1,6 @@
 package leti_sisdis_6.hapappointmentrecords.repository;
 
-import leti_sisdis_6.hapappointmentrecords.model.Appointment;
 import leti_sisdis_6.hapappointmentrecords.model.AppointmentRecord;
-import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
-import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,7 +9,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Optional;
 
@@ -28,34 +24,17 @@ class AppointmentRecordRepositoryTest {
     @Autowired
     private AppointmentRecordRepository repository;
 
-    private Appointment appointment1;
-    private Appointment appointment2;
     private AppointmentRecord record1;
     private AppointmentRecord record2;
 
     @BeforeEach
     void setUp() {
-        appointment1 = Appointment.builder()
-                .appointmentId("APT001")
-                .patientId("PAT001")
-                .physicianId("PHY001")
-                .dateTime(LocalDateTime.of(2025, 11, 1, 10, 0))
-                .consultationType(ConsultationType.FIRST_TIME)
-                .status(AppointmentStatus.COMPLETED)
-                .build();
-
-        appointment2 = Appointment.builder()
-                .appointmentId("APT002")
-                .patientId("PAT002")
-                .physicianId("PHY001")
-                .dateTime(LocalDateTime.of(2025, 11, 2, 14, 0))
-                .consultationType(ConsultationType.FOLLOW_UP)
-                .status(AppointmentStatus.COMPLETED)
-                .build();
+        // Note: Appointments now live in physicians service
+        // We only store appointmentId references
 
         record1 = AppointmentRecord.builder()
                 .recordId("REC001")
-                .appointment(appointment1)
+                .appointmentId("APT001") // reference to appointment in physicians service
                 .diagnosis("Gripe comum")
                 .treatmentRecommendations("Repouso e hidratação")
                 .prescriptions("Paracetamol 500mg")
@@ -64,21 +43,15 @@ class AppointmentRecordRepositoryTest {
 
         record2 = AppointmentRecord.builder()
                 .recordId("REC002")
-                .appointment(appointment2)
+                .appointmentId("APT002")
                 .diagnosis("Pressão alta")
                 .treatmentRecommendations("Dieta com baixo teor de sódio")
                 .prescriptions("Losartana 50mg")
                 .duration(LocalTime.of(0, 45))
                 .build();
 
-        // Persist appointments first
-        entityManager.persistAndFlush(appointment1);
-        entityManager.persistAndFlush(appointment2);
-
-        // Then persist records
         entityManager.persistAndFlush(record1);
         entityManager.persistAndFlush(record2);
-
         entityManager.clear();
     }
 
@@ -86,20 +59,9 @@ class AppointmentRecordRepositoryTest {
     @DisplayName("Deve salvar e recuperar AppointmentRecord")
     void shouldSaveAndRetrieveAppointmentRecord() {
         // Given
-        Appointment validAppointment = Appointment.builder()
-                .appointmentId("APT-ERROR-001")
-                .patientId("PAT-ERROR-001")
-                .physicianId("PHY001")
-                .dateTime(LocalDateTime.of(2025, 11, 15, 16, 0))
-                .consultationType(ConsultationType.FOLLOW_UP)
-                .status(AppointmentStatus.COMPLETED)
-                .build();
-
-        entityManager.persistAndFlush(validAppointment);
-
         AppointmentRecord newRecord = AppointmentRecord.builder()
                 .recordId("REC003")
-                .appointment(validAppointment)
+                .appointmentId("APT003")
                 .diagnosis("Diabetes tipo 2")
                 .treatmentRecommendations("Controle glicêmico")
                 .prescriptions("Metformina 850mg")
@@ -114,14 +76,14 @@ class AppointmentRecordRepositoryTest {
         assertThat(retrieved).isPresent();
         assertThat(retrieved.get().getRecordId()).isEqualTo("REC003");
         assertThat(retrieved.get().getDiagnosis()).isEqualTo("Diabetes tipo 2");
-        assertThat(retrieved.get().getAppointment().getAppointmentId()).isEqualTo("APT-ERROR-001");
+        assertThat(retrieved.get().getAppointmentId()).isEqualTo("APT003");
     }
 
     @Test
     @DisplayName("Deve encontrar record por appointment ID")
     void shouldFindRecordByAppointmentId() {
         // When
-        Optional<AppointmentRecord> record = repository.findByAppointment_AppointmentId("APT001");
+        Optional<AppointmentRecord> record = repository.findByAppointmentId("APT001");
 
         // Then
         assertThat(record).isPresent();
@@ -133,7 +95,7 @@ class AppointmentRecordRepositoryTest {
     @DisplayName("Deve retornar empty para appointment ID inexistente")
     void shouldReturnEmptyForNonExistentAppointmentId() {
         // When
-        Optional<AppointmentRecord> record = repository.findByAppointment_AppointmentId("APT999");
+        Optional<AppointmentRecord> record = repository.findByAppointmentId("APT999");
 
         // Then
         assertThat(record).isEmpty();
@@ -143,8 +105,8 @@ class AppointmentRecordRepositoryTest {
     @DisplayName("Deve buscar records por múltiplos appointment IDs")
     void shouldFindRecordsByMultipleAppointmentIds() {
         // When
-        Optional<AppointmentRecord> record1 = repository.findByAppointment_AppointmentId("APT001");
-        Optional<AppointmentRecord> record2 = repository.findByAppointment_AppointmentId("APT002");
+        Optional<AppointmentRecord> record1 = repository.findByAppointmentId("APT001");
+        Optional<AppointmentRecord> record2 = repository.findByAppointmentId("APT002");
 
         // Then
         assertThat(record1).isPresent();
@@ -206,20 +168,9 @@ class AppointmentRecordRepositoryTest {
     @DisplayName("Deve validar constraints de campos obrigatórios")
     void shouldValidateMandatoryFieldConstraints() {
         // Given
-        Appointment validAppointment = Appointment.builder()
-                .appointmentId("APT-ERROR-001")
-                .patientId("PAT-ERROR-001")
-                .physicianId("PHY001")
-                .dateTime(LocalDateTime.of(2025, 11, 15, 16, 0))
-                .consultationType(ConsultationType.FOLLOW_UP)
-                .status(AppointmentStatus.COMPLETED)
-                .build();
-
-        entityManager.persistAndFlush(validAppointment);
-
         AppointmentRecord record = AppointmentRecord.builder()
                 .recordId("REC-CONSTRAINTS")
-                .appointment(validAppointment)
+                .appointmentId("APT-CONSTRAINTS")
                 .diagnosis("Teste de constraints")
                 .treatmentRecommendations("Teste")
                 .prescriptions("Teste")
@@ -232,7 +183,7 @@ class AppointmentRecordRepositoryTest {
         // Then
         assertThat(saved).isNotNull();
         assertThat(saved.getRecordId()).isEqualTo("REC-CONSTRAINTS");
-        assertThat(saved.getAppointment()).isNotNull();
+        assertThat(saved.getAppointmentId()).isEqualTo("APT-CONSTRAINTS");
         assertThat(saved.getDiagnosis()).isNotNull();
     }
 }

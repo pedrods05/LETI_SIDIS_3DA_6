@@ -15,10 +15,9 @@ public class AppointmentRecord {
     @Column(name = "record_id", length = 32, nullable = false, updatable = false)
     private String recordId;
 
-    // Relação 1–1 com Appointment (mesmo serviço)
-    @OneToOne(optional = false)
-    @JoinColumn(name = "appointment_id", referencedColumnName = "appointment_id")
-    private Appointment appointment;
+    // Store only appointmentId - full appointment data lives in physicians service
+    @Column(name = "appointment_id", length = 255, nullable = false, unique = true)
+    private String appointmentId;
 
     @Column(nullable = false, length = 255)
     private String diagnosis;
