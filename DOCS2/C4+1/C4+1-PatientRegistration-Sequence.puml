@@ -31,6 +31,7 @@ alt Email already exists
   Controller --> User : 409 Conflict (email in use)
   deactivate Controller
 else Email not in use
+  activate Service
   Service -> Repo : existsByEmail(email)
   activate Repo
   Repo --> Service : false
@@ -45,11 +46,13 @@ else Email not in use
     Repo --> Service : Patient Entity { patientId }
     deactivate Repo
     Service -> MQ : convertAndSend(\n  exchange=\"hap-exchange\",\n  routingKey=\"patient.registered\",\n  event: PatientRegisteredEvent\n)
-    deactivate Service
+    activate MQ
+deactivate MQ
     Service --> Controller : 201 Created { patientId }
     deactivate Service
+activate Controller
     Controller --> User : 201 Created { patientId }
-    deactivate Controller
+deactivate Controller 
     activate MQ
     MQ -> EventHandler : PatientRegisteredEvent\n{ patientId, fullName, email, phone,\n  address, insuranceInfo, ... }
     deactivate MQ
@@ -61,10 +64,15 @@ else Email not in use
     deactivate QueryRepo
     deactivate EventHandler
   else Auth error (4xx/5xx/timeout)
+activate AUTH
     AUTH --> Service : exception
+
     deactivate AUTH
+    activate Service
+
     Service --> Controller : IllegalArgumentException("Failed to register in Auth")
     deactivate Service
+activate Controller
     Controller --> User : 400 Bad Request { error }
     deactivate Controller
   end
