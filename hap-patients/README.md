@@ -34,7 +34,7 @@ mvn test -Dtest=PatientEventHandlerTest
 ```
 
 ### Cobertura de Testes
-O módulo contém **18 classes de teste** cobrindo:
+O módulo contém **15 classes de teste** cobrindo:
 - ✅ Controllers (REST endpoints + peer forwarding)
 - ✅ Services (business logic + CQRS commands)
 - ✅ Repositories (H2 + MongoDB)
