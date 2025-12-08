@@ -19,6 +19,8 @@ Admin -> Controller : GET /patients/{id}
 activate Controller
 
 Controller -> QueryService : getPatientDetailsFromReadModel(id)
+deactivate Admin
+
 activate QueryService
 QueryService -> MongoRepo : findById(id)
 activate MongoRepo
@@ -27,50 +29,63 @@ alt Found in MongoDB read model
     deactivate MongoRepo
     QueryService --> Controller : PatientDetailsDTO
     deactivate QueryService
+activate Admin
     Controller --> Admin : 200 OK + JSON (from Mongo read model)
     deactivate Controller
     deactivate Admin
 else Not found in MongoDB
+activate MongoRepo
+activate QueryService
     MongoRepo --> QueryService : (empty)
     deactivate MongoRepo
+activate Controller
     QueryService --> Controller : (not found)
     deactivate QueryService
 
     ' 2) Tentar cache local (DTOs previamente obtidos)
     Controller -> LocalCache : findById(id)
     activate LocalCache
-    alt Found in local cache
+  else  alt Found in local cache
         LocalCache --> Controller : PatientDetailsDTO
         deactivate LocalCache
+activate Admin
         Controller --> Admin : 200 OK + JSON (from local cache)
-        deactivate Controller
         deactivate Admin
     else Not in local cache
         deactivate LocalCache
 
         ' 3) Tentar BD relacional local via PatientService
         Controller -> Service : getPatientDetails(id)
+        deactivate Controller
+
         activate Service
+deactivate Controller
+
         Service -> Repo : findById(id)
         activate Repo
         alt Found in local H2
             Repo --> Service : Patient Entity
             deactivate Repo
             Service --> Controller : PatientDetailsDTO
+activate Controller
             deactivate Service
             Controller -> LocalCache : save(dto)
             activate LocalCache
             LocalCache --> Controller : (cached)
             deactivate LocalCache
+activate Admin
             Controller --> Admin : 200 OK + JSON (from local H2)
             deactivate Controller
             deactivate Admin
         else Not found in local H2
+activate Repo
+activate Service
             Repo --> Service : (empty)
             deactivate Repo
             deactivate Service
 
             loop for each configured peer (excluding self)
+activate Controller
                 Controller -> Peer : HTTP GET /patients/{id}
                 activate Peer
                 alt Peer returns patient
@@ -80,6 +95,7 @@ else Not found in MongoDB
                     activate LocalCache
                     LocalCache --> Controller : (cached)
                     deactivate LocalCache
+activate Admin
                     Controller --> Admin : 200 OK + JSON (from peer)
                     deactivate Controller
                     deactivate Admin
@@ -89,7 +105,7 @@ else Not found in MongoDB
                     deactivate Peer
                 end
             end
-
+activate Admin
             Controller --> Admin : 404 Not Found { "error": "Patient not found" }
             deactivate Controller
             deactivate Admin
