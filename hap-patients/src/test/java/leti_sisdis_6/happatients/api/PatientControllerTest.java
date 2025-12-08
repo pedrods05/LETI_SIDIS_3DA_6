@@ -20,8 +20,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
+import leti_sisdis_6.happatients.exceptions.GlobalExceptionHandler;
+import leti_sisdis_6.happatients.exceptions.NotFoundException;
 import leti_sisdis_6.happatients.http.ResilientRestTemplate;
 import leti_sisdis_6.happatients.repository.PatientLocalRepository;
+import leti_sisdis_6.happatients.service.PatientQueryService;
 import leti_sisdis_6.happatients.service.PatientService;
 
 import org.springframework.http.MediaType;
@@ -34,7 +37,8 @@ class PatientControllerTest {
     private MockMvc mockMvc;
 
     @Mock private PatientService patientService;
-    @Mock private PatientLocalRepository localRepository;
+    @Mock private PatientQueryService patientQueryService;
+    @Mock private PatientLocalRepository localRepository; // kept for compatibility, not used by controller anymore
     @Mock private ResilientRestTemplate resilientRestTemplate;
 
     @InjectMocks private PatientController controller;
@@ -44,7 +48,9 @@ class PatientControllerTest {
         ReflectionTestUtils.setField(controller, "patientPeersProp", "http://localhost:18080");
         ReflectionTestUtils.setField(controller, "serverPort", 0);
         ReflectionTestUtils.invokeMethod(controller, "initPeers");
-        this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        this.mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test
@@ -62,20 +68,26 @@ class PatientControllerTest {
     void getPatientDetails_localCacheHit() throws Exception {
         String id = "PAT01";
         PatientDetailsDTO local = PatientDetailsDTO.builder().patientId(id).fullName("Local").email("l@l").build();
-        when(localRepository.findById(id)).thenReturn(Optional.of(local));
+        // Controller first tries query service; ensure it yields no result
+        when(patientQueryService.getPatientProfile(id)).thenThrow(new NotFoundException("not found in mongo"));
+        // Then service should return local details
+        when(patientService.getPatientDetails(id)).thenReturn(local);
 
         mockMvc.perform(get("/patients/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fullName").value("Local"));
 
-        verifyNoInteractions(patientService);
+        verify(patientService, times(1)).getPatientDetails(id);
     }
 
     @Test
     void getPatientDetails_notFoundAnywhere_returns404() throws Exception {
         String id = "PAT999";
-        when(localRepository.findById(id)).thenReturn(Optional.empty());
+        // Ensure query service yields not found
+        when(patientQueryService.getPatientProfile(id)).thenThrow(new NotFoundException("not found in mongo"));
+        // Ensure local service yields not found
         when(patientService.getPatientDetails(id)).thenThrow(new EntityNotFoundException("not found"));
+        // Ensure peers/fallback yields null
         when(resilientRestTemplate.getForObjectWithFallback(anyString(), eq(PatientDetailsDTO.class))).thenReturn(null);
 
         mockMvc.perform(get("/patients/{id}", id))
@@ -113,4 +125,3 @@ class PatientControllerTest {
                 .andExpect(jsonPath("$.message").value("Contact details updated successfully."));
     }
 }
-

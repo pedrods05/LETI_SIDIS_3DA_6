@@ -5,12 +5,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="updated maven version">
-      <change afterPath="$PROJECT_DIR$/.idea/copilotDiffState.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/deviceManager.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/InternalPatientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/InternalPatientController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/InternalPatientControllerTest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerPeerForwardingTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerPeerForwardingTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientSecurityTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientSecurityTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
@@ -21,17 +39,21 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
-        &quot;lastFilter&quot;: {
-        &quot;state&quot;: &quot;OPEN&quot;,
-        &quot;assignee&quot;: &quot;pedrocunha4&quot;
-        }
-        }</component>
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;pedrocunha4&quot;
+  }
+}</component>
   <component name="GithubPullRequestsUISettings">{
-        &quot;selectedUrlAndAccountId&quot;: {
-        &quot;url&quot;: &quot;https://github.com/pedrods05/LET_SIDIS_3DA_6.git&quot;,
-        &quot;accountId&quot;: &quot;7d51d996-4996-4ed9-9c35-f10b71549cea&quot;
-        }
-        }</component>
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/pedrods05/LETI_SIDIS_3DA_6.git&quot;,
+    &quot;accountId&quot;: &quot;8d59ecb3-d26e-4eef-b16d-368cfb6d257b&quot;
+  }
+}</component>
+  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
+  <component name="KubernetesApiProvider"><![CDATA[{
+  "isMigrated": true
+}]]></component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -46,6 +68,23 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "JUnit.GlobalExceptionHandlerTest.executor": "Run",
+    "JUnit.HapPatientsApplicationTests.executor": "Run",
+    "JUnit.InternalPatientControllerTest.executor": "Run",
+    "JUnit.JpaSimpleRepositoriesTest.executor": "Run",
+    "JUnit.PatientControllerPeerForwardingTest.executor": "Run",
+    "JUnit.PatientControllerTest.executor": "Run",
+    "JUnit.PatientMapperTest.executor": "Run",
+    "JUnit.PatientRegistrationControllerTest.executor": "Run",
+    "JUnit.PatientRegistrationServiceTest.executor": "Run",
+    "JUnit.PatientSecurityTest.executor": "Run",
+    "JUnit.ResilientRestTemplateTest.executor": "Run",
+    "JUnit.api in hap-appointmentrecords.executor": "Run",
+    "JUnit.hapappointmentrecords in hap-appointmentrecords.executor": "Run",
+    "JUnit.leti_sisdis_6.happatients in hap-patients.executor": "Run",
+    "JUnit.leti_sisdis_6.happatients.api in hap-patients.executor": "Run",
+    "JUnit.leti_sisdis_6.happatients.repository in hap-patients.executor": "Run",
+    "JUnit.leti_sisdis_6.happatients.service in hap-patients.executor": "Run",
     "RequestMappingsPanelOrder0": "0",
     "RequestMappingsPanelOrder1": "1",
     "RequestMappingsPanelWidth0": "75",
@@ -61,18 +100,21 @@
     "Spring Boot.hap-appointmentrecords-instance1.executor": "Run",
     "Spring Boot.hap-appointmentrecords-instance2.executor": "Run",
     "Spring Boot.hap-auth-instance1.executor": "Run",
+    "Spring Boot.hap-auth-instance2.executor": "Run",
     "Spring Boot.hap-patients-instance1.executor": "Run",
+    "Spring Boot.hap-patients-instance2.executor": "Run",
     "Spring Boot.hap-physicians-instance1.executor": "Run",
-    "git-widget-placeholder": "luis",
+    "Spring Boot.hap-physicians-instance2.executor": "Run",
+    "git-widget-placeholder": "pedro",
     "jdk.selected.JAVA_MODULE": "openjdk-23",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/main/java/leti_sisdis_6/happatients/service",
+    "last_opened_file_path": "C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/test/resources",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
+    "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.17",
     "project.structure.side.proportion": "0.2",
     "run.configurations.included.in.services": "true",
@@ -82,6 +124,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\test\resources" />
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\service" />
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients\usermanagement" />
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\main\java\leti_sisdis_6\happatients" />
@@ -99,6 +142,20 @@
         <option value="SpringBootApplicationConfigurationType" />
       </set>
     </option>
+    <option name="hiddenConfigurations">
+      <map>
+        <entry key="SpringBootApplicationConfigurationType">
+          <value>
+            <set>
+              <option value="HapAppointmentrecordsApplication" />
+              <option value="HapAuthApplication" />
+              <option value="HapPatientsApplication" />
+              <option value="HapPhysiciansApplication" />
+            </set>
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="configurationStatuses">
       <map>
         <entry key="SpringBootApplicationConfigurationType">
@@ -108,18 +165,185 @@
               <entry key="hap-appointmentrecords-instance1" value="STOPPED" />
               <entry key="hap-appointmentrecords-instance2" value="STOPPED" />
               <entry key="hap-auth-instance1" value="STOPPED" />
-              <entry key="hap-patients-instance1" value="FAILED" />
+              <entry key="hap-auth-instance2" value="STOPPED" />
+              <entry key="hap-patients-instance1" value="STOPPED" />
+              <entry key="hap-patients-instance2" value="STOPPED" />
+              <entry key="hap-physicians-instance1" value="STOPPED" />
+              <entry key="hap-physicians-instance2" value="STOPPED" />
             </map>
           </value>
         </entry>
       </map>
     </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.hap-appointmentrecords-instance1">
+  <component name="RunManager" selected="JUnit.HapPatientsApplicationTests">
+    <configuration name="GlobalExceptionHandlerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.exceptions.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients.exceptions" />
+      <option name="MAIN_CLASS_NAME" value="leti_sisdis_6.happatients.exceptions.GlobalExceptionHandlerTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HapPatientsApplicationTests" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients" />
+      <option name="MAIN_CLASS_NAME" value="leti_sisdis_6.happatients.HapPatientsApplicationTests" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HapPatientsApplicationTests" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients" />
+      <option name="MAIN_CLASS_NAME" value="leti_sisdis_6.happatients.HapPatientsApplicationTests" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="JpaSimpleRepositoriesTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.repository.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients.repository" />
+      <option name="MAIN_CLASS_NAME" value="leti_sisdis_6.happatients.repository.JpaSimpleRepositoriesTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PatientRegistrationServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients.service" />
+      <option name="MAIN_CLASS_NAME" value="leti_sisdis_6.happatients.service.PatientRegistrationServiceTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PatientSecurityTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.api.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients.api" />
+      <option name="MAIN_CLASS_NAME" value="leti_sisdis_6.happatients.api.PatientSecurityTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ResilientRestTemplateTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.http.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients.http" />
+      <option name="MAIN_CLASS_NAME" value="leti_sisdis_6.happatients.http.ResilientRestTemplateTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="leti_sisdis_6.happatients in hap-patients" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients" />
+      <option name="TEST_OBJECT" value="package" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="leti_sisdis_6.happatients.repository in hap-patients" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.repository.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients.repository" />
+      <option name="TEST_OBJECT" value="package" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="leti_sisdis_6.happatients.service in hap-patients" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hap-patients" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="leti_sisdis_6.happatients.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="leti_sisdis_6.happatients.service" />
+      <option name="TEST_OBJECT" value="package" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="HapAppointmentrecordsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="hap-appointmentrecords" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapappointmentrecords.HapAppointmentrecordsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HapAppointmentrecordsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-appointmentrecords" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapappointmentrecords.HapAppointmentrecordsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HapAuthApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-auth" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.hapauth.HapAuthApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -140,6 +364,22 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="HapPatientsApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-patients" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.happatients.HapPatientsApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="HapPhysiciansApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="hap-physicians" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="leti_sisdis_6.happhysicians.HapPhysiciansApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="HapPhysiciansApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
       <module name="hap-physicians" />
@@ -149,6 +389,11 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="JUnit.GlobalExceptionHandlerTest" />
+      <item itemvalue="JUnit.ResilientRestTemplateTest" />
+      <item itemvalue="JUnit.leti_sisdis_6.happatients.repository in hap-patients" />
+      <item itemvalue="JUnit.leti_sisdis_6.happatients.service in hap-patients" />
+      <item itemvalue="JUnit.HapPatientsApplicationTests" />
       <item itemvalue="Spring Boot.hap-physicians-instance1" />
       <item itemvalue="Spring Boot.hap-physicians-instance2" />
       <item itemvalue="Spring Boot.hap-appointmentrecords-instance1" />
@@ -162,12 +407,21 @@
       <item itemvalue="Spring Boot.HapPatientsApplication" />
       <item itemvalue="Spring Boot.HapPhysiciansApplication" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.HapPatientsApplicationTests" />
+        <item itemvalue="JUnit.leti_sisdis_6.happatients.service in hap-patients" />
+        <item itemvalue="JUnit.leti_sisdis_6.happatients.repository in hap-patients" />
+        <item itemvalue="JUnit.ResilientRestTemplateTest" />
+        <item itemvalue="JUnit.GlobalExceptionHandlerTest" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26830.84" />
-        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.26830.84" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.28238.7" />
+        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-IU-252.28238.7" />
       </set>
     </attachedChunks>
   </component>
@@ -183,6 +437,8 @@
       <workItem from="1760109781364" duration="479000" />
       <workItem from="1760542102600" duration="338000" />
       <workItem from="1760732535112" duration="865000" />
+      <workItem from="1765142102816" duration="3832000" />
+      <workItem from="1765156494693" duration="2311000" />
     </task>
     <task id="LOCAL-00001" summary="updated maven version">
       <option name="closed" value="true" />
@@ -212,5 +468,13 @@
         </breakpoint>
       </breakpoints>
     </breakpoint-manager>
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
   </component>
 </project>

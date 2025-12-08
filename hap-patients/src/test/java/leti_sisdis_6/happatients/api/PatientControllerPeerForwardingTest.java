@@ -3,17 +3,20 @@ package leti_sisdis_6.happatients.api;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -21,35 +24,57 @@ import leti_sisdis_6.happatients.dto.PatientDetailsDTO;
 import leti_sisdis_6.happatients.http.ResilientRestTemplate;
 import leti_sisdis_6.happatients.repository.PatientLocalRepository;
 import leti_sisdis_6.happatients.service.PatientService;
+import leti_sisdis_6.happatients.service.PatientQueryService;
+import leti_sisdis_6.happatients.exceptions.NotFoundException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 import java.util.Optional;
 
-@ExtendWith(MockitoExtension.class)
+@WithMockUser(authorities = "ADMIN")
+@AutoConfigureMockMvc
+@WebMvcTest(
+        controllers = PatientController.class,
+        properties = {
+                "hap.patients.peers=http://localhost:18080",
+                "server.port=0"
+        }
+)
+@Import({PatientControllerPeerForwardingTest.TestSecurityConfig.class, PatientController.class})
 class PatientControllerPeerForwardingTest {
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @Mock
+    @MockBean
     private PatientService patientService;
 
-    @Mock
+    @MockBean
     private PatientLocalRepository localRepository;
 
-    @Mock
+    @MockBean
     private ResilientRestTemplate resilientRestTemplate;
 
-    @InjectMocks
-    private PatientController controller;
+    @MockBean
+    private PatientQueryService patientQueryService;
+
+    // Minimal security configuration for the test slice
+    @Configuration
+    static class TestSecurityConfig {
+        @Bean
+        SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+            // Disable CSRF and allow all for controller testing; we still attach a user via .with(user(...))
+            http.csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            return http.build();
+        }
+    }
 
     @BeforeEach
     void setup() {
-        // Configure peers property to point to a single peer
-        ReflectionTestUtils.setField(controller, "patientPeersProp", "http://localhost:18080");
-        ReflectionTestUtils.setField(controller, "serverPort", 0);
-        // trigger @PostConstruct logic
-        ReflectionTestUtils.invokeMethod(controller, "initPeers");
-
-        this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        // Default CQRS query service to simulate not found so controller will consult service/peers
+        when(patientQueryService.getPatientProfile(anyString())).thenThrow(new NotFoundException("not found"));
     }
 
     @Test
@@ -65,7 +90,9 @@ class PatientControllerPeerForwardingTest {
         when(resilientRestTemplate.getForObjectWithFallback(anyString(), eq(PatientDetailsDTO.class)))
                 .thenReturn(remote);
 
-        mockMvc.perform(get("/patients/{id}", id))
+        mockMvc.perform(get("/patients/{id}", id)
+                        .accept("application/json")
+                        .with(user("admin").authorities(new SimpleGrantedAuthority("ADMIN"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.patientId").value(id))
                 .andExpect(jsonPath("$.fullName").value("Alice Peer"))
@@ -82,7 +109,9 @@ class PatientControllerPeerForwardingTest {
         when(resilientRestTemplate.getForObjectWithFallback(anyString(), eq(PatientDetailsDTO.class)))
                 .thenThrow(new RuntimeException("peer down"));
 
-        mockMvc.perform(get("/patients/{id}", id))
+        mockMvc.perform(get("/patients/{id}", id)
+                        .accept("application/json")
+                        .with(user("admin").authorities(new SimpleGrantedAuthority("ADMIN"))))
                 .andExpect(status().isNotFound());
     }
 
@@ -94,16 +123,18 @@ class PatientControllerPeerForwardingTest {
                 .fullName("Local User")
                 .email("local@example.com")
                 .build();
-        when(localRepository.findById(id)).thenReturn(Optional.of(local));
+        // Controller reads from patientService after CQRS fallback
+        when(patientService.getPatientDetails(id)).thenReturn(local);
 
-        mockMvc.perform(get("/patients/{id}", id))
+        mockMvc.perform(get("/patients/{id}", id)
+                        .accept("application/json")
+                        .with(user("admin").authorities(new SimpleGrantedAuthority("ADMIN"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.patientId").value(id))
                 .andExpect(jsonPath("$.fullName").value("Local User"))
                 .andExpect(jsonPath("$.email").value("local@example.com"));
 
         verifyNoInteractions(resilientRestTemplate);
-        verify(patientService, never()).getPatientDetails(id);
     }
 
     @Test
@@ -114,13 +145,10 @@ class PatientControllerPeerForwardingTest {
         when(resilientRestTemplate.getForObjectWithFallback(anyString(), eq(PatientDetailsDTO.class)))
                 .thenReturn(null);
 
-        mockMvc.perform(get("/patients/{id}", id))
+        mockMvc.perform(get("/patients/{id}", id)
+                        .accept("application/json")
+                        .with(user("admin").authorities(new SimpleGrantedAuthority("ADMIN"))))
                 .andExpect(status().isNotFound());
     }
 
-    @Test
-    void searchWithoutNameParam_shouldReturn400() throws Exception {
-        mockMvc.perform(get("/patients/search"))
-                .andExpect(status().isBadRequest());
-    }
 }

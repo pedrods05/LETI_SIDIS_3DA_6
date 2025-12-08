@@ -10,9 +10,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -34,8 +37,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PatientController.class)
-// 1. Usamos uma configuração isolada para não carregar a App principal e o JPA
+@AutoConfigureMockMvc
 @ContextConfiguration(classes = {PatientSecurityTest.MinimalApp.class, PatientController.class})
+@org.springframework.boot.autoconfigure.ImportAutoConfiguration({JacksonAutoConfiguration.class, HttpMessageConvertersAutoConfiguration.class})
 class PatientSecurityTest {
 
     // 2. Definimos uma "Mini App" que desliga explicitamente as bases de dados
@@ -98,10 +102,12 @@ class PatientSecurityTest {
                 .email("l@l")
                 .build();
 
+        // O controller tenta primeiro pelo CQRS (Mongo) via patientQueryService
+        // Simulamos que não existe lá, para cair no fallback SQL
+        when(patientQueryService.getPatientProfile(id)).thenThrow(new leti_sisdis_6.happatients.exceptions.NotFoundException("not found"));
+        // Depois retorna do serviço local SQL
+        when(patientService.getPatientDetails(id)).thenReturn(details);
 
-        when(patientQueryService.getPatientDetails(id)).thenReturn(details);
-
-        // 3. Executar o pedido como ADMIN
         mockMvc.perform(get("/patients/{id}", id)
                         .with(SecurityMockMvcRequestPostProcessors.jwt()
                                 .authorities(new SimpleGrantedAuthority("ADMIN"))))
