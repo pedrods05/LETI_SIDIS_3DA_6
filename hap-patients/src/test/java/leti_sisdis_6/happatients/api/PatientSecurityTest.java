@@ -8,43 +8,67 @@ import leti_sisdis_6.happatients.service.PatientQueryService;
 import leti_sisdis_6.happatients.service.PatientService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PatientController.class)
-@Import(PatientSecurityTest.MockBeans.class)
+// 1. Usamos uma configuração isolada para não carregar a App principal e o JPA
+@ContextConfiguration(classes = {PatientSecurityTest.MinimalApp.class, PatientController.class})
 class PatientSecurityTest {
 
-    @TestConfiguration
-    static class MockBeans {
-        @Bean JwtDecoder jwtDecoder() { return mock(JwtDecoder.class); }
-        @Bean PatientService patientService() { return mock(PatientService.class); }
-        @Bean PatientLocalRepository patientLocalRepository() { return mock(PatientLocalRepository.class); }
-        @Bean ResilientRestTemplate resilientRestTemplate() { return mock(ResilientRestTemplate.class); }
+    // 2. Definimos uma "Mini App" que desliga explicitamente as bases de dados
+    @SpringBootApplication(exclude = {
+            DataSourceAutoConfiguration.class,
+            HibernateJpaAutoConfiguration.class,
+            MongoAutoConfiguration.class,
+            MongoDataAutoConfiguration.class
+    })
+    static class MinimalApp {
+        // Esta classe serve apenas para arrancar o contexto do Spring sem erros de DB
     }
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private PatientService patientService;
-    @Autowired private PatientLocalRepository localRepository;
-    @Autowired private PatientQueryService patientQueryService; // <--- ADICIONADO
+    @Autowired
+    private MockMvc mockMvc;
+
+    // 3. Usamos @MockBean direto (mais limpo e seguro que classes estáticas)
+    // O Spring encarrega-se de injetar isto no Controller automaticamente.
+
+    @MockBean
+    private JwtDecoder jwtDecoder; // Necessário para a segurança arrancar
+
+    @MockBean
+    private PatientService patientService;
+
+    @MockBean
+    private PatientLocalRepository localRepository;
+
+    @MockBean
+    private ResilientRestTemplate resilientRestTemplate;
+
+    @MockBean // O tal que faltava e dava erro de UnsatisfiedDependencyException
+    private PatientQueryService patientQueryService;
 
     @Test
     void listPatients_requiresAdmin() throws Exception {
@@ -64,12 +88,20 @@ class PatientSecurityTest {
     @Test
     void getPatientDetails_requiresAdmin() throws Exception {
         String id = "PAT01";
+
         mockMvc.perform(get("/patients/{id}", id))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isUnauthorized());
 
-        when(localRepository.findById(id)).thenReturn(Optional.of(PatientDetailsDTO.builder()
-                .patientId(id).fullName("Local").email("l@l").build()));
+        PatientDetailsDTO details = PatientDetailsDTO.builder()
+                .patientId(id)
+                .fullName("Local")
+                .email("l@l")
+                .build();
 
+
+        when(patientQueryService.getPatientDetails(id)).thenReturn(details);
+
+        // 3. Executar o pedido como ADMIN
         mockMvc.perform(get("/patients/{id}", id)
                         .with(SecurityMockMvcRequestPostProcessors.jwt()
                                 .authorities(new SimpleGrantedAuthority("ADMIN"))))
@@ -95,7 +127,7 @@ class PatientSecurityTest {
                         .with(SecurityMockMvcRequestPostProcessors.jwt()
                                 .authorities(new SimpleGrantedAuthority("PHYSICIAN"))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.patientId").value(id)); // CORREÇÃO: Validar campo na raiz
+                .andExpect(jsonPath("$.patientId").value(id));
     }
 
     @Test
@@ -111,6 +143,7 @@ class PatientSecurityTest {
                 .andExpect(status().isForbidden());
 
         when(patientService.updateContactDetails(any(), any())).thenReturn("Contact details updated successfully.");
+
         mockMvc.perform(patch("/patients/me")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body)
