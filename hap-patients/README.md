@@ -7,6 +7,7 @@ Este serviço gere o registo e a consulta de pacientes e suporta peer-forwarding
 - instance2 → 8088
 
 ## Executar (Windows, cmd.exe)
+É necessário arrancar o RabbitMQ, MongoDB e Zipkin antes de iniciar a aplicação:
 ```cmd
 mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance1
 ```
@@ -60,7 +61,7 @@ mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
   - Os eventos `PatientRegisteredEvent` ficam disponíveis para que outros serviços possam reagir (coreografia leve), mas sem um orquestrador de Saga nem passos de compensação.
 
 ## Limitações conhecidas
-- Sem service discovery e sem circuit breaker.
+- Service Discovery estático (via lista de peers no application.properties). Implementação de resiliência customizada (ResilientRestTemplate) para tolerância a falhas de rede entre instâncias, em vez de um Circuit Breaker de biblioteca (Resilience4j) neste módulo específico."
 - Sem cache distribuída; consistência eventual entre instâncias.
 - Eventos focados nos cenários principais (por exemplo, `PatientRegisteredEvent`); extensões para outros eventos são possíveis mas não totalmente exploradas aqui.
 - O módulo não aplica event sourcing completo: o estado oficial do paciente está numa base relacional e o event log (`PatientEvent`) não é usado para reconstruir o estado.
@@ -83,6 +84,7 @@ mvnw.cmd -q -DskipTests package
 
 Este módulo usa RabbitMQ para publicar o evento `PatientRegisteredEvent` sempre que um novo paciente é registado.
 O evento é consumido localmente por `PatientEventHandler`, que atualiza o modelo de leitura em MongoDB (`PatientSummary`).
+Além dos logs, o sistema integra com o Zipkin (via Micrometer Tracing) para visualização gráfica das spans e latências. O X-Correlation-Id serve como TraceId, permitindo depurar o fluxo completo: REST Request -> RabbitMQ Publish -> RabbitMQ Consume -> MongoDB Write.
 
 ### Correlation IDs (Tracing de ponta a ponta)
 
