@@ -1,0 +1,648 @@
+@startuml LogicalView
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+hide circle
+hide methods
+
+title Logical View
+
+package "hap-auth" #LightBlue {
+    ' Entities
+    class User {
+        -id: String
+        -username: String
+        -password: String
+        -role: Role
+    }
+
+    enum Role {
+        ADMIN
+        PATIENT
+        PHYSICIAN
+    }
+
+    ' Controllers
+    class AuthApi <<RestController>> {
+        +login()
+        +register()
+        +validateToken()
+    }
+
+    class InternalAuthApi <<RestController>> {
+        +getUserByUsername()
+        +getUserById()
+        +authenticateUser()
+    }
+
+    ' Services
+    class AuthService <<Service>> {
+        +authenticate()
+        +generateToken()
+        +validateToken()
+        +authenticateWithPeers()
+    }
+
+    class UserService <<Service>> {
+        +register()
+        +findById()
+        +findByUsername()
+        +existsByUsername()
+    }
+
+    ' Repositories
+    class UserRepository <<Repository>> {
+        +findByUsername()
+        +save()
+        +existsByUsername()
+    }
+
+    User ..> Role : uses
+    AuthApi --> AuthService : uses
+    AuthApi --> UserService : uses
+    InternalAuthApi --> UserService : uses
+    InternalAuthApi --> AuthService : uses
+    UserService --> UserRepository : uses
+    UserRepository --> User : manages
+}
+
+package "hap-patients" #LightGreen {
+    ' Entities
+    class Patient {
+        -patientId: String
+        -fullName: String
+        -birthDate: LocalDate
+        -phoneNumber: String
+        -email: String
+        -dataConsentGiven: boolean
+        -dataConsentDate: LocalDate
+    }
+
+    class HealthConcern {
+        -id: String
+        -description: String
+        -diagnosisDate: LocalDate
+        -treatment: String
+        -ongoing: Boolean
+        -resolvedDate: LocalDate
+    }
+
+    class Address {
+        -street: String
+        -city: String
+        -postalCode: String
+        -country: String
+    }
+
+    class InsuranceInfo {
+        -policyNumber: String
+        -companyName: String
+    }
+
+    class Photo {
+        -photoId: String
+        -url: String
+        -uploadedAt: LocalDateTime
+    }
+
+    class PatientEvent {
+        -eventId: String
+        -patientId: String
+        -eventType: String
+        -timestamp: LocalDateTime
+        -eventData: String
+    }
+
+    ' Controllers
+    class PatientController <<RestController>> {
+        +getPatient()
+        +getAllPatients()
+        +updatePatient()
+    }
+
+    class PatientRegistrationController <<RestController>> {
+        +registerPatient()
+    }
+
+    class InternalPatientController <<RestController>> {
+        +getPatientInternal()
+        +getPatientsBatch()
+    }
+
+    ' Services
+    class PatientService <<Service>> {
+        +getPatientById()
+        +getAllPatients()
+        +updatePatient()
+    }
+
+    class PatientRegistrationService <<Service>> {
+        +register()
+        +validateDataConsent()
+    }
+
+    class PatientQueryService <<Service>> {
+        +getPatientProfile()
+    }
+
+    class PatientEventHandler <<EventHandler>> {
+        +handlePatientRegistered()
+    }
+
+    ' Repositories
+    class PatientRepository <<Repository>> {
+        +findById()
+        +save()
+        +findAll()
+        +findByEmail()
+        +searchByName()
+    }
+
+    class PatientLocalRepository <<Repository>> {
+        +findById()
+        +save()
+        +findAll()
+    }
+
+    class PatientQueryRepository <<Repository>> {
+        +findById()
+        +findAll()
+    }
+
+    class PatientEventRepository <<Repository>> {
+        +findByPatientId()
+        +save()
+    }
+
+    class AddressRepository <<Repository>> {
+        +findById()
+        +save()
+    }
+
+    class InsuranceInfoRepository <<Repository>> {
+        +findById()
+        +save()
+    }
+
+    class PhotoRepository <<Repository>> {
+        +findById()
+        +save()
+    }
+
+    Patient "1" --> "0..*" HealthConcern : has
+    Patient "1" --> "0..1" Address : has
+    Patient "1" --> "0..1" InsuranceInfo : has
+    Patient "1" --> "0..1" Photo : has
+    Patient "1" --> "0..*" PatientEvent : generates
+
+    PatientController --> PatientService : uses
+    PatientController --> PatientLocalRepository : uses
+    PatientController --> PatientQueryService : uses
+    PatientRegistrationController --> PatientRegistrationService : uses
+    InternalPatientController --> PatientService : uses
+    PatientService --> PatientRepository : uses
+    PatientService --> PhotoRepository : uses
+    PatientService --> AddressRepository : uses
+    PatientService --> InsuranceInfoRepository : uses
+    PatientRegistrationService --> PatientRepository : uses
+    PatientQueryService --> PatientQueryRepository : uses
+    PatientEventHandler --> PatientQueryRepository : uses
+    PatientEventHandler --> PatientEventRepository : uses
+    PatientRepository --> Patient : manages
+    PatientLocalRepository --> PatientDetailsDTO : manages
+    PatientQueryRepository --> PatientSummary : manages
+    PatientEventRepository --> PatientEvent : manages
+    PhotoRepository --> Photo : manages
+    AddressRepository --> Address : manages
+    InsuranceInfoRepository --> InsuranceInfo : manages
+}
+
+package "hap-physicians" #LightYellow {
+    ' Entities
+    class Physician {
+        -physicianId: String
+        -fullName: String
+        -licenseNumber: String
+        -username: String
+        -workingHourStart: LocalTime
+        -workingHourEnd: LocalTime
+    }
+
+    class Appointment {
+        -appointmentId: String
+        -patientId: String
+        -patientName: String
+        -dateTime: LocalDateTime
+        -consultationType: ConsultationType
+        -status: AppointmentStatus
+    }
+
+    class Specialty {
+        -specialtyId: String
+        -name: String
+    }
+
+    class Department {
+        -departmentId: String
+        -code: String
+        -name: String
+    }
+
+    class EventStore {
+        -eventId: Long
+        -aggregateId: String
+        -eventType: EventType
+        -timestamp: LocalDateTime
+        -eventData: String
+        -aggregateVersion: Long
+        -correlationId: String
+        -userId: String
+        -metadata: String
+    }
+
+    enum ConsultationType {
+        FIRST_TIME
+        FOLLOW_UP
+    }
+
+    enum AppointmentStatus {
+        SCHEDULED
+        CANCELED
+        COMPLETED
+    }
+
+    enum EventType {
+        CONSULTATION_SCHEDULED
+        CONSULTATION_UPDATED
+        CONSULTATION_CANCELED
+        CONSULTATION_COMPLETED
+        CONSULTATION_RESCHEDULED
+        NOTE_ADDED
+    }
+
+    ' Controllers
+    class PhysicianController <<RestController>> {
+        +getPhysician()
+        +registerPhysician()
+        +getAllPhysicians()
+    }
+
+    class AppointmentController <<RestController>> {
+        +getAppointment()
+        +createAppointment()
+        +getAllAppointments()
+        +getAuditTrail()
+    }
+
+    class InternalController <<RestController>> {
+        +getPhysicianInternal()
+        +getAppointmentInternal()
+        +getPhysicians()
+        +getAppointmentDetails()
+    }
+
+    ' Services
+    class PhysicianService <<Service>> {
+        +register()
+        +findById()
+        +getAllPhysicians()
+        +partialUpdate()
+        +searchByNameOrSpecialty()
+    }
+
+    class AppointmentService <<Service>> {
+        +createAppointment()
+        +getAppointmentById()
+        +getAllAppointments()
+        +getAppointmentsByPhysician()
+        +getAppointmentsByPatient()
+        +getAppointmentWithPatientAndRecord()
+        +updateAppointment()
+        +cancelAppointment()
+    }
+
+    class ExternalServiceClient <<Service>> {
+        +getPatientById()
+        +getAppointmentRecord()
+        +getUserById()
+        +registerUser()
+        +createAppointmentInRecords()
+        +updateAppointmentInRecords()
+        +getPeerUrls()
+    }
+
+    ' Command Services (CQRS)
+    class PhysicianCommandService <<CommandService>> {
+        +registerPhysician()
+        +updatePhysician()
+    }
+
+    class AppointmentCommandService <<CommandService>> {
+        +createAppointment()
+        +updateAppointment()
+        +cancelAppointment()
+        +addNoteToAppointment()
+    }
+
+    ' Query Services (CQRS)
+    class PhysicianQueryService <<QueryService>> {
+        +getAllPhysicians()
+        +getPhysicianById()
+    }
+
+    class AppointmentQueryService <<QueryService>> {
+        +getAllAppointments()
+        +getAppointmentById()
+        +listUpcomingAppointments()
+        +getAppointmentsByPhysician()
+        +getAppointmentsByPatient()
+    }
+
+    ' Event Sourcing
+    class EventStoreService <<Service>> {
+        +saveEvent()
+        +getEventHistory()
+        +getEventsByType()
+        +getEventsByAggregateAndType()
+        +getCurrentState()
+    }
+
+    ' Event Handlers
+    class AppointmentEventHandler <<EventHandler>> {
+        +handleAppointmentCreated()
+        +handleAppointmentUpdated()
+        +handleAppointmentCanceled()
+    }
+
+    class AppointmentReminderHandler <<EventHandler>> {
+        +handleAppointmentReminder()
+    }
+
+    class PhysicianEventHandler <<EventHandler>> {
+        +handlePhysicianRegistered()
+        +handlePhysicianUpdated()
+    }
+
+    ' Utilities
+    class AppointmentTimeValidator <<Utility>> {
+        +validateTimeSlot()
+    }
+
+    class SlotCalculator <<Utility>> {
+        +calculateAvailableSlots()
+    }
+
+    ' Repositories
+    class PhysicianRepository <<Repository>> {
+        +findById()
+        +save()
+        +findAll()
+        +findBySpecialtySpecialtyId()
+        +findByDepartmentDepartmentId()
+        +existsByUsername()
+        +existsByLicenseNumber()
+    }
+
+    class AppointmentRepository <<Repository>> {
+        +findById()
+        +save()
+        +findByPhysicianPhysicianId()
+        +findByPatientId()
+        +existsByPhysicianPhysicianIdAndDateTime()
+    }
+
+    class DepartmentRepository <<Repository>> {
+        +findById()
+        +save()
+        +findAll()
+        +existsByCode()
+    }
+
+    class SpecialtyRepository <<Repository>> {
+        +findById()
+        +save()
+        +findAll()
+        +existsByName()
+    }
+
+    class LocalDataRepository <<Repository>> {
+        +findPhysicianById()
+        +findAppointmentById()
+        +savePhysician()
+        +saveAppointment()
+    }
+
+    ' Query Repositories (CQRS - Read Model)
+    class PhysicianQueryRepository <<Repository>> {
+        +findById()
+        +findAll()
+    }
+
+    class AppointmentQueryRepository <<Repository>> {
+        +findById()
+        +findAll()
+        +findByDateTimeAfterOrderByDateTimeAsc()
+        +findByPhysicianId()
+        +findByPatientId()
+    }
+
+    ' Event Store Repository
+    class EventStoreRepository <<Repository>> {
+        +findByAggregateIdOrderByTimestampAsc()
+        +findByEventTypeOrderByTimestampDesc()
+        +findByAggregateIdAndEventTypeOrderByTimestampAsc()
+        +findEventsBetween()
+        +findLastVersionByAggregateId()
+        +save()
+    }
+
+    Physician "1" --> "1" Specialty : has
+    Physician "1" --> "1" Department : belongs to
+    Physician "1" --> "0..*" Appointment : schedules
+    Appointment "1" --> "1" Physician : assigned to
+    Appointment ..> ConsultationType : uses
+    Appointment ..> AppointmentStatus : uses
+    EventStore ..> EventType : uses
+
+    PhysicianController --> PhysicianService : uses
+    PhysicianController --> PhysicianRepository : uses
+    PhysicianController --> PhysicianCommandService : uses
+    PhysicianController --> PhysicianQueryService : uses
+    PhysicianController --> SlotCalculator : uses
+    AppointmentController --> AppointmentService : uses
+    AppointmentController --> AppointmentCommandService : uses
+    AppointmentController --> AppointmentQueryService : uses
+    AppointmentController --> EventStoreService : uses
+    AppointmentController --> ExternalServiceClient : uses
+    InternalController --> PhysicianRepository : uses
+    InternalController --> AppointmentRepository : uses
+    PhysicianService --> PhysicianRepository : uses
+    PhysicianService --> DepartmentRepository : uses
+    PhysicianService --> SpecialtyRepository : uses
+    PhysicianService --> AppointmentRepository : uses
+    PhysicianService --> ExternalServiceClient : uses
+    AppointmentService --> AppointmentRepository : uses
+    AppointmentService --> PhysicianRepository : uses
+    AppointmentService --> ExternalServiceClient : uses
+    AppointmentService --> AppointmentTimeValidator : uses
+    PhysicianCommandService --> PhysicianService : uses
+    PhysicianCommandService --> PhysicianRepository : uses
+    AppointmentCommandService --> AppointmentService : uses
+    AppointmentCommandService --> AppointmentRepository : uses
+    AppointmentCommandService --> EventStoreService : uses
+    AppointmentCommandService --> AppointmentTimeValidator : uses
+    PhysicianQueryService --> PhysicianQueryRepository : uses
+    PhysicianQueryService --> PhysicianRepository : uses
+    AppointmentQueryService --> AppointmentQueryRepository : uses
+    AppointmentQueryService --> AppointmentRepository : uses
+    AppointmentQueryService --> ExternalServiceClient : uses
+    EventStoreService --> EventStoreRepository : uses
+    AppointmentEventHandler --> AppointmentQueryRepository : uses
+    AppointmentEventHandler --> AppointmentRepository : uses
+    PhysicianEventHandler --> PhysicianQueryRepository : uses
+    EventStoreRepository --> EventStore : manages
+    PhysicianQueryRepository --> PhysicianSummary : manages
+    AppointmentQueryRepository --> AppointmentSummary : manages
+    PhysicianRepository --> Physician : manages
+    AppointmentRepository --> Appointment : manages
+    DepartmentRepository --> Department : manages
+    SpecialtyRepository --> Specialty : manages
+    LocalDataRepository --> Physician : manages
+    LocalDataRepository --> Appointment : manages
+    LocalDataRepository --> Department : manages
+    LocalDataRepository --> Specialty : manages
+}
+
+package "hap-appointmentrecords" #LightCoral {
+    ' Entities
+    class AppointmentRecord {
+        -recordId: String
+        -appointmentId: String
+        -diagnosis: String
+        -treatmentRecommendations: String
+        -prescriptions: String
+        -duration: LocalTime
+    }
+
+    class Appointment {
+        -appointmentId: String
+        -patientId: String
+        -physicianId: String
+        -dateTime: LocalDateTime
+        -consultationType: ConsultationType
+        -status: AppointmentStatus
+    }
+
+    class AppointmentRecordProjection {
+        -id: String
+        -appointmentId: String
+        -patientId: String
+        -physicianId: String
+        -dateTime: LocalDateTime
+        -status: String
+    }
+
+    enum AppointmentStatus {
+        SCHEDULED
+        CANCELED
+        COMPLETED
+    }
+
+    enum ConsultationType {
+        FIRST_TIME
+        FOLLOW_UP
+    }
+
+    ' Controllers
+    class AppointmentRecordController <<RestController>> {
+        +createRecord()
+        +getRecord()
+        +getPatientRecords()
+        +getMyRecords()
+    }
+
+    class AppointmentQueryController <<RestController>> {
+        +listAll()
+        +getById()
+        +getByPatient()
+        +getByPhysician()
+        +createAppointment()
+        +updateAppointment()
+        +cancelAppointment()
+    }
+
+    class InternalController <<RestController>> {
+        +getAppointmentInternal()
+    }
+
+    class PeerHealthController <<RestController>> {
+        +health()
+    }
+
+    ' Services
+    class AppointmentRecordService <<Service>> {
+        +createRecord()
+        +getAppointmentRecord()
+        +getPatientRecords()
+    }
+
+    class ExternalServiceClient <<Service>> {
+        +getAppointment()
+        +validateUser()
+        +getPeerUrls()
+    }
+
+    ' Event Listeners/Publishers
+    class AppointmentEventsListener <<EventListener>> {
+        +handleAppointmentCreated()
+        +handleAppointmentUpdated()
+        +handleAppointmentCanceled()
+    }
+
+    class AppointmentEventsPublisher <<EventPublisher>> {
+        +publishAppointmentRecordCreated()
+    }
+
+    ' Repositories
+    class AppointmentRecordRepository <<Repository>> {
+        +findById()
+        +save()
+        +findByAppointmentId()
+    }
+
+    class AppointmentRepository <<Repository>> {
+        +findById()
+        +save()
+        +findByPatientId()
+        +findByPhysicianId()
+    }
+
+    class AppointmentRecordProjectionRepository <<Repository>> {
+        +findById()
+        +findByAppointmentId()
+        +findByPatientId()
+        +save()
+    }
+
+    Appointment "1" --> "0..1" AppointmentRecord : has
+    Appointment ..> ConsultationType : uses
+    Appointment ..> AppointmentStatus : uses
+
+    AppointmentRecordController --> AppointmentRecordService : uses
+    AppointmentQueryController --> AppointmentRepository : uses
+    AppointmentQueryController --> ExternalServiceClient : uses
+    InternalController --> AppointmentRepository : uses
+    PeerHealthController --> ExternalServiceClient : uses
+    AppointmentRecordService --> AppointmentRecordRepository : uses
+    AppointmentRecordService --> AppointmentRepository : uses
+    AppointmentRecordService --> AppointmentRecordProjectionRepository : uses
+    AppointmentRecordService --> ExternalServiceClient : uses
+    AppointmentEventsListener --> AppointmentRecordProjectionRepository : uses
+    AppointmentEventsListener --> AppointmentRepository : uses
+    AppointmentEventsPublisher --> AppointmentRecordService : uses
+    AppointmentRecordRepository --> AppointmentRecord : manages
+    AppointmentRepository --> Appointment : manages
+    AppointmentRecordProjectionRepository --> AppointmentRecordProjection : manages
+}
+
+@enduml
+
