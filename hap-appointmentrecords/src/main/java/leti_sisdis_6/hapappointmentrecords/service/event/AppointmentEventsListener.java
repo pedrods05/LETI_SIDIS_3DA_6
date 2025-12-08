@@ -51,8 +51,6 @@ public class AppointmentEventsListener {
                 event != null ? event.getDateTime() : "null");
 
         try {
-            // Just log the event - appointment data lives in physicians service
-            // AppointmentRecords will query physicians service when it needs appointment details
         } finally {
             MDC.remove(CORRELATION_ID_HEADER);
         }
@@ -79,7 +77,6 @@ public class AppointmentEventsListener {
                 event != null ? event.getNewStatus() : "null");
 
         try {
-            // Just log the event - appointment data lives in physicians service
         } finally {
             MDC.remove(CORRELATION_ID_HEADER);
         }
@@ -105,7 +102,6 @@ public class AppointmentEventsListener {
                 event != null ? event.getReason() : "null");
 
         try {
-            // Just log the event - appointment data lives in physicians service
         } finally {
             MDC.remove(CORRELATION_ID_HEADER);
         }
