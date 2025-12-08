@@ -1,0 +1,101 @@
+@startuml
+' C4+1 — Get Appointment Record (aligned with code)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Get Appointment Record
+
+actor "Client" as C
+participant "Spring Security" as SEC
+participant "AppointmentRecordController" as ARC
+participant "AppointmentRecordService" as ARS
+participant "MongoDB (Projection Read Model)" as MONGO_R
+participant "hap-physicians API" as HPHY
+participant "Peer AppointmentRecordController" as ARC_PEER
+
+autonumber
+activate C
+' ---- Request & Security Gate ----
+C -> ARC : GET /api/appointment-records/{recordId}\nAuthorization, X-User-Id, X-User-Role
+activate ARC
+ARC -> SEC : hasAnyAuthority('ADMIN','PATIENT') ?
+activate SEC
+alt Authorized
+  SEC --> ARC : allow
+  deactivate SEC
+else Not authorized
+  SEC --> C : 403 Forbidden + {"error": "..."}\n(Spring Security)
+  deactivate SEC
+  deactivate ARC
+  return
+end
+
+' ---- Build current user ----
+ARC -> ARC : build UserDTO(id=X-User-Id, role=X-User-Role)
+
+' ---- Controller -> Service ----
+activate ARC
+ARC -> ARS : getAppointmentRecord(recordId, currentUser)
+activate ARS
+
+' ---- (Service) Read projection + authorization + enrichment ----
+ARS -> MONGO_R : findById(recordId)
+MONGO_R --> ARS : AppointmentRecordProjection | NotFound
+ARS -> ARS : if PATIENT and projection.patientId != currentUser.id\nthen throw UnauthorizedException
+
+' Optional enrichment via physicians service
+ARS -> HPHY : GET /physicians/{physicianId}\n(enrich physicianName)
+activate HPHY
+HPHY --> ARS : 200 OK / errors (ignored)
+deactivate HPHY
+
+' ---- Outcomes do service mapeados pelo controller ----
+alt Record found
+  ARS --> ARC : AppointmentRecordViewDTO
+  deactivate ARS
+  ARC --> C : 200 OK + AppointmentRecordViewDTO
+else NotFoundException
+  ARS --> ARC : throw NotFoundException(msg)
+  deactivate ARS
+
+  ' ---- Anti-loop guard ----
+  alt Request tem "X-Peer-Request"
+    ARC --> C : 404 Not Found + {"error": msg}
+  else Sem "X-Peer-Request" -> tentar peers
+    ' Preparar cabeçalhos reencaminhados: Authorization, X-User-Id, X-User-Role, X-Peer-Request=true
+    loop para cada peer em ExternalServiceClient.getPeerUrls()
+      ARC -> ARC_PEER : HTTP GET /api/appointment-records/{recordId}\n(fwd Authorization, X-User-Id, X-User-Role, X-Peer-Request=true)
+      activate ARC_PEER
+      alt Peer tem o registo
+        ARC_PEER --> ARC : 200 OK + AppointmentRecordViewDTO
+        deactivate ARC_PEER
+        ARC --> C : 200 OK + AppointmentRecordViewDTO
+        break
+      else Peer responde 404
+        ARC_PEER --> ARC : 404 Not Found
+        deactivate ARC_PEER
+        ' continua para próximo peer
+      else Peer erro (timeout/5xx)
+        ARC_PEER --> ARC : error (ignored)
+        deactivate ARC_PEER
+        ' continua para próximo peer
+      end
+    end
+    ' Nenhum peer devolveu sucesso
+    ARC --> C : 404 Not Found + {"error": msg}
+  end
+
+else UnauthorizedException
+activate ARC
+  ARS --> ARC : throw UnauthorizedException(msg)
+  deactivate ARS
+  ARC --> C : 403 Forbidden + {"error": msg}
+
+else Unexpected Exception
+  ARS --> ARC : throw Exception(e)
+  deactivate ARS
+  ARC --> C : 500 Internal Server Error\n+ {"error": "External service communication error: ..."}
+end
+
+@enduml

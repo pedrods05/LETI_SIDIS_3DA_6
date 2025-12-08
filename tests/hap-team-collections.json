@@ -1,546 +1,634 @@
-[
-  {
-    "v": 10,
-    "name": "SIDIS",
-    "folders": [
-      {
-        "v": 10,
-        "name": "peer forwarding",
-        "folders": [],
-        "requests": [
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "peer appointment",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhgoojjz_aa000552-ef86-4cd7-bf3b-8d993cbff54c",
-            "headers": [],
-            "endpoint": "http://localhost:8087/appointments/APT20",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
+{
+  "v": 11,
+  "id": "cmh24xo3z0ghcg11krc304m8r",
+  "name": "SIDIS",
+  "folders": [
+    {
+      "v": 11,
+      "id": "cmhi31cxr0l4xi01kledqh6ik",
+      "name": "peer forwarding",
+      "folders": [],
+      "requests": [
+        {
+          "v": "17",
+          "name": "peer appointment",
+          "method": "GET",
+          "endpoint": "http://localhost:8087/appointments/APT20",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
+            "authActive": true
           },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicHVsZ2FAaG90bWFpbC5jb20iLCJleHAiOjE3NjE5NDQ2MTksImlhdCI6MTc2MTk0MTAxOSwicm9sZXMiOiJQSFlTSUNJQU4ifQ.282dJX3HypCrFSsaVqoLA70pQ_xfEu-0DueLfzUiojY",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "peer appointment record",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhfapw0h_f4e356b0-36df-49c0-bbe1-8d5cc436e9f8",
-            "headers": [
-              {
-                "key": "X-User-Id",
-                "value": "PHY03",
-                "active": true,
-                "description": ""
-              },
-              {
-                "key": "X-User-Role",
-                "value": "PHYSICIAN",
-                "active": true,
-                "description": ""
-              }
-            ],
-            "endpoint": "http://localhost:8090/api/appointment-records/REC782C797D",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
+          "body": {
+            "contentType": null,
+            "body": null
           },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "peer patients",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhgoojjz_06a96931-fc6b-45c5-bb44-d5b1b0d119e3",
-            "headers": [],
-            "endpoint": "http://localhost:8088/patients/PAT03",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          }
-        ],
-        "auth": {
-          "authType": "inherit",
-          "authActive": true
+          "requestVariables": [],
+          "responses": {},
+          "description": null
         },
-        "headers": [],
-        "variables": [],
-        "_ref_id": "coll_mhi3rgns_230375e0-b9cf-4976-9bb8-3dededeab263"
+        {
+          "v": "17",
+          "name": "peer appointment record",
+          "method": "GET",
+          "endpoint": "http://localhost:8090/api/appointment-records/REC782C797D",
+          "params": [],
+          "headers": [
+            {
+              "key": "X-User-Id",
+              "value": "PHY03",
+              "active": true,
+              "description": ""
+            },
+            {
+              "key": "X-User-Role",
+              "value": "PHYSICIAN",
+              "active": true,
+              "description": ""
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicHVsZ2FAaG90bWFpbC5jb20iLCJleHAiOjE3NjE5NDQ2MTksImlhdCI6MTc2MTk0MTAxOSwicm9sZXMiOiJQSFlTSUNJQU4ifQ.282dJX3HypCrFSsaVqoLA70pQ_xfEu-0DueLfzUiojY",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "peer patients",
+          "method": "GET",
+          "endpoint": "http://localhost:8088/patients/PAT03",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        }
+      ],
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
       },
-      {
-        "v": 10,
-        "name": "failure handling",
-        "folders": [],
-        "requests": [
-          {
-            "v": "16",
-            "auth": {
-              "authType": "inherit",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "headers em falta",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhi394d6_f7aa35ad-ab2b-4759-98f6-c930556e8685",
-            "headers": [],
-            "endpoint": "http://localhost:8083/api/appointment-records/REC01",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "authType": "inherit",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "Invalid or missing token",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mhi3ch84_e03bc8a9-3e8b-4f07-85d6-8e0f436fe28f",
-            "headers": [],
-            "endpoint": "http://localhost:8084/api/public/login",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "authType": "inherit",
-              "authActive": true
-            },
-            "body": {
-              "body": "{ \"username\": \"paule@example.com\", \"password\": \"Pa#1234567\" }",
-              "contentType": "application/json"
-            },
-            "name": "Credenciais invalidas",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mhi3q314_898887e1-ae04-4a70-8f7e-c91f967f2166",
-            "headers": [],
-            "endpoint": "http://localhost:8084/api/public/login",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          }
-        ],
-        "auth": {
-          "authType": "inherit",
-          "authActive": true
-        },
-        "headers": [],
-        "variables": [],
-        "_ref_id": "coll_mhi3rgns_5912ca6b-c195-4a86-8086-0e7d359d5025"
-      },
-      {
-        "v": 10,
-        "name": "local data",
-        "folders": [],
-        "requests": [
-          {
-            "v": "16",
-            "auth": {
-              "authType": "inherit",
-              "authActive": true
-            },
-            "body": {
-              "body": "{ \"fullName\": \"Paulo\", \"email\": \"paulo@example.com\", \"password\": \"Pa#1234567\", \"phoneNumber\": \"+351987657852\", \"birthDate\": \"1996-06-12\", \"address\": { \"street\": \"Rua B\", \"city\": \"Porto\", \"postalCode\": \"1000-002\", \"country\": \"PT\" }, \"insuranceInfo\": { \"policyNumber\": \"POL00012\", \"companyName\": \"MinhaSeguradoraTua\", \"coverageType\": \"STANDARD\" }, \"photo\": { \"url\": \"http://example.com/photo.jpg\", \"uploadedAt\": \"2025-10-17T16:40:00Z\" }, \"healthConcerns\": [], \"dataConsentGiven\": true }",
-              "contentType": "application/json"
-            },
-            "name": "Criar paciente",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mh25382f_ba78fa0a-70af-4aec-a639-e627e2aa8708",
-            "headers": [],
-            "endpoint": "http://localhost:8082/api/v2/patients/register",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjE4NjQ0MjMsImlhdCI6MTc2MTg2MDgyMywicm9sZXMiOiJST0xFX0FETUlOIn0.j5Rf1FRD1SNRazBjKOaPqUMXBjRnUzWp18Fx5wTcEOw",
-              "authType": "none",
-              "authActive": true
-            },
-            "body": {
-              "body": "{ \"username\": \"paulo@example.com\", \"password\": \"Pa#1234567\" }",
-              "contentType": "application/json"
-            },
-            "name": "Login Paciente",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mh25h6lw_5462c508-b961-47dd-96cb-0e875234eb76",
-            "headers": [],
-            "endpoint": "http://localhost:8084/api/public/login",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "authType": "inherit",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n \"username\": \"pedroSousa@clinic.pt\", \"password\": \"1230773\", \"role\": \"ADMIN\" }",
-              "contentType": "application/json"
-            },
-            "name": "Registar User",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mh25m18e_2de2863c-1720-4ee7-aa2a-e2a40ceb4f0f",
-            "headers": [],
-            "endpoint": "http://localhost:8084/api/public/register",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "authType": "none",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n  \"username\": \"lulu@clinic.pt\", \"password\": \"12345678\"\n}",
-              "contentType": "application/json"
-            },
-            "name": "Login Admin",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mh25j7jz_50a99d1e-3084-4b7b-8637-8233c7ea4d23",
-            "headers": [],
-            "endpoint": "http://localhost:8084/api/public/login",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjE5NDI5NjYsImlhdCI6MTc2MTkzOTM2Niwicm9sZXMiOiJBRE1JTiJ9.-sVeen-6--PhyAeG2GiJVnys4UGLqLmuPRLUbP3AlAA",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n  \"fullName\": \"Dr. Pulgas\",\n  \"licenseNumber\": \"MD26345\",\n  \"username\": \"pulga@hotmail.com\",\n  \"password\": \"12345678\",\n  \"specialtyId\": \"SPC01\",\n  \"departmentId\": \"DEP02\",\n  \"emails\": [\"dr.claudia@hotmail.com\", \"clausia.santos@clinic.com\"],\n  \"phoneNumbers\": [\"+351912785678\", \"+351912399679\"],\n  \"workingHourStart\": \"09:00\",\n  \"workingHourEnd\": \"17:00\"\n}",
-              "contentType": "application/json"
-            },
-            "name": "Registar Physician",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mhcfbpnx_bca73198-37c5-4010-b5c6-2dba96cfcb75",
-            "headers": [],
-            "endpoint": "http://localhost:8081/physicians/register",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjE5NDI5NjYsImlhdCI6MTc2MTkzOTM2Niwicm9sZXMiOiJBRE1JTiJ9.-sVeen-6--PhyAeG2GiJVnys4UGLqLmuPRLUbP3AlAA",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n  \"username\": \"pulga@hotmail.com\",\n  \"password\": \"12345678\"\n}\n",
-              "contentType": "application/json"
-            },
-            "name": "Login Physician ",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mhcfncua_14becfc4-9376-4651-b890-4a9068f6121c",
-            "headers": [],
-            "endpoint": "http://localhost:8084/api/public/login",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicGVkcm9Tb3VzYUBjbGluaWMucHQiLCJleHAiOjE3NjE3NzIxMTgsImlhdCI6MTc2MTc2ODUxOCwicm9sZXMiOiJST0xFX0FETUlOIn0.tqe0tD8oDPRJVnQp3GM_V83HjzCACpqgTysWlSDEhkQ",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "View Physician Details ",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhcfqx6j_145cc517-37ff-41d6-bae1-2abdfa32299e",
-            "headers": [],
-            "endpoint": "http://localhost:8081/physicians/PHY03",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwMzc0MjIsImlhdCI6MTc2MjAzMzgyMiwicm9sZXMiOiJBRE1JTiJ9.DICtw9XYApF2hMrBgqiUDFZuiUBYWrYLy9gF0-HN45Q",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n    \"appointmentId\": \"APT20\",\n    \"patientId\": \"PAT01\",\n    \"physicianId\": \"PHY03\",\n    \"dateTime\": \"2025-11-03T10:00:00\",\n    \"consultationType\": \"FIRST_TIME\",\n    \"status\": \"SCHEDULED\",\n    \"wasRescheduled\": false\n  }",
-              "contentType": "application/json"
-            },
-            "name": "Schedule an appointment ",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mhcgdkbc_54cccbfb-c1a6-4fdc-ae50-348b9c89da2b",
-            "headers": [],
-            "endpoint": "http://localhost:8081/appointments",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjE5MTgyNzQsImlhdCI6MTc2MTkxNDY3NCwicm9sZXMiOiJST0xFX0FETUlOIn0.-VOJGBNd9dLLGnD-3XN19KlON8jFlulKu_p4hOvv0W8",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n  \"patientId\": \"PAT03\",\n  \"physicianId\": \"PHY03\",\n  \"dateTime\": \"2025-11-05T10:00:00\",\n  \"consultationType\": \"PRESENTIAL\",\n  \"status\": \"SCHEDULED\"\n}\n\n",
-              "contentType": "application/json"
-            },
-            "name": "Get all appointment ",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhcgdkbc_54cccbfb-c1a6-4fdc-ae50-348b9c89da2b",
-            "headers": [],
-            "endpoint": "http://localhost:8081/appointments",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n    \"patientId\": \"PAT02\",\n    \"physicianId\": \"PHY02\",\n    \"dateTime\": \"2025-11-12T10:00:00\",\n    \"consultationType\": \"FOLLOW_UP\",\n    \"status\": \"SCHEDULED\",\n    \"wasRescheduled\": true\n  }",
-              "contentType": "application/json"
-            },
-            "name": "Update Appointment",
-            "method": "PUT",
-            "params": [],
-            "headers": [],
-            "endpoint": "http://localhost:8081/appointments/APT07",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "Cancel appointment",
-            "method": "PUT",
-            "params": [],
-            "_ref_id": "req_mhfbp9ko_b0cb7af7-0be1-49ec-a4c2-8a2b433a18a7",
-            "headers": [],
-            "endpoint": "http://localhost:8081/appointments/APT06/cancel",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": "{\n  \"diagnosis\": \"Bronquite aguda\",\n  \"treatmentRecommendations\": \"Repouso, líquidos, evitar esforço físico\",\n  \"prescriptions\": \"Brufen 600mg - 2x/dia por 5 dias\",\n  \"duration\": \"00:25:00\"\n}",
-              "contentType": "application/json"
-            },
-            "name": "Criar appointment record",
-            "method": "POST",
-            "params": [],
-            "_ref_id": "req_mhf88fb0_a1f4fef8-33c3-4c98-a654-d3e145765800",
-            "headers": [
-              {
-                "key": "X-User-Id",
-                "value": "PHY02",
-                "active": true,
-                "description": ""
-              }
-            ],
-            "endpoint": "http://localhost:8083/api/appointment-records/APT20/record",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicHVsZ2FAaG90bWFpbC5jb20iLCJleHAiOjE3NjE5NDQ2MTksImlhdCI6MTc2MTk0MTAxOSwicm9sZXMiOiJQSFlTSUNJQU4ifQ.282dJX3HypCrFSsaVqoLA70pQ_xfEu-0DueLfzUiojY",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "Ver appointment record",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhf9zrob_dfb558b0-5fa1-48bd-8b20-eb48274d372c",
-            "headers": [
-              {
-                "key": "X-User-Id",
-                "value": "PHY03",
-                "active": true,
-                "description": ""
-              },
-              {
-                "key": "X-User-Role",
-                "value": "PHYSICIAN",
-                "active": true,
-                "description": ""
-              }
-            ],
-            "endpoint": "http://localhost:8083/api/appointment-records/REC782C797D",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjE5NDUzMzEsImlhdCI6MTc2MTk0MTczMSwicm9sZXMiOiJBRE1JTiJ9.xF8QAhFVu-6V-hAktNJ1-VUAfiOWgIiT5DePsRqcoCk",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "View Patients Details",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhfaukwv_be8f71ca-fa82-407a-96ad-e052b5354760",
-            "headers": [],
-            "endpoint": "http://localhost:8082/patients/PAT03",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          },
-          {
-            "v": "16",
-            "auth": {
-              "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
-              "authType": "bearer",
-              "authActive": true
-            },
-            "body": {
-              "body": null,
-              "contentType": null
-            },
-            "name": "View future appointments",
-            "method": "GET",
-            "params": [],
-            "_ref_id": "req_mhgq3hbf_37a89338-90be-4c8a-8b84-4b13717bb5ca",
-            "headers": [],
-            "endpoint": "http://localhost:8081/appointments/upcoming",
-            "responses": {},
-            "testScript": "",
-            "preRequestScript": "",
-            "requestVariables": []
-          }
-        ],
-        "auth": {
-          "authType": "inherit",
-          "authActive": true
-        },
-        "headers": [],
-        "variables": [],
-        "_ref_id": "coll_mhi3rgns_f71f2745-bfea-4171-b7c9-0ae4c809c8c6"
-      }
-    ],
-    "requests": [],
-    "auth": {
-      "authType": "inherit",
-      "authActive": true
+      "headers": [],
+      "variables": [],
+      "description": null
     },
-    "headers": [],
-    "variables": [],
-    "_ref_id": "coll_mhi3rgns_06880f10-cf17-41d0-9168-18e54a78a176"
-  }
-]
+    {
+      "v": 11,
+      "id": "cmhi32je30fl5eo1kds3o6dux",
+      "name": "failure handling",
+      "folders": [],
+      "requests": [
+        {
+          "v": "17",
+          "name": "headers em falta",
+          "method": "GET",
+          "endpoint": "http://localhost:8083/api/appointment-records/REC01",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Invalid or missing token",
+          "method": "POST",
+          "endpoint": "http://localhost:8081/appointments",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"appointmentId\": \"APT20\",\n    \"patientId\": \"PAT01\",\n    \"physicianId\": \"PHY02\",\n    \"dateTime\": \"2025-11-03T10:00:00\",\n    \"consultationType\": \"FIRST_TIME\",\n    \"status\": \"SCHEDULED\",\n    \"wasRescheduled\": false\n}"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Credenciais invalidas",
+          "method": "POST",
+          "endpoint": "http://localhost:8084/api/public/login",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{ \"username\": \"paule@example.com\", \"password\": \"Pa#1234567\" }"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        }
+      ],
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "headers": [],
+      "variables": [],
+      "description": null
+    },
+    {
+      "v": 11,
+      "id": "cmhi3p8cv0l52i01kbr4d809b",
+      "name": "local data",
+      "folders": [],
+      "requests": [
+        {
+          "v": "17",
+          "name": "Criar paciente",
+          "method": "POST",
+          "endpoint": "http://localhost:8082/api/v2/patients/register",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{ \"fullName\": \"Paulo\", \"email\": \"paulo@example.com\", \"password\": \"Pa#1234567\", \"phoneNumber\": \"+351987657852\", \"birthDate\": \"1996-06-12\", \"address\": { \"street\": \"Rua B\", \"city\": \"Porto\", \"postalCode\": \"1000-002\", \"country\": \"PT\" }, \"insuranceInfo\": { \"policyNumber\": \"POL00012\", \"companyName\": \"MinhaSeguradoraTua\", \"coverageType\": \"STANDARD\" }, \"photo\": { \"url\": \"http://example.com/photo.jpg\", \"uploadedAt\": \"2025-10-17T16:40:00Z\" }, \"healthConcerns\": [], \"dataConsentGiven\": true }"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Login Paciente",
+          "method": "POST",
+          "endpoint": "http://localhost:8084/api/public/login",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{ \"username\": \"paulo@example.com\", \"password\": \"Pa#1234567\" }"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Registar User",
+          "method": "POST",
+          "endpoint": "http://localhost:8084/api/public/register",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n \"username\": \"pedroSousa@clinic.pt\", \"password\": \"1230773\", \"role\": \"ADMIN\" }"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Login Admin",
+          "method": "POST",
+          "endpoint": "http://localhost:8084/api/public/login",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"username\": \"lulu@clinic.pt\", \"password\": \"12345678\"\n}"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Create physician",
+          "method": "POST",
+          "endpoint": "http://localhost:8081/physicians/register",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "inherit",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"fullName\": \"Dr. Claudia Santos\",\n  \"licenseNumber\": \"MD16345\",\n  \"username\": \"dra.claudia@hotmail.com\",\n  \"password\": \"FCP1976!FCP\",\n  \"specialtyId\": \"SPC01\",\n  \"departmentId\": \"DEP02\",\n  \"emails\": [\"dr.claudia@hotmail.com\", \"clausia.santos@clinic.com\"],\n  \"phoneNumbers\": [\"+351912785678\", \"+351912399679\"],\n  \"workingHourStart\": \"09:00\",\n  \"workingHourEnd\": \"17:00\"\n}"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Login Physician ",
+          "method": "POST",
+          "endpoint": "http://localhost:8084/api/public/login",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"username\": \"dra.claudia@hotmail.com\",\n  \"password\": \"FCP1976!FCP\"\n}\n"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "View Physician Details ",
+          "method": "GET",
+          "endpoint": "http://localhost:8081/physicians/PHY03",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicGVkcm9Tb3VzYUBjbGluaWMucHQiLCJleHAiOjE3NjE3NzIxMTgsImlhdCI6MTc2MTc2ODUxOCwicm9sZXMiOiJST0xFX0FETUlOIn0.tqe0tD8oDPRJVnQp3GM_V83HjzCACpqgTysWlSDEhkQ",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Schedule an appointment ",
+          "method": "POST",
+          "endpoint": "http://localhost:8081/appointments",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4NTExOTQsImlhdCI6MTc2NDg0NzU5NCwicm9sZXMiOiJBRE1JTiJ9.DUaosni-gHvGYVwosQPzn7WoJL9X-kK06yjXV_owLyY",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n    \"appointmentId\": \"APT23\",\n    \"patientId\": \"PAT01\",\n    \"physicianId\": \"PHY03\",\n    \"dateTime\": \"2025-11-12T10:00:00\",\n    \"consultationType\": \"FIRST_TIME\",\n    \"status\": \"SCHEDULED\",\n    \"wasRescheduled\": false\n  }"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Get all appointments",
+          "method": "GET",
+          "endpoint": "http://localhost:8081/appointments",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4MDMyMDksImlhdCI6MTc2NDc5OTYwOSwicm9sZXMiOiJBRE1JTiJ9.pNqRJNnkoqKlgVuTRiBeiwgIZi2KlDDXCu5qMWOerJU",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Update Appointment",
+          "method": "PUT",
+          "endpoint": "http://localhost:8081/appointments/APT20",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjI5MzkzOTgsImlhdCI6MTc2MjkzNTc5OCwicm9sZXMiOiJBRE1JTiJ9.1Q8Q8QninEMSGINr50rERj6VqzlviTgiVZfl-i7mCJ8",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n    \"patientId\": \"PAT02\",\n    \"physicianId\": \"PHY02\",\n    \"dateTime\": \"2025-11-12T10:00:00\",\n    \"consultationType\": \"FOLLOW_UP\",\n    \"status\": \"SCHEDULED\",\n    \"wasRescheduled\": true\n  }"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Cancel appointment",
+          "method": "PUT",
+          "endpoint": "http://localhost:8081/appointments/APT20/cancel",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjUyMjAzMDAsImlhdCI6MTc2NTIxNjcwMCwicm9sZXMiOiJBRE1JTiJ9.wBtSyu4z6GQhjH7oqvwLJsnyjud8_4j_L4AwRIloGOw",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Update physician",
+          "method": "PUT",
+          "endpoint": "http://localhost:8081/physicians/PHY04",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4NTExOTQsImlhdCI6MTc2NDg0NzU5NCwicm9sZXMiOiJBRE1JTiJ9.DUaosni-gHvGYVwosQPzn7WoJL9X-kK06yjXV_owLyY",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n\"fullName\": \"Dr. João Silva\", \n\"licenseNumber\": \"MD12344\",\n\"username\": \"joao1@hotmail.com\",\n\"specialtyId\":\"SPC02\",\n\"departmentId\":\"DEP02\"\n}"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Criar appointment record",
+          "method": "POST",
+          "endpoint": "http://localhost:8083/api/appointment-records/APT20/record",
+          "params": [],
+          "headers": [
+            {
+              "key": "X-User-Id",
+              "value": "PHY03",
+              "active": true,
+              "description": ""
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjUyMTk4MzYsImlhdCI6MTc2NTIxNjIzNiwicm9sZXMiOiJBRE1JTiJ9.BFsP8WPaMD_9eEWEoFrJkIjy0xA8sR8VP_Rmbk8wWzU",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"diagnosis\": \"Bronquite aguda\",\n  \"treatmentRecommendations\": \"Repouso, líquidos, evitar esforço físico\",\n  \"prescriptions\": \"Brufen 600mg - 2x/dia por 5 dias\",\n  \"duration\": \"00:25:00\"\n}"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Ver appointment record",
+          "method": "GET",
+          "endpoint": "http://localhost:8083/api/appointment-records/REC782C797D",
+          "params": [],
+          "headers": [
+            {
+              "key": "X-User-Id",
+              "value": "PHY03",
+              "active": true,
+              "description": ""
+            },
+            {
+              "key": "X-User-Role",
+              "value": "PHYSICIAN",
+              "active": true,
+              "description": ""
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicHVsZ2FAaG90bWFpbC5jb20iLCJleHAiOjE3NjE5NDQ2MTksImlhdCI6MTc2MTk0MTAxOSwicm9sZXMiOiJQSFlTSUNJQU4ifQ.282dJX3HypCrFSsaVqoLA70pQ_xfEu-0DueLfzUiojY",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "View Patients Details",
+          "method": "GET",
+          "endpoint": "http://localhost:8082/patients/PAT03",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjE5NDUzMzEsImlhdCI6MTc2MTk0MTczMSwicm9sZXMiOiJBRE1JTiJ9.xF8QAhFVu-6V-hAktNJ1-VUAfiOWgIiT5DePsRqcoCk",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "View future appointments",
+          "method": "GET",
+          "endpoint": "http://localhost:8081/appointments/upcoming",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Slots - appointments",
+          "method": "GET",
+          "endpoint": "http://localhost:8081/physicians/PHY03/slots?startDate=2025-12-01&endDate=2025-12-31",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4NTA4NTAsImlhdCI6MTc2NDg0NzI1MCwicm9sZXMiOiJBRE1JTiJ9.6_yHPffh_2QVJfg1umGwsf8j39OMcfJ3siKuB0l5eQs",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "Notas nos appointments",
+          "method": "POST",
+          "endpoint": "http://localhost:8081/appointments/APT23/notes",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ5NTg2NjAsImlhdCI6MTc2NDk1NTA2MCwicm9sZXMiOiJBRE1JTiJ9.G8xVX_4wMZPX2G87y791QS-4HzCHvp8_WAESpxtcnj4",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"note\": \"Paciente relatou dor de cabeça\",\n  \"userId\": \"PHY02\"\n}"
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        },
+        {
+          "v": "17",
+          "name": "TRAIL - Appointments",
+          "method": "GET",
+          "endpoint": "http://localhost:8081/appointments/APT20/audit-trail",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "",
+          "auth": {
+            "authType": "bearer",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ5NTg2NjAsImlhdCI6MTc2NDk1NTA2MCwicm9sZXMiOiJBRE1JTiJ9.G8xVX_4wMZPX2G87y791QS-4HzCHvp8_WAESpxtcnj4",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          },
+          "requestVariables": [],
+          "responses": {},
+          "description": null
+        }
+      ],
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "headers": [],
+      "variables": [],
+      "description": null
+    }
+  ],
+  "requests": [],
+  "auth": {
+    "authType": "inherit",
+    "authActive": true
+  },
+  "headers": [],
+  "variables": [],
+  "description": null
+}
