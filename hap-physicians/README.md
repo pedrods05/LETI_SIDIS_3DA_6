@@ -1,395 +1,179 @@
-# hap-physicians — Microserviço de Gestão de Médicos e Consultas
+# hap-physicians — Gestão de Médicos e Consultas
 
-O `hap-physicians` é um **microserviço** que faz parte do sistema **HAP (Hospital Appointment Platform)**, uma plataforma de gestão hospitalar. Este serviço é responsável por:
+Este serviço gere o registo e a consulta de médicos, bem como o agendamento e gestão de consultas futuras. Suporta peer-forwarding entre instâncias para leitura distribuída e implementa CQRS com Event Sourcing para consultas.
 
-- **Gerenciar médicos**: Registrar novos médicos, consultar informações, atualizar dados
-- **Gerenciar consultas futuras**: Criar, atualizar, cancelar e consultar agendamentos de consultas
-- **Validar disponibilidade**: Verificar horários disponíveis para agendamento
+## Perfis e Portas
 
-## Como Executar
-### Perfis e Portas
+- instance1 → 8081
+- instance2 → 8087
 
-O serviço pode ser executado em **duas instâncias** diferentes (para alta disponibilidade e distribuição de carga):
+## Executar (Windows, cmd.exe)
 
-- **Instance 1**: Porta 8081, Profile `instance1`
-- **Instance 2**: Porta 8087, Profile `instance2`
-
-### Comandos de Execução (Windows, cmd.exe)
+É necessário arrancar o RabbitMQ, MongoDB e Zipkin antes de iniciar a aplicação:
 
 ```cmd
-# Terminal 1 - Instance 1
 mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance1
-
-# Terminal 2 - Instance 2
+```
+Para a segunda instância:
+```cmd
 mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
 ```
-
-## Endpoints Principais
-
-O serviço expõe os seguintes endpoints HTTP REST:
+## Endpoints principais
 
 **Gestão de Médicos:**
-- `POST /physicians/register` - Registrar um novo médico
-- `GET /physicians/{id}` - Consultar informações de um médico
-- `PUT /physicians/{id}` - Atualizar dados de um médico
-- `GET /physicians/{id}/slots` - Ver horários disponíveis para agendamento (ver detalhes abaixo)
+- GET  /physicians/{id}
+- POST /physicians/register
+- PUT  /physicians/{id}
+- GET  /physicians/{id}/slots
 
 **Gestão de Consultas:**
-- `POST /appointments` - Criar uma nova consulta
-- `GET /appointments` - Listar todas as consultas
-- `GET /appointments/{id}` - Consultar uma consulta específica
-- `PUT /appointments/{id}` - Atualizar uma consulta
-- `PUT /appointments/{id}/cancel` - Cancelar uma consulta
-- `GET /appointments/upcoming` - Listar consultas futuras
-- `GET /physicians/{physicianId}/slots?startDate=20XX-XX-XX&endDate=20XX-XX-XX` - Retorna os horários disponíveis para agendamento de um médico específico.
-
-> **Nota**: Para ver todos os endpoints disponíveis e testá-los, acesse o Swagger UI:
-> - Instance 1: `http://localhost:8081/swagger-ui.html`
-> - Instance 2: `http://localhost:8087/swagger-ui.html`
-
-## Arquitetura e Design
-
-### O que é Domain-Driven Design (DDD)?
-
-**Domain-Driven Design (DDD)** é uma abordagem de design de software que foca em modelar o software de acordo com o domínio (área de negócio) que ele representa. No nosso caso, o domínio é a gestão hospitalar.
-
-### Evolução: Monolito → Microserviços
-
-O microserviço `hap-physicians` foi concebido através da decomposição de uma arquitetura monolítica hipotética (um único sistema grande), aplicando princípios de **Domain-Driven Design (DDD)** para dividir em serviços menores e mais gerenciáveis.
-
-#### Bounded Context: "Physician & Appointment Management"
-
-**O que é um Bounded Context?**  
-Um Bounded Context é um limite claro dentro do qual um modelo de domínio específico se aplica. É como uma "área de responsabilidade" bem definida.
-
-O `hap-physicians` representa um **Bounded Context** focado na gestão de médicos e agendamento de consultas futuras:
-
-- **Gestão de Médicos**: Registro, consulta e manutenção de informações de médicos
-- **Agendamento de Consultas**: Criação, atualização, cancelamento e consulta de consultas futuras
-- **Relacionamentos**: Associação entre médicos e consultas, validação de disponibilidade
-
-#### Agregados
-
-**O que é um Agregado?**  
-Um Agregado é um conjunto de objetos relacionados que são tratados como uma unidade para propósito de mudanças de dados. O **Aggregate Root** é a entidade principal que controla o acesso ao agregado.
-
-1. **Agregado `Physician`** (Aggregate Root)
-   - **Entidade Raiz**: `Physician` (o médico)
-   - **Relacionamentos**: `Department` (departamento), `Specialty` (especialidade)
-   - **Regras de Negócio**: 
-     - Cada médico deve ter uma licença única
-     - Cada médico deve estar associado a uma especialidade e um departamento
-
-2. **Agregado `Appointment`** (Aggregate Root)
-   - **Entidade Raiz**: `Appointment` (a consulta)
-   - **Referências**: 
-     - `patientId` (referência externa ao serviço `hap-patients`)
-     - `Physician` (referência interna ao médico)
-   - **Regras de Negócio**: 
-     - Validação de conflitos de horário
-     - Verificação de disponibilidade do médico
-     - Estados possíveis: `SCHEDULED` (agendada), `CANCELED` (cancelada), `COMPLETED` (concluída)
-
-#### Justificativa do Microserviço
-
-O `hap-physicians` existe como microserviço independente porque:
-
-1. **Responsabilidade Única**: Foco exclusivo em médicos e agendamentos futuros
-2. **Ciclo de Vida Independente**: Desenvolvimento, teste e deploy independentes
-3. **Escalabilidade Específica**: Escalável conforme demanda de agendamentos
-4. **Tecnologias Específicas**: Permite CQRS com MongoDB para read models
-5. **Bounded Context Claro**: Domínio bem definido com linguagem ubíqua
-
-**Limites**:
-- **Dentro do escopo**: Registro de médicos, gestão de consultas futuras, validações
-- **Fora do escopo**: Gestão de pacientes (`hap-patients`), registros médicos (`hap-appointmentrecords`), autenticação (`hap-auth`)
-
-## CQRS - Command Query Responsibility Segregation
-
-### O que é CQRS?
-
-**CQRS (Command Query Responsibility Segregation)** é um padrão arquitetural que **separa operações de leitura (queries) das operações de escrita (commands)**.
-
-**Por que usar CQRS?**
-- **Otimização**: Podemos otimizar leitura e escrita de forma independente
-- **Escalabilidade**: Podemos escalar leitura e escrita separadamente
-- **Performance**: Read models podem ser desnormalizados para consultas mais rápidas
-- **Flexibilidade**: Podemos usar diferentes tecnologias para leitura e escrita
-
-**Como funciona no nosso projeto:**
-- **Commands (Escrita)**: Modificam dados, salvam no banco de escrita (H2)
-- **Queries (Leitura)**: Apenas consultam dados, leem do banco de leitura (MongoDB)
-
-### Commands (Escrita) - Modificar Dados
-
-Commands são operações que **modificam o estado** do sistema (criar, atualizar, deletar). Eles são implementados em `PhysicianCommandService` e `AppointmentCommandService`.
-
-**Endpoints que usam Commands** (ver lista completa na seção "Endpoints Principais"):
-- `POST /physicians/register` → Salva no Write Model (H2) e publica `PhysicianRegisteredEvent`
-- `PUT /physicians/{id}` → Atualiza e publica `PhysicianUpdatedEvent`
-- `POST /appointments` → Salva no Write Model e publica `AppointmentCreatedEvent`
-- `PUT /appointments/{id}` → Atualiza e publica `AppointmentUpdatedEvent`
-- `PUT /appointments/{id}/cancel` → Cancela e publica `AppointmentCanceledEvent`
-
-**Características importantes:**
-- Todos os commands são **transacionais** (ou tudo acontece ou nada acontece)
-- Garantem **consistência imediata** no Write Model (H2/JPA)
-- Após salvar, publicam eventos para atualizar o Read Model de forma assíncrona
-
-### Queries (Leitura) - Consultar Dados
-
-Queries são operações que **apenas consultam dados** sem modificá-los. Elas são implementadas em `PhysicianQueryService` e `AppointmentQueryService`.
-
-**Endpoints que usam Queries** (ver lista completa na seção "Endpoints Principais"):
-- `GET /physicians/{id}` → Consulta Read Model (MongoDB) com fallback para Write Model
-- `GET /appointments` → Consulta Read Model
-- `GET /appointments/{id}` → Consulta Read Model com fallback
-- `GET /appointments/upcoming` → Query específica otimizada
-- `GET /physicians/{id}/slots` → Calcula slots disponíveis
-
-**Características importantes:**
-- As queries consultam **preferencialmente o Read Model (MongoDB)**, otimizado para leitura rápida
-- Se o Read Model não tiver os dados, fazem **fallback** para o Write Model (H2)
-- Nunca modificam dados, apenas retornam informações
-
-### Separação de Modelos - Write Model e Read Model
-
-Para implementar CQRS, usamos **dois bancos de dados diferentes**, cada um otimizado para seu propósito:
-
-#### Write Model (H2/JPA) - Banco de Escrita
-
-**Tecnologia**: H2 (banco de dados relacional em memória, para desenvolvimento)  
-**Uso**: Operações de escrita (Commands)
-
-**Características:**
-- **Garante integridade referencial**: Relacionamentos entre tabelas são validados
-- **Consistência transacional**: Operações são atômicas (ACID)
-- **Modelos**: `Physician`, `Appointment` (entidades JPA - Java Persistence API)
-- **Estrutura**: Normalizada (evita duplicação de dados)
-- **Por instância**: Cada instância tem seu próprio banco H2 (isolamento de transações)
-
-**Exemplo**: Quando registramos um médico, os dados são salvos aqui primeiro, garantindo que tudo está correto.
-
-#### Read Model (MongoDB) - Banco de Leitura
-
-**Tecnologia**: MongoDB (banco de dados NoSQL)  
-**Uso**: Operações de leitura (Queries)
-
-**Características:**
-- **Desnormalizado**: Dados duplicados intencionalmente para performance
-- **Otimizado para consultas**: Estrutura pensada para leitura rápida
-- **Modelos**: `PhysicianSummary`, `AppointmentSummary` (documentos MongoDB)
-- **Atualizado assincronamente**: Atualizado via eventos do RabbitMQ (não imediatamente)
-- **Compartilhado**: Ambas as instâncias conectam ao mesmo database `happhysicians_db` (consistência de leitura)
-
-**Exemplo**: Quando consultamos um médico, lemos daqui para ter resposta mais rápida.
-
-**Por que dois bancos?**
-- **Write Model**: Garante que os dados estão corretos e consistentes
-- **Read Model**: Garante que as consultas são rápidas e eficientes
-- **Separação de responsabilidades**: Cada banco faz o que faz melhor
-
-**Estratégia de Bancos de Dados:**
-- **H2 Separado**: Isolamento de dados de escrita, evita conflitos, permite processamento paralelo
-- **MongoDB Compartilhado**: Consistência de leitura entre instâncias, read model representa estado agregado
-- **O que acontece ao remover instância**: 
-  - H2: Dados perdidos (in-memory), mas eventos já publicados estão no RabbitMQ
-  - MongoDB: Dados preservados (compartilhado)
-  - Eventos: Preservados no RabbitMQ, podem ser processados por outras instâncias
-
-## Eventos e RabbitMQ
-
-### O que é RabbitMQ?
-
-**RabbitMQ** é um **message broker** (corretor de mensagens) que permite comunicação assíncrona entre componentes usando o protocolo AMQP (Advanced Message Queuing Protocol).
-
-**Analogia simples**: É como um "correio" onde:
-- Componentes enviam "cartas" (eventos)
-- O correio (RabbitMQ) entrega as cartas aos destinatários corretos
-- Cada destinatário tem uma "caixa de correio" (queue)
-
-### Configuração
-
-- **Exchange**: `hap-exchange` (tipo: Topic Exchange)
-  - **O que é Exchange?** É o "centro de distribuição" que roteia mensagens para as queues corretas
-- **Configuração**: `RabbitMQConfig.java`
-- **Formato de Mensagens**: JSON (usando `Jackson2JsonMessageConverter`)
-
-### Queues (Filas) Criadas Automaticamente
-
-- `q.physician.summary.updater` → Consumida por `PhysicianEventHandler`
-- `q.appointment.summary.updater` → Consumida por `AppointmentEventHandler`
-- `q.appointment.reminders` → Consumida por `AppointmentReminderHandler`
-
-Uma Queue é uma fila onde os eventos ficam aguardando serem processados. Cada handler tem sua própria queue.
-
-### Eventos Publicados
-
-Após cada escrita bem-sucedida, um evento é publicado via RabbitMQ:
-
-| Evento | Routing Key | Handler | Ação |
-|--------|-------------|---------|------|
-| `PhysicianRegisteredEvent` | `physician.registered` | `PhysicianEventHandler` | Atualiza `PhysicianSummary` no MongoDB |
-| `PhysicianUpdatedEvent` | `physician.updated` | `PhysicianEventHandler` | Atualiza `PhysicianSummary` no MongoDB |
-| `AppointmentCreatedEvent` | `appointment.created` | `AppointmentEventHandler` | Atualiza `AppointmentSummary` no MongoDB |
-| `AppointmentUpdatedEvent` | `appointment.updated` | `AppointmentEventHandler` | Atualiza `AppointmentSummary` no MongoDB |
-| `AppointmentCanceledEvent` | `appointment.canceled` | `AppointmentEventHandler` | Atualiza status para "CANCELED" no MongoDB |
-| `AppointmentReminderEvent` | `appointment.reminder` | `AppointmentReminderHandler` | Envia lembretes de consulta (email/SMS) |
-
-
-### Consistência Eventual
-
-É quando os dados não ficam sincronizados imediatamente, mas eventualmente (em alguns milissegundos) ficam consistentes.
-
-**No nosso caso:**
-- Write Model é atualizado **imediatamente** (consistência forte).
-- Read Model é atualizado **assincronamente** (consistência eventual).
-- **Fallback**: Se o Read Model ainda não tiver os dados, consultamos o Write Model.
-
-É aceitavél uma vez que:
-- Consultas são muito mais rápidas no Read Model.
-- A diferença de tempo é mínima (milissegundos).
-- O fallback garante que sempre temos dados corretos.
-
-## Múltiplas Instâncias
-
-### Configuração
-- **Instance 1**: Porta 8081, Profile `instance1`
-- **Instance 2**: Porta 8087, Profile `instance2`
-
-### Compartilhamento de Recursos
-- **RabbitMQ**: Mesmo exchange e queues (event-driven)
-- **MongoDB**: Mesmo database para Read Model
-- **H2**: Banco separado por instância (isolamento de escrita)
-
-### Peer-forwarding
-
-Se um recurso não existir na instância local, o serviço tenta buscar nos peers (outras instâncias) usando endpoints públicos. Isso garante alta disponibilidade mesmo se uma instância não tiver os dados.
-
-## Comunicação Externa (HTTP REST)
-
-**O que é comunicação externa?**  
-Além de gerenciar médicos e consultas, o serviço precisa se comunicar com outros microserviços para:
-- Obter informações de pacientes.
-- Validar registros médicos.
-- Criar usuários de autenticação.
-
-**ExternalServiceClient** é a classe que gerencia todas essas comunicações HTTP:
-
-| Microserviço | Endpoint | Propósito |
-|--------------|----------|-----------|
-| **hap-patients** | `GET /patients/{id}` ou `/internal/patients/{id}` | Enriquecer dados de pacientes nas consultas |
-| **hap-appointmentrecords** | `GET /api/appointment-records/{id}` | Validar registros médicos |
-| **hap-auth** | `POST /auth/users` | Criar usuários de autenticação ao registrar médicos |
-
-**Propagação de Headers**:  
-Headers de segurança (`Authorization`, `X-User-Id`, `X-User-Role`) são propagados automaticamente para manter o contexto de autenticação entre serviços.
-
-**Estratégia de Fallback**:  
-1. Tenta primeiro endpoint interno `/internal/patients/{id}` (mais rápido, mesma rede).
-2. Se falhar, tenta endpoint público `/patients/{id}` (mais lento, mas funciona).
-
-## Análise: Síncrono vs Assíncrono
-- A comunicação síncrona é quando o remetente **espera** a resposta antes de continuar. Como uma ligação telefônica - você fala e espera a resposta.
-- A comunicação assíncrona é quando o remetente **não espera** a resposta. Como enviar um email - você envia e continua fazendo outras coisas.
-
-### Síncrono (HTTP REST) - Usado para:
-
-- ✅ **Validações críticas em tempo real**: Ex: verificar se paciente existe antes de criar consulta
-- ✅ **Operações transacionais**: Ex: criar usuário de autenticação (precisa confirmar que foi criado)
-- ✅ **Enriquecimento de dados**: Ex: buscar dados do paciente para retornar na resposta imediata
-
-**Características**: Resposta imediata, garante que a operação foi concluída antes de continuar.
-
-### Assíncrono (RabbitMQ) - Usado para:
-
-- ✅ **Atualização de Read Models**: Ex: atualizar MongoDB após escrever no H2
-- ✅ **Desacoplamento de componentes**: Write Side não precisa conhecer Read Side diretamente
-- ✅ **Processamento em background**: Ex: enviar lembretes de consulta por email
-
-**Características**: Não bloqueia, permite processamento paralelo, eventualmente consistente.
-
-### Matriz de Decisão 
-
-| Critério | Síncrono (REST) | Assíncrono (RabbitMQ) |
-|----------|-----------------|----------------------|
-| **Precisa de resposta imediata?** | ✅ Sim | ❌ Não |
-| **Precisa de consistência transacional?** | ✅ Sim | ❌ Não (aceita consistência eventual) |
-| **É validação crítica?** | ✅ Sim | ❌ Não |
-| **É atualização de Read Model?** | ❌ Não | ✅ Sim |
-| **Precisa desacoplar componentes?** | ❌ Não | ✅ Sim |
-
-## Configuração e Execução
-
-### Pré-requisitos
-
-1. **RabbitMQ**: `localhost:5672` (guest/guest), Management UI: `http://localhost:15672`
-2. **MongoDB**: `localhost:27017`, Database: `happhysicians_db`, User: `root`, Password: `secretpassword`
-
-### Iniciar Serviços
-
-```bash
-# Docker Compose 
-docker compose up -d
-
-# Ou manualmente
-docker run -d -p 5672:5672 -p 15672:15672 rabbitmq:management
-docker run -d -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=root -e MONGO_INITDB_ROOT_PASSWORD=secretpassword mongo
-```
-
-### Executar Instâncias
-
-```cmd
-# Terminal 1 - Instance 1
-mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance1
-
-# Terminal 2 - Instance 2
-mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
-```
-### Verificar Funcionamento
-
-1. **Logs**: Procurar por `✅ Exchange 'hap-exchange' declarado`, `📥 [Query Side] Recebi evento`
-2. **RabbitMQ UI**: `http://localhost:15672` - Verificar exchange e queues
-3. **MongoDB**: Verificar collections `physician_summaries`, `appointment_summaries`
-4. **Swagger**: `http://localhost:8081/swagger-ui.html` - Testar endpoints
-
-## Testes de Integração
-
-Os testes de integração são testes que verificam se os diferentes componentes do sistema funcionam corretamente juntos (banco de dados, RabbitMQ, outros serviços, etc.).
-
-Testes disponíveis no **Hoppscotch** (ferramenta para testar APIs) cobrindo:
-
-1. **CQRS - Commands**: Verificar se a escrita no Write Model funciona e se os eventos são publicados.
-2. **CQRS - Queries**: Verificar se a leitura do Read Model (MongoDB) funciona corretamente.
-3. **Eventos**: Verificar se a sincronização entre Write Model e Read Model funciona após commands.
-4. **Múltiplas Instâncias**: Testar peer-forwarding (buscar dados em outras instâncias) e consistência.
-5. **Comunicação Externa**: Verificar se as chamadas HTTP para outros serviços funcionam e se os headers são propagados.
-
-**Como usar**: 
-1. Importar coleção de testes SIDIS no Hoppscotch
-2. Configurar variáveis de ambiente (URLs dos serviços, etc.)
-3. Executar testes na ordem sugerida
-
-## Estrutura de Código
-```
-hap-physicians/
-├── command/          # Command Services (escrita)
-├── query/            # Query Services e Read Models (MongoDB)
-├── events/           # Eventos e Event Handlers
-├── config/           # Configurações (RabbitMQ, MongoDB)
-├── repository/       # Repositories do Write Model (JPA)
-└── model/            # Entidades do Write Model (JPA)
-```
+- GET  /appointments/{id}
+- POST /appointments
+- PUT  /appointments/{id}
+- PUT  /appointments/{id}/cancel
+- GET  /appointments/upcoming
+- GET  /appointments/{id}/audit-trail
+- POST /appointments/{id}/notes
+
+## Colaboração entre serviços (HTTP/REST)
+
+- **hap-patients**: GET http://localhost:{8082|8088}/patients/{id} ou /internal/patients/{id}
+- **hap-auth**: POST http://localhost:{8084|8089}/api/public/register, GET /auth/users/{id}
+- **hap-appointmentrecords**: GET http://localhost:8083/api/appointment-records/{id}
+
+- Propagação de headers (quando aplicável): Authorization, X-User-Id, X-User-Role
+
+## Peer-forwarding
+
+- Se um médico ou consulta não existir localmente, consulta peers pelas mesmas rotas públicas (evita endpoints internos para o cliente externo; os internos são usados apenas entre instâncias).
+- A lista de peers é estática por perfil/instância (ex.: 8081 conhece 8087 e vice-versa) configurada via lista hardcoded em `ExternalServiceClient`.
+- Se nenhuma instância tiver o recurso, o pedido devolve 404 (não há fallback "mágico").
+- Implementado utilizando `ResilientRestTemplate` para lidar com falhas temporárias de peers.
+
+## Configuração (exemplo)
+
+- Bases URL remotas via application.properties (por profile):
+  - hap.patients.base-url
+  - hap.auth.base-url
+  - hap.appointmentrecords.base-url
+
+## Swagger
+- http://localhost:8081/swagger-ui.html (instância 1)
+- http://localhost:8087/swagger-ui.html (instância 2)
+
+## Decisões e Notas
+- **Separação leitura/escrita (CQRS):**
+  - Lado comando (escrita) usa JPA + H2 via `PhysicianCommandService`/`AppointmentCommandService` e respetivos repositories.
+  - Lado query (leitura) usa MongoDB via `PhysicianQueryService`/`AppointmentQueryService` e respetivos query repositories para respostas otimizadas.
+- **Comunicação síncrona (HTTP/REST):**
+  - Usada para interagir com o `hap-auth` (criar utilizadores ao registar médicos, validar tokens).
+  - Usada para obter dados de pacientes do `hap-patients` (enriquecimento de dados nas consultas).
+  - Usada para validar e criar registos médicos no `hap-appointmentrecords`.
+  - Usada também entre containers quando é necessária consistência imediata (ex.: peer-forwarding para encontrar dados que ainda não foram replicados localmente).
+- **Comunicação assíncrona (AMQP/RabbitMQ):**
+  - Após operações de escrita bem-sucedidas, os command services publicam eventos no exchange `hap-exchange`:
+    - `PhysicianRegisteredEvent`, `PhysicianUpdatedEvent`
+    - `AppointmentCreatedEvent`, `AppointmentUpdatedEvent`, `AppointmentCanceledEvent`
+    - `AppointmentReminderEvent`
+  - `PhysicianEventHandler` e `AppointmentEventHandler` consomem esses eventos e atualizam o modelo de leitura em MongoDB.
+  - Este padrão permite que outros serviços também reajam a eventos sem acoplamento forte.
+- **Event log / Event Sourcing (para consultas):**
+  - Para cada operação sobre uma consulta (criação, atualização, cancelamento, adição de notas), o serviço persiste um `EventStore` na tabela `event_store` com tipo de evento, `aggregateId` (appointmentId), metadados de auditoria e correlation ID.
+  - O estado oficial da consulta continua na entidade JPA `Appointment`; o event log funciona como trilho de auditoria (audit trail) completo e permite reconstruir o histórico de eventos via `GET /appointments/{id}/audit-trail`.
+  - Diferente do `hap-patients`, aqui o event store é usado para consultas (appointments), não para médicos (physicians).
+- **Peer-forwarding HTTP entre instâncias:**
+  - Continua ativo mesmo com CQRS/AMQP: se a instância local ainda não conhecer o médico ou consulta, tenta sequencialmente os peers configurados.
+  - Implementado nos controllers (`PhysicianController`, `AppointmentController`) utilizando `ResilientRestTemplate` para lidar com falhas temporárias de peers.
+- **Isolamento entre serviços:**
+  - Não há imports diretos de classes de outros módulos; a integração é sempre via HTTP/REST ou eventos AMQP.
+- **Circuit Breaker (Resilience4j):**
+  - Implementado para chamadas ao `hap-auth` e `hap-appointmentrecords` via anotações `@CircuitBreaker` em `ExternalServiceClient`.
+  - Configuração via `application.properties` com thresholds e timeouts específicos por serviço.
+- **Sagas envolvendo médicos/consultas:**
+  - Não existe uma Saga distribuída formal para o registo de médicos. A criação de credenciais em `hap-auth` é feita via chamada HTTP síncrona dentro de uma transação local.
+  - Para consultas, a criação pode envolver validações síncronas (paciente existe, médico disponível) mas sem orquestração de Saga formal nem passos de compensação.
+  - Os eventos publicados ficam disponíveis para que outros serviços possam reagir (coreografia leve), mas sem um orquestrador de Saga.
 
 ## Limitações conhecidas
+- Service Discovery estático (via lista hardcoded de peers em `ExternalServiceClient`). Implementação de resiliência customizada (`ResilientRestTemplate`) para tolerância a falhas de rede entre instâncias, combinada com Circuit Breaker (Resilience4j) para serviços externos.
+- Sem cache distribuída; consistência eventual entre instâncias.
+- Eventos focados nos cenários principais (por exemplo, `PhysicianRegisteredEvent`, `AppointmentCreatedEvent`); extensões para outros eventos são possíveis mas não totalmente exploradas aqui.
+- O módulo não aplica event sourcing completo para médicos: apenas para consultas (appointments). O estado oficial dos médicos está numa base relacional e não há event store para reconstruir o histórico de médicos.
+- Não há Saga de registo de médico ou criação de consulta com vários passos assíncronos e compensações; optou-se por um fluxo mais simples (transação local + chamadas HTTP síncronas + eventos de integração).
+- MongoDB read models são separados por instância (`happhysicians_db_1` e `happhysicians_db_2`), o que pode levar a inconsistências de leitura entre instâncias até que os eventos sejam processados.
 
-As limitações conhecidas são funcionalidades que não foram implementadas (por questões de tempo, escopo, ou complexidade) mas que seriam desejáveis em um ambiente de produção.
+## Testes e build
+```cmd
+mvnw.cmd -q test
+mvnw.cmd -q -DskipTests package
+```
 
-| Limitação | Impacto | Solução Futura |
-|-----------|---------|----------------|
-| **Sem service discovery** | Peers precisam ser configurados manualmente | Implementar Eureka, Consul, ou Kubernetes Service Discovery |
-| **Sem circuit breaker/retries** | Se um serviço externo falhar, a requisição falha imediatamente | Implementar Resilience4j ou Hystrix |
-| **Sem cache distribuída** | Cada instância faz suas próprias consultas | Implementar Redis ou Hazelcast |
-| **H2 in-memory** | Dados perdidos ao reiniciar (apenas para desenvolvimento) | Migrar para PostgreSQL ou MySQL em produção |
+## CQRS
 
-**Nota**: Estas limitações são aceitáveis para o contexto educacional do projeto, mas em produção seriam necessárias melhorias.
+- Na nossa implementação Java com Spring Boot, os conceitos de CQRS foram mapeados da seguinte forma:
+- Os Commands (ex: RegisterPhysician, CreateAppointment) são representados pelos métodos transacionais nos `*CommandService`, que atuam sobre o modelo de escrita (JPA / base de dados relacional).
+- As Queries (ex: GetPhysicianById, GetAppointmentById) são representadas pelos métodos de leitura nos `*QueryService`, que consultam o modelo de leitura (`*QueryRepository` / projeções de leitura em MongoDB).
+- Os DTOs de entrada (por exemplo `RegisterPhysicianRequest`, `ScheduleAppointmentRequest`) funcionam como objetos de comando.
+
+## Messaging e Tracing no hap-physicians
+
+Este módulo usa RabbitMQ para publicar eventos sempre que um médico é registado/atualizado ou uma consulta é criada/atualizada/cancelada.
+Os eventos são consumidos localmente por `PhysicianEventHandler` e `AppointmentEventHandler`, que atualizam o modelo de leitura em MongoDB (`PhysicianSummary`, `AppointmentSummary`).
+Além dos logs, o sistema integra com o Zipkin (via Micrometer Tracing) para visualização gráfica das spans e latências. O X-Correlation-Id serve como TraceId, permitindo depurar o fluxo completo: REST Request -> RabbitMQ Publish -> RabbitMQ Consume -> MongoDB Write.
+
+### Correlation IDs (Tracing de ponta a ponta)
+
+Para permitir rastreio de um pedido entre serviços:
+
+- Os controladores (`PhysicianController`, `AppointmentController`) aceitam opcionalmente o header HTTP `X-Correlation-Id`.
+    - Se não existir, geram um UUID e colocam-no no MDC (contexto de logging) sob a mesma chave.
+- O `RabbitTemplate` é configurado em `RabbitMQConfig` com um `beforePublishPostProcessor` que lê o `X-Correlation-Id` do MDC
+  e coloca esse valor nos headers AMQP da mensagem.
+
+- Os event handlers (`PhysicianEventHandler`, `AppointmentEventHandler`) lêem o header `X-Correlation-Id` da mensagem RabbitMQ, voltam a colocá-lo no MDC e incluem o valor nos logs.
+- O `EventStoreService` também persiste o correlation ID no event store, permitindo rastrear eventos de auditoria com o mesmo ID de correlação.
+
+Desta forma, é possível seguir nos logs o mesmo `X-Correlation-Id` desde o pedido HTTP de registo de médico/criação de consulta,
+passando pela publicação do evento até ao processamento no lado de leitura (MongoDB) e em quaisquer consumidores adicionais
+que usem o mesmo header.
+
+### Event Sourcing (Audit Trail)
+
+Para consultas (appointments), o módulo implementa Event Sourcing light:
+
+- Cada operação sobre uma consulta gera um evento no `EventStore`:
+  - `CONSULTATION_SCHEDULED` - quando uma consulta é criada
+  - `CONSULTATION_UPDATED` - quando uma consulta é atualizada
+  - `CONSULTATION_CANCELED` - quando uma consulta é cancelada
+  - `NOTE_ADDED` - quando uma nota é adicionada a uma consulta
+  - `CONSULTATION_COMPLETED` - quando uma consulta é marcada como concluída
+- O endpoint `GET /appointments/{id}/audit-trail` retorna todos os eventos relacionados com uma consulta, permitindo reconstruir o histórico completo.
+- O event store persiste metadados como correlation ID, user ID, timestamp e versão do agregado, permitindo auditoria completa.
+
+### Perguntas frequentes (Q&A)
+
+**Q1: Onde é que se vê CQRS no módulo hap-physicians?**
+- Comando (escrita): `POST /physicians/register`, `POST /appointments` usam `*CommandService`, que validam regras de negócio, escrevem na base de dados e publicam eventos.
+- Query (leitura): `GET /physicians/{id}`, `GET /appointments/{id}` usam `*QueryService`, que lêem de `*QueryRepository` (MongoDB read model) e devolvem DTOs de leitura sem efeitos de escrita.
+
+**Q2: Onde é que se vê AMQP / message broker?**
+- Nos command services, após operações bem sucedidas, são publicados eventos via `RabbitTemplate` para um exchange configurado (`hap.rabbitmq.exchange`).
+- `PhysicianEventHandler` e `AppointmentEventHandler` ouvem esses eventos e atualizam o read model (MongoDB), garantindo que as queries são rápidas e desacopladas do modelo de escrita.
+- Outros serviços podem consumir estes eventos para manter os seus próprios modelos de leitura sincronizados.
+
+**Q3: O CQRS e o AMQP substituem o peer-forwarding?**
+- Não. CQRS e AMQP tratam da separação leitura/escrita e da disseminação assíncrona de eventos entre serviços.
+- O peer-forwarding continua a ser usado entre instâncias do mesmo serviço (por exemplo em `GET /physicians/{id}` ou `GET /appointments/{id}`) para encontrar dados que ainda não foram replicados localmente.
+- Assim, temos dois mecanismos complementares:
+  - Eventos AMQP para sincronização entre componentes diferentes (physicians, patients, appointments, auth).
+  - Peer-forwarding HTTP para leitura entre instâncias do mesmo componente quando o dado não existe localmente.
+
+**Q4: Estão a usar event sourcing completo ou Sagas no hap-physicians?**
+- Para consultas (appointments), sim: usamos um event store (`EventStore`) para auditoria e reconstrução do histórico via `GET /appointments/{id}/audit-trail`. O estado oficial da consulta continua na base de dados relacional, mas o event store permite rastrear todas as mudanças.
+- Para médicos (physicians), não: não há event store; apenas eventos AMQP para sincronização do read model.
+- Não há uma Saga distribuída formal para o registo de médicos ou criação de consultas; em vez disso, optou-se por integrações síncronas simples com outros serviços e emissão de eventos para integração assíncrona.
+
+**Q5: Por que é que os read models MongoDB são separados por instância?**
+- Cada instância tem o seu próprio database MongoDB (`happhysicians_db_1` e `happhysicians_db_2`) para isolamento de dados de leitura.
+- Isto permite que cada instância mantenha o seu próprio read model atualizado via eventos, mas pode levar a inconsistências temporárias entre instâncias até que os eventos sejam processados.
+- O peer-forwarding ajuda a mitigar este problema ao permitir que uma instância consulte outra se não encontrar dados localmente.
