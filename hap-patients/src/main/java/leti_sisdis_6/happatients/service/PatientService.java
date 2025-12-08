@@ -202,14 +202,11 @@ public class PatientService {
 
     @Transactional(readOnly = true)
     public PatientProfileDTO getPatientProfileWithPeers(String id) {
-        // 1) tentar localmente (read model relacional)
         try {
             return getPatientProfile(id, null);
         } catch (NotFoundException | EntityNotFoundException ex) {
-            // ignorar e tentar peers
         }
 
-        // 2) tentar sequencialmente em cada peer pela rota pública GET /patients/{id}
         for (String base : patientPeers) {
             String url = base + "/patients/" + id;
             try {
@@ -218,11 +215,10 @@ public class PatientService {
                     return dto;
                 }
             } catch (Exception ignored) {
-                // tenta próximo peer
+
             }
         }
 
-        // 3) nenhum peer devolveu o paciente
         throw new NotFoundException("Patient not found with ID: " + id);
     }
 }
