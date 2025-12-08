@@ -24,6 +24,11 @@ Read Side (Queries): Responsável por servir dados rapidamente ao cliente, utili
 ## 2. Database per service
 Cada microserviço (Auth, Patients, Physicians, AppointmentRecords) possui a sua própria base de dados de escrita (H2/relacional em dev, equivalente a PostgreSQL/SQL Server em produção) e, quando aplicável, a sua própria base de dados de leitura (MongoDB).
 Não existe acesso direto entre bases de dados; os serviços comunicam exclusivamente por HTTP/REST ou eventos AMQP (RabbitMQ).
+Nota sobre Persistência e Ciclo de Vida dos Dados:
+Ambiente de Desenvolvimento (Write Model): Utilizamos H2 em memória. Isto significa que a base de dados "vive" dentro da instância do microserviço.
+Consequência: Se a instância for desligada ou reiniciada, os dados relacionais perdem-se. Cada nova instância arranca com uma base de dados vazia (ou recriada pelo DataBootstrap). Não há partilha de dados entre instâncias do mesmo serviço (daí a necessidade do Peer-Forwarding ou Data Seeding).
+Ambiente de Desenvolvimento (Read Model): Utilizamos MongoDB em contentor Docker.
+Consequência: Os dados persistem em Volumes Docker mesmo que o contentor do microserviço Java seja destruído. Múltiplas instâncias do mesmo serviço (instance1, instance2) podem ligar-se ao mesmo contentor MongoDB partilhado, garantindo que ambas vêem as mesmas projeções de leitura.
 
 ## 3. Event Sourcing e Auditabilidade
 Embora o sistema mantenha o estado atual nas tabelas relacionais (Snapshot) para operações do dia-a-dia, implementámos um padrão de **Event Sourcing** paralelo focado na auditabilidade e recuperação histórica.
