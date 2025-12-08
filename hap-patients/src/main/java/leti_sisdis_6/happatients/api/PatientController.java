@@ -119,25 +119,6 @@ public class PatientController {
                 .body(Map.of("error", "Patient not found", "patientId", id));
     }
 
-    // Internal endpoint for peer forwarding, not under /patients mapping
-    @GetMapping(value = "/internal/patients/{id}", produces = "application/json")
-    public ResponseEntity<?> getPatientDetailsInternal(@PathVariable String id) {
-        try {
-            PatientDetailsDTO patient = patientService.getPatientDetails(id);
-            if (patient != null) {
-                return ResponseEntity.ok(patient);
-            }
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Patient not found", "patientId", id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage(), "patientId", id));
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", "Patient not found", "patientId", id));
-    }
-
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<PatientDetailsDTO>> listAllPatients() {
@@ -149,7 +130,7 @@ public class PatientController {
     public ResponseEntity<?> searchPatients(@RequestParam String name) {
         try {
             return ResponseEntity.ok(patientService.searchPatientsByName(name));
-        } catch (EntityNotFoundException e) {
+        } catch (jakarta.persistence.EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         }
     }
@@ -175,8 +156,8 @@ public class PatientController {
         return ResponseEntity.ok(new UpdateResponse(message));
     }
 
-    @ExceptionHandler(UnrecognizedPropertyException.class)
-    public ResponseEntity<ErrorResponse> handleUnrecognizedPropertyException(UnrecognizedPropertyException e) {
+    @ExceptionHandler(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.class)
+    public ResponseEntity<ErrorResponse> handleUnrecognizedPropertyException(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", "Unknown field: " + e.getPropertyName(), "BAD_REQUEST"));
     }
     @ExceptionHandler(IllegalArgumentException.class)
