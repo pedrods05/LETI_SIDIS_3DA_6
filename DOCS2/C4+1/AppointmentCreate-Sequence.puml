@@ -120,5 +120,14 @@ deactivate RabbitMQ
 activate ReminderHandler
 ReminderHandler -> ReminderHandler: sendReminderEmail(event)
 ReminderHandler -> ReminderHandler: Log reminder details
+deactivate ReminderHandler
+
+note right of Controller
+  Este diagrama mostra a criação de uma nova consulta.
+  A consulta é salva no write model (H2) e eventos são
+  publicados no RabbitMQ para atualizar o read model
+  (MongoDB) e enviar lembretes ao paciente.
+end note
+
 @enduml
 

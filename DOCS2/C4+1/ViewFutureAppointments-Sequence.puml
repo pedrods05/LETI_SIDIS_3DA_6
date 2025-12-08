@@ -94,5 +94,13 @@ note right of QueryService
   2. If empty, fallback to H2 write model
 end note
 
+note right of Controller
+  Este diagrama mostra a listagem de consultas futuras.
+  Primeiro busca no read model (MongoDB) filtrando por
+  status SCHEDULED e data futura. Se vazio, faz fallback
+  para o write model (H2). Enriquece dados do paciente
+  quando necessário.
+end note
+
 @enduml
 

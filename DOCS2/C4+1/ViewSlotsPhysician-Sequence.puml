@@ -87,5 +87,13 @@ note right of Calculator
   - Limited to 3 months ahead
 end note
 
+note right of Controller
+  Este diagrama mostra a geração de slots disponíveis
+  para agendamento com um médico. Busca o médico,
+  obtém consultas existentes no período e calcula
+  os slots livres considerando horários de trabalho,
+  duração dos slots e consultas já agendadas.
+end note
+
 @enduml
 

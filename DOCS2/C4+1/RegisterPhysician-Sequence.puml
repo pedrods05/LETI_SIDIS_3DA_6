@@ -76,6 +76,15 @@ ReadRepo --> EventHandler: Saved
 deactivate ReadRepo
 
 EventHandler -> EventHandler: Update MongoDB read model
+deactivate EventHandler
+
+note right of Controller
+  Este diagrama mostra o registro de um novo médico.
+  O médico é registrado no serviço de autenticação,
+  salvo no write model (H2) e um evento é publicado
+  no RabbitMQ para criar o summary no read model
+  (MongoDB) de forma assíncrona.
+end note
 
 @enduml
 

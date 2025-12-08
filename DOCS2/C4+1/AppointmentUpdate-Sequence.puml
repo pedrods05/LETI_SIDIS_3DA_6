@@ -140,7 +140,16 @@ else Event is appointment.canceled
         end
     end
     EventHandler -> EventHandler: Update MongoDB read model
+    deactivate EventHandler
 end
+
+note right of Controller
+  Este diagrama mostra a atualização de uma consulta.
+  Dependendo do status, publica evento de atualização
+  ou cancelamento. Se atualizado, também envia lembrete.
+  O handler atualiza o read model (MongoDB) de forma
+  assíncrona através do RabbitMQ.
+end note
 
 @enduml
 
