@@ -20,6 +20,31 @@ mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
 - GET  /patients/{id}
 - POST /api/v2/patients/register
 
+## Testes
+
+### Executar todos os testes
+```bash
+mvn test
+```
+
+### Executar testes específicos
+```bash
+mvn test -Dtest=PatientServiceTest
+mvn test -Dtest=PatientEventHandlerTest
+```
+
+### Cobertura de Testes
+O módulo contém **18 classes de teste** cobrindo:
+- ✅ Controllers (REST endpoints + peer forwarding)
+- ✅ Services (business logic + CQRS commands)
+- ✅ Repositories (H2 + MongoDB)
+- ✅ Event Handlers (RabbitMQ consumers)
+- ✅ Configuration (RabbitMQ + HTTP Client)
+- ✅ Models & DTOs
+- ✅ Exception Handling
+
+📄 **Documentação completa dos testes:** [TEST_DOCUMENTATION.md](./TEST_DOCUMENTATION.md)
+
 ## Colaboração entre serviços (HTTP/REST)
 - Auth: POST http://localhost:{8084|8089}/api/public/register
 - Propagação de headers (quando aplicável): Authorization, X-User-Id, X-User-Role
@@ -82,9 +107,9 @@ mvnw.cmd -q -DskipTests package
 
 ## Messaging e Tracing no hap-patients
 
-Este módulo usa RabbitMQ para publicar o evento `PatientRegisteredEvent` sempre que um novo paciente é registado.
-O evento é consumido localmente por `PatientEventHandler`, que atualiza o modelo de leitura em MongoDB (`PatientSummary`).
-Além dos logs, o sistema integra com o Zipkin (via Micrometer Tracing) para visualização gráfica das spans e latências. O X-Correlation-Id serve como TraceId, permitindo depurar o fluxo completo: REST Request -> RabbitMQ Publish -> RabbitMQ Consume -> MongoDB Write.
+- Este módulo usa RabbitMQ para publicar o evento `PatientRegisteredEvent` sempre que um novo paciente é registado.
+- O evento é consumido localmente por `PatientEventHandler`, que atualiza o modelo de leitura em MongoDB (`PatientSummary`).
+- Além dos logs, o sistema integra com o Zipkin (via Micrometer Tracing) para visualização gráfica das spans e latências. O X-Correlation-Id serve como TraceId, permitindo depurar o fluxo completo: REST Request -> RabbitMQ Publish -> RabbitMQ Consume -> MongoDB Write.
 
 ### Correlation IDs (Tracing de ponta a ponta)
 
