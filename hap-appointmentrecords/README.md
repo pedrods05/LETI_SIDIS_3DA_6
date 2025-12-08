@@ -1,203 +1,137 @@
-# HAP-APPOINTMENTRECORDS - Technical Reference Manual
+# hap-appointmentrecords — Gestão de Registos de Consultas
 
+Este serviço gere o registo e a consulta de registos clínicos pós-consulta e suporta peer-forwarding entre instâncias para leitura distribuída.
 
----
+## Perfis e Portas
+- instance1 → 8083
+- instance2 → 8090
 
-## Table of Contents
-1. [Architecture and Design (DDD/CQRS)](#1-architecture-and-design-dddcqrs)
-2. [Project Structure and Technologies](#2-project-structure-and-technologies)
-3. [Database Per Instance Configuration](#3-database-per-instance-configuration)
-4. [Execution and Installation Guide](#4-execution-and-installation-guide)
-5. [Detailed Testing Roadmap (HTTP & AMQP)](#5-detailed-testing-roadmap-http--amqp)
-6. [Troubleshooting and Common Errors](#6-troubleshooting-and-common-errors)
-7. [Defense Guide (Q&A)](#7-defense-guide-qa)
-
----
-
-## 1. Architecture and Design (DDD/CQRS)
-
-### Overview
-The `hap-appointmentrecords` module is a microservice focused exclusively on managing **Clinical Records** post-consultation. It acts as a **Passive Participant** in the system choreography.
-
-### Communication Diagram
-```ascii
-┌─────────────────────────┐
-│   hap-physicians        │ ← Appointment Owner (Single Source of Truth)
-│   (port 8081)           │
-└──────────┬──────────────┘
-           │
-           │ HTTP Queries (Synchronous + Circuit Breaker)
-           │ "GET /appointments/{id}"
-           ▼
-┌─────────────────────────┐      ┌─────────────────────────┐
-│ hap-appointmentrecords  │◄─────│  RabbitMQ (Topic)       │
-│                         │      │  Exchange: hap-exchange │
-│    AppointmentRecord    │      │  Key: appointment.* │
-│    (Write: H2)          │      └─────────────────────────┘
-│                         │
-│    RecordProjection     │◄─────┐
-│    (Read: MongoDB)      │      │
-└─────────────────────────┘      │
-                                 │
-                          ┌──────┴───────┐
-                          │   MongoDB     │
-                          │  (Record      │
-                          │   Projections)│
-                          └──────────────┘
+## Executar (Windows, cmd.exe)
+É necessário arrancar o RabbitMQ, MongoDB e Zipkin antes de iniciar a aplicação:
+```cmd
+mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance1
+```
+Para a segunda instância:
+```cmd
+mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
 ```
 
-### Refactoring Decisions
-* **Removal of Duplicate Data:** The `Appointment` entity was removed from this service. We now store only the `appointmentId` (String).
-* **Synchronous Communication:** Detailed patient/physician data is retrieved in real-time via `ExternalServiceClient` (HTTP) from the `hap-physicians` service.
-* **Strict CQRS:**
-    * **Command (Write):** H2 (Transactional, ensures integrity).
-    * **Query (Read):** MongoDB (Denormalized for read performance).
+## Endpoints principais
+- POST /api/appointment-records/{appointmentId}/record
+- GET  /api/appointment-records/{recordId}
+- GET  /api/appointment-records/patient/mine
+- GET  /api/appointment-records/patient/{patientId}
 
----
+## Colaboração entre serviços (HTTP/REST)
+- Physicians: GET http://localhost:{8081}/api/appointments/{id}
+- Patients: GET http://localhost:{8082}/patients/{id}
+- Auth: POST http://localhost:{8084|8089}/api/public/register
+- Propagação de headers (quando aplicável): Authorization, X-User-Id, X-User-Role
 
-## 2. Project Structure and Technologies
+## Peer-forwarding
+- Se um registo não existir localmente, consulta peers pelas mesmas rotas públicas (evita endpoints internos para o cliente externo; os internos são usados apenas entre instâncias).
+- A lista de peers é estática por perfil/instância (ex.: 8083 conhece 8090 e vice-versa) configurada via `hap.appointmentrecords.peers`.
+- Se nenhuma instância tiver o recurso, o pedido devolve 404 (não há fallback "mágico").
 
-### Tech Stack
-* **Core:** Spring Boot 3.5.6, Java 17+
-* **Data:** Spring Data JPA (H2), Spring Data MongoDB
-* **Messaging:** Spring AMQP (RabbitMQ) with `Jackson2JsonMessageConverter`
-* **Resilience:** Resilience4j (Circuit Breaker for HTTP calls)
+## Configuração (exemplo)
+- Bases URL remotas via application.properties (por profile):
+  - hap.physicians.base-url
+  - hap.patients.base-url
+  - hap.auth.base-url
 
-### Key Classes (Post-Refactoring)
-* `AppointmentRecord` - JPA Entity (Write Model).
-* `AppointmentRecordProjection` - Mongo Document (Read Model).
-* `ExternalServiceClient` - HTTP Client to communicate with `hap-physicians`.
-* `AppointmentEventsListener` - RabbitMQ Consumer (Logging/Tracing only).
-* `InternalAppointmentRecordController` - Controller for Peer Forwarding.
+## Swagger
+- http://localhost:8083/swagger-ui.html (instância 1)
+- http://localhost:8090/swagger-ui.html (instância 2)
 
----
+## Decisões e Notas
+- **Separação leitura/escrita (CQRS):**
+  - Lado comando (escrita) usa JPA + H2 via `AppointmentRecordService` e `AppointmentRecordRepository`.
+  - Lado query (leitura) usa MongoDB via `AppointmentRecordProjectionRepository` para respostas otimizadas.
+- **Comunicação síncrona (HTTP/REST):**
+  - Usada para interagir com o `hap-physicians` (obter detalhes de consultas) e `hap-patients` (obter detalhes de pacientes).
+  - Usada também entre containers quando é necessária consistência imediata (ex.: validação de consulta antes de criar registo).
+  - Implementado com Circuit Breaker (Resilience4j) para tolerância a falhas de serviços externos.
+- **Comunicação assíncrona (AMQP/RabbitMQ):**
+  - `AppointmentEventsListener` consome eventos de consultas (`AppointmentCreatedEvent`, `AppointmentCompletedEvent`, etc.) do exchange `hap-exchange`.
+  - Estes eventos são usados principalmente para logging e tracing; o serviço funciona como participante passivo na coreografia.
+  - Opcionalmente, após criar um registo, pode publicar `AppointmentRecordCreatedEvent` (configurável via `hap.events.records.enabled`).
+- **Single Source of Truth:**
+  - O serviço não mantém uma cópia local da entidade `Appointment`; apenas armazena o `appointmentId` como referência.
+  - Detalhes de consultas são obtidos em tempo real via HTTP do serviço `hap-physicians` quando necessário.
+  - Esta abordagem evita problemas de sincronização e mantém a consistência dos dados.
+- **Peer-forwarding HTTP entre instâncias:**
+  - Continua ativo mesmo com CQRS/AMQP: se a instância local ainda não conhece o registo, tenta sequencialmente os peers configurados.
+  - Implementado no `AppointmentRecordController` utilizando `RestTemplate` para lidar com falhas temporárias de peers.
+  - Previne loops infinitos através do header `X-Peer-Request`.
+- **Isolamento entre serviços:**
+  - Não há imports diretos de classes de outros módulos; a integração é sempre via HTTP/REST ou eventos AMQP.
+- **Resiliência:**
+  - Circuit Breaker (Resilience4j) aplicado nas chamadas HTTP ao serviço `hap-physicians` via `ExternalServiceClient`.
+  - Permite que o serviço continue a funcionar mesmo quando serviços externos estão temporariamente indisponíveis.
 
-## 3. Database Per Instance Configuration
+## Limitações conhecidas
+- Service Discovery estático (via lista de peers no application.properties). Implementação de resiliência customizada para tolerância a falhas de rede entre instâncias.
+- Sem cache distribuída; consistência eventual entre instâncias.
+- Eventos focados nos cenários principais (por exemplo, `AppointmentRecordCreatedEvent`); extensões para outros eventos são possíveis mas não totalmente exploradas aqui.
+- O módulo não aplica event sourcing completo: o estado oficial do registo está numa base relacional e as projeções em MongoDB são atualizadas de forma síncrona após escrita.
+- Dependência de serviços externos (hap-physicians, hap-patients) para obter detalhes completos; se estes serviços estiverem indisponíveis, algumas funcionalidades podem ser limitadas (mitigado pelo Circuit Breaker).
 
-Each instance operates in isolation, simulating distinct physical servers.
-
-| Configuration | Instance 1 | Instance 2 |
-| :--- | :--- | :--- |
-| **Port** | `8083` | `8090` |
-| **Profile** | `instance1` | `instance2` |
-| **MongoDB URI** | `.../hapappointmentrecords_instance1` | `.../hapappointmentrecords_instance2` |
-| **H2 URL** | `jdbc:h2:mem:instance1db` | `jdbc:h2:mem:instance2db` |
-| **Peer Target** | `http://localhost:8090` | `http://localhost:8083` |
-
-**Peer Forwarding:** If Instance 1 receives a request for a record it does not possess, it internally forwards the request to Instance 2 via HTTP, ensuring transparency for the client.
-
----
-
-## 4. Execution and Installation Guide
-
-### Prerequisites
-* Docker Desktop running.
-* Java 17 installed and configured in PATH.
-
-### Step 1: Support Infrastructure
-```bash
-# In the project root (where docker-compose.yml is located)
-docker compose up -d mongodb rabbitmq
+## Testes e build
+```cmd
+mvnw.cmd -q test
+mvnw.cmd -q -DskipTests package
 ```
 
-### Step 2: Start Instances
-Open two terminals in the `hap-appointmentrecords` folder:
+## CQRS
 
-**Terminal 1 (Instance 1):**
-```bash
-.\start-instance1.bat
-```
+- Na nossa implementação Java com Spring Boot, os conceitos de CQRS foram mapeados da seguinte forma:
+- Os Commands (ex: CreateAppointmentRecord) são representados pelos métodos transacionais no `AppointmentRecordService`, que atuam sobre o modelo de escrita (JPA / base de dados relacional do serviço de registos).
+- As Queries (ex: GetAppointmentRecordById) são representadas pelos métodos de leitura que consultam o modelo de leitura (`AppointmentRecordProjectionRepository` / projeções de leitura em MongoDB).
+- Os DTOs de entrada (por exemplo `AppointmentRecordRequest`) funcionam como objetos de comando.
 
-**Terminal 2 (Instance 2):**
-```bash
-.\start-instance2.bat
-```
-*(Note: The script uses `mvnw spring-boot:run` with specific profiles)*
+## Messaging e Tracing no hap-appointmentrecords
 
----
+Este módulo usa RabbitMQ para consumir eventos de consultas (`AppointmentCreatedEvent`, `AppointmentCompletedEvent`, etc.) e opcionalmente publicar eventos de registos criados (`AppointmentRecordCreatedEvent`).
+Os eventos são consumidos por `AppointmentEventsListener`, que os utiliza principalmente para logging e tracing.
+Além dos logs, o sistema integra com o Zipkin (via Micrometer Tracing) para visualização gráfica das spans e latências. O X-Correlation-Id serve como TraceId, permitindo depurar o fluxo completo: REST Request -> RabbitMQ Consume -> HTTP External Service Call -> MongoDB Write.
 
-## 5. Detailed Testing Roadmap (HTTP & AMQP)
+### Correlation IDs (Tracing de ponta a ponta)
 
-### Test A: Data Isolation (Database per Instance)
+Para permitir rastreio de um pedido entre serviços:
 
-**1. Create Record on Instance 1 (8083)**
-```http
-POST http://localhost:8083/api/appointment-records/APT-001/record
-Content-Type: application/json
+- O controlador `AppointmentRecordController` aceita opcionalmente o header HTTP `X-Correlation-Id`.
+    - Se não existir, gera um UUID e coloca-o no MDC (contexto de logging) sob a mesma chave.
+- O `RabbitTemplate` é configurado em `RabbitMQConfig` com um `beforePublishPostProcessor` que lê o `X-Correlation-Id` do MDC
+  e coloca esse valor nos headers AMQP da mensagem.
+- O `AppointmentEventsListener` lê o header `X-Correlation-Id` da mensagem RabbitMQ, volta a colocá-lo no MDC e inclui o valor nos logs.
 
-{
-  "diagnosis": "Instance 1 Test",
-  "treatmentRecommendations": "Rest",
-  "prescriptions": "Paracetamol",
-  "duration": "00:30:00"
-}
-```
-> **Validation:** Verify in MongoDB Compass or Shell that database `hapappointmentrecords_instance1` contains the record and `...instance2` does **NOT**.
+Desta forma, é possível seguir nos logs o mesmo `X-Correlation-Id` desde o pedido HTTP de criação de registo,
+passando pela publicação do evento (se aplicável) até ao processamento no lado de leitura (MongoDB) e em quaisquer consumidores adicionais
+que usem o mesmo header.
 
-### Test B: Peer Forwarding
+### Perguntas frequentes (Q&A)
 
-**1. Read on Instance 2 (8090) the record created on Instance 1**
-* Get the `recordId` returned in the previous step (e.g., `REC-123`).
-* Execute:
-```http
-GET http://localhost:8090/api/appointment-records/REC-123
-```
-> **Validation:** Should receive `200 OK`. Instance 2 logs should show: `Querying peer: http://localhost:8083...`.
+**Q1: Onde é que se vê CQRS no módulo hap-appointmentrecords?**
+- Comando (escrita): `POST /api/appointment-records/{appointmentId}/record` usa `AppointmentRecordController` + `AppointmentRecordService`, que valida regras de negócio, escreve na base de dados de registos (H2) e atualiza projeções em MongoDB.
+- Query (leitura): `GET /api/appointment-records/{recordId}` usa `AppointmentRecordController` + `AppointmentRecordService`, que lê de `AppointmentRecordProjectionRepository` (MongoDB read model) e devolve um DTO de leitura sem efeitos de escrita.
 
-### Test C: RabbitMQ Integration (Smoke Test)
+**Q2: Onde é que se vê AMQP / message broker?**
+- O `AppointmentEventsListener` consome eventos de consultas do exchange `hap-exchange` via RabbitMQ.
+- Estes eventos são usados principalmente para logging e tracing; o serviço funciona como participante passivo.
+- Opcionalmente, `AppointmentEventsPublisher` pode publicar `AppointmentRecordCreatedEvent` quando um registo é criado (configurável via `hap.events.records.enabled`).
 
-To verify if the listener is receiving events (check logs):
+**Q3: O CQRS e o AMQP substituem o peer-forwarding?**
+- Não. CQRS e AMQP tratam da separação leitura/escrita e da disseminação assíncrona de eventos entre serviços.
+- O peer-forwarding continua a ser usado entre instâncias do mesmo serviço (por exemplo em `GET /api/appointment-records/{recordId}`) para encontrar dados que ainda não foram replicados localmente.
+- Assim, temos dois mecanismos complementares:
+  - Eventos AMQP para sincronização entre componentes diferentes (appointments, records, patients, physicians).
+  - Peer-forwarding HTTP para leitura entre instâncias do mesmo componente quando o dado não existe localmente.
 
-**Example JSON Payload (AppointmentCreatedEvent):**
-```json
-{
-  "appointmentId": "apt-rabbit-01",
-  "patientId": "p1",
-  "physicianId": "d1",
-  "dateTime": "2025-12-10T09:00:00",
-  "consultationType": "FIRST_TIME",
-  "status": "SCHEDULED",
-  "occurredAt": "2025-12-05T10:00:00"
-}
-```
+**Q4: Por que é que o serviço não mantém uma cópia local da entidade Appointment?**
+- Para respeitar o **Single Source of Truth**. Manter cópias de dados de outros serviços cria problemas complexos de sincronização (consistência eventual).
+- Referenciar por ID + consulta em tempo real via HTTP é mais robusto para este caso de uso e evita duplicação de dados.
 
-**PowerShell Command to publish to Exchange:**
-```powershell
-$payload = '{"appointmentId":"apt-rabbit-01", ... (json above) ... }'
-$body = @{ properties = @{}; routing_key = 'appointment.created'; payload = $payload; payload_encoding = 'string' } | ConvertTo-Json
-Invoke-RestMethod -Uri 'http://localhost:15672/api/exchanges/%2F/hap-exchange/publish' -Method Post -Body $body -ContentType 'application/json' -Credential (Get-Credential)
-```
-> **Validation:** Check application logs. It should appear: `Event AppointmentCreatedEvent received | appointmentId=apt-rabbit-01`.
-
----
-
-## 6. Troubleshooting and Common Errors
-
-### "Connection refused" on startup
-* **Cause:** MongoDB or RabbitMQ are not accessible.
-* **Solution:** Check if Docker containers are UP (`docker ps`). Confirm ports 27017 and 5672.
-
-### "Peer request failed" or 404 on Cross-Read
-* **Cause:** The other instance is not running or the peer URL is wrong.
-* **Solution:** Confirm both terminal windows are open and error-free. Check `application.properties` for each profile to confirm `hap.appointmentrecords.peers`.
-
-### Maven Build Errors on Windows
-* **Error:** "mvnw is not recognized..."
-* **Solution:** Use `.\mvnw.cmd` or install Maven globally and use `mvn`. If there are spaces in the folder path, wrap the path in quotes.
-
-### Logs show "CircuitBreaker 'externalService' is OPEN"
-* **Cause:** The `hap-physicians` service (port 8081) is down and the application tried to contact it repeatedly.
-* **Solution:** Start the `hap-physicians` service or wait for the Circuit Breaker to switch to `HALF_OPEN` state (retries after a few seconds).
-
----
-
-## 7. Defense Guide (Q&A)
-
-**Q: Is the system resilient?**
-A: "Yes. At the data level, instance isolation prevents cascading corruption. At the communication level, we use **Circuit Breakers** on HTTP calls to the physician service, ensuring our service doesn't block if theirs fails."
-
-**Q: Why did you remove the local Appointment table?**
-A: "To respect the **Single Source of Truth**. Keeping copies of data from other services creates complex synchronization issues (eventual consistency). Reference by ID + real-time query is more robust for this use case."
-
-**Q: What happens if RabbitMQ goes down?**
-A: "Since we are **passive participants** (we use events only for logging/tracing), the core functionality of the system (creating and reading clinical records) **continues to work at 100%**. We only lose real-time observability of scheduling events."
+**Q5: O que acontece se o serviço hap-physicians estiver indisponível?**
+- O Circuit Breaker (Resilience4j) aplicado nas chamadas HTTP via `ExternalServiceClient` previne que o serviço fique bloqueado.
+- Quando o Circuit Breaker está aberto, as chamadas falham rapidamente sem esperar timeouts, permitindo que o serviço continue a funcionar para outras operações.
+- Algumas funcionalidades que dependem de dados do hap-physicians podem estar limitadas, mas o serviço não fica completamente indisponível.
