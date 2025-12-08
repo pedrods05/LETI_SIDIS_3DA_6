@@ -15,7 +15,7 @@ A ordem de resolução é:
 2. **Cache Local/Write Model (SQL):** Fonte de verdade local.
 3. **Peer Forwarding (HTTP):** Consulta direta síncrona a outras instâncias conhecidas do mesmo serviço.
 
-Justificativa
+Justificação
 ------------
 - **Teorema CAP:** Em caso de falha parcial, priorizamos a **Disponibilidade (Availability)** sobre a Consistência imediata.
 - **Redundância:** Se a base de dados local de uma instância falhar, ela pode atuar como *proxy* para uma instância saudável.
