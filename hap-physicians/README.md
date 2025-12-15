@@ -35,6 +35,32 @@ mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=instance2
 - GET  /appointments/{id}/audit-trail
 - POST /appointments/{id}/notes
 
+## Testes
+
+### Executar todos os testes
+```bash
+mvn test
+```
+
+### Executar testes específicos
+```bash
+mvn test -Dtest=PhysicianControllerTest
+mvn test -Dtest=AppointmentServiceTest
+mvn test -Dtest=ExternalServiceClientTest
+```
+
+### Cobertura de Testes
+O módulo contém **12 classes de teste** cobrindo:
+- ✅ Controllers (REST endpoints para médicos e consultas)
+- ✅ Services (business logic + CQRS commands/queries)
+- ✅ External Service Client (comunicação HTTP entre serviços)
+- ✅ Utilities (validação de horários, cálculo de slots)
+- ✅ Models & DTOs (enums, DTOs de resposta)
+- ✅ Exception Handling
+- ✅ HTTP Client Configuration
+
+📄 **Documentação completa dos testes:** [TEST_DOCUMENTATION.md](./TEST_DOCUMENTATION.md)
+
 ## Colaboração entre serviços (HTTP/REST)
 
 - **hap-patients**: GET http://localhost:{8082|8088}/patients/{id} ou /internal/patients/{id}
