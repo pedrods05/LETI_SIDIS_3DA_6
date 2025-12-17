@@ -1,237 +1,237 @@
-# Test Documentation - hap-physicians Module
+# Documentação de Testes - Módulo hap-physicians
 
-## Overview
-This document provides documentation of the main unit and integration tests in the hap-physicians module, organized by functionality and architectural patterns.
+## Visão Geral
+Este documento fornece documentação dos principais testes unitários e de integração no módulo hap-physicians, organizados por funcionalidade e padrões arquiteturais.
 
-**Last Updated:** December 8, 2025  
-**Total Test Classes:** 12  
-**Test Coverage Areas:** API Controllers, Services, Repositories, Events, Configuration, Models, Utilities, Integration
-
----
-
-## Table of Contents
-1. [API Layer Tests](#api-layer-tests)
-2. [Service Layer Tests](#service-layer-tests)
-3. [HTTP Client Tests](#http-client-tests)
-4. [Model / DTO Tests](#model--dto-tests)
-5. [Utility Tests](#utility-tests)
-6. [Exception Handling Tests](#exception-handling-tests)
-7. [Running the Tests](#running-the-tests)
+**Última Atualização:** 8 de Dezembro de 2025  
+**Total de Classes de Teste:** 12  
+**Áreas de Cobertura de Testes:** API Controllers, Services, Repositories, Events, Configuration, Models, Utilities, Integration
 
 ---
 
-## API Layer Tests
+## Índice
+1. [Testes da Camada API](#testes-da-camada-api)
+2. [Testes da Camada de Serviços](#testes-da-camada-de-serviços)
+3. [Testes de Cliente HTTP](#testes-de-cliente-http)
+4. [Testes de Model / DTO](#testes-de-model--dto)
+5. [Testes de Utilitários](#testes-de-utilitários)
+6. [Testes de Tratamento de Exceções](#testes-de-tratamento-de-exceções)
+7. [Executar os Testes](#executar-os-testes)
+
+---
+
+## Testes da Camada API
 
 ### 1. PhysicianControllerTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/api/PhysicianControllerTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/api/PhysicianControllerTest.java`
 
-**Purpose:** Tests the main physician endpoints exposed to external consumers.
+**Propósito:** Testa os principais endpoints de médicos expostos a consumidores externos.
 
-**Typical Scenarios Covered:**
-- Successful retrieval of a physician by id
-- Successful registration of a new physician
-- Successful update of physician information
-- Calculation and retrieval of available appointment slots
-- Behaviour when the physician does not exist (404)
-- Response structure (DTO fields) and HTTP status codes for the happy path and error paths
-- Integration with command and query services (CQRS pattern)
+**Cenários Típicos Cobertos:**
+- Recuperação bem-sucedida de um médico por id
+- Registo bem-sucedido de um novo médico
+- Atualização bem-sucedida de informações do médico
+- Cálculo e recuperação de slots de consulta disponíveis
+- Comportamento quando o médico não existe (404)
+- Estrutura de resposta (campos DTO) e códigos de estado HTTP para caminhos de sucesso e erro
+- Integração com serviços de comando e query (padrão CQRS)
 
-**Key Concerns:**
-- Correct HTTP status codes (200, 201, 404, 5xx)
-- Delegation to the service / command / query layer instead of duplicating business logic
-- Proper use of CQRS pattern (commands for writes, queries for reads)
+**Preocupações Principais:**
+- Códigos de estado HTTP corretos (200, 201, 404, 5xx)
+- Delegação para a camada de serviço / comando / query em vez de duplicar lógica de negócio
+- Uso adequado do padrão CQRS (comandos para escrita, queries para leitura)
 
 ---
 
 ### 2. AppointmentControllerTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/api/AppointmentControllerTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/api/AppointmentControllerTest.java`
 
-**Purpose:** Tests HTTP endpoints responsible for managing appointments (scheduling, updating, canceling, retrieving).
+**Propósito:** Testa endpoints HTTP responsáveis pela gestão de consultas (agendamento, atualização, cancelamento, recuperação).
 
-**Typical Scenarios Covered:**
-- Successful creation of an appointment
-- Successful retrieval of appointment details
-- Successful update of appointment information
-- Successful cancellation of an appointment
-- Retrieval of audit trail for an appointment (Event Sourcing)
-- Validation errors (missing required fields, invalid formats) and resulting 400 responses
-- Interaction with command and query services (CQRS pattern)
-- Integration with EventStoreService for audit trail
+**Cenários Típicos Cobertos:**
+- Criação bem-sucedida de uma consulta
+- Recuperação bem-sucedida de detalhes de consulta
+- Atualização bem-sucedida de informações de consulta
+- Cancelamento bem-sucedido de uma consulta
+- Recuperação do trilho de auditoria de uma consulta (Event Sourcing)
+- Erros de validação (campos obrigatórios em falta, formatos inválidos) e respostas 400 resultantes
+- Interação com serviços de comando e query (padrão CQRS)
+- Integração com EventStoreService para funcionalidade de trilho de auditoria
 
-**Key Concerns:**
-- Correct HTTP status codes (200, 201, 400, 404, 5xx)
-- Proper use of CQRS pattern (commands for writes, queries for reads)
-- Event sourcing integration for audit trail functionality
+**Preocupações Principais:**
+- Códigos de estado HTTP corretos (200, 201, 400, 404, 5xx)
+- Uso adequado do padrão CQRS (comandos para escrita, queries para leitura)
+- Integração de event sourcing para funcionalidade de trilho de auditoria
 
 ---
 
-## Service Layer Tests
+## Testes da Camada de Serviços
 
 ### 3. PhysicianServiceTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/services/PhysicianServiceTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/services/PhysicianServiceTest.java`
 
-**Purpose:** Tests core physician business logic including registration, retrieval, and updates.
+**Propósito:** Testa a lógica de negócio principal dos médicos, incluindo registo, recuperação e atualizações.
 
-**Typical Scenarios Covered:**
-- Getting physician details when they exist
-- Registering a new physician with valid data
-- Updating physician information
-- Searching physicians by name or specialty
-- Behaviour when the physician does not exist
-- Integration with repositories and external services
+**Cenários Típicos Cobertos:**
+- Obter detalhes do médico quando existem
+- Registar um novo médico com dados válidos
+- Atualizar informações do médico
+- Pesquisar médicos por nome ou especialidade
+- Comportamento quando o médico não existe
+- Integração com repositórios e serviços externos
 
 ---
 
 ### 4. AppointmentServiceTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/services/AppointmentServiceTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/services/AppointmentServiceTest.java`
 
-**Purpose:** Tests the appointment business logic, including scheduling, validation, and integration with other services.
+**Propósito:** Testa a lógica de negócio das consultas, incluindo agendamento, validação e integração com outros serviços.
 
-**Typical Scenarios Covered:**
-- Successful appointment creation flow with validations
-- Appointment retrieval with patient and record details
-- Appointment updates and cancellations
-- Handling of time slot conflicts
-- Integration with external services (patients, appointment records)
-- Validation of appointment time slots against physician working hours
-- Handling of appointment status transitions
+**Cenários Típicos Cobertos:**
+- Fluxo de criação bem-sucedida de consulta com validações
+- Recuperação de consulta com detalhes de paciente e registo
+- Atualizações e cancelamentos de consultas
+- Tratamento de conflitos de slots de tempo
+- Integração com serviços externos (pacientes, registos de consultas)
+- Validação de slots de tempo de consulta contra horários de trabalho do médico
+- Tratamento de transições de estado de consulta
 
-**Key Concerns:**
-- Business rule validation (time slots, physician availability)
-- Integration with ExternalServiceClient for cross-service communication
-- Proper error handling for external service failures
+**Preocupações Principais:**
+- Validação de regras de negócio (slots de tempo, disponibilidade do médico)
+- Integração com ExternalServiceClient para comunicação entre serviços
+- Tratamento adequado de erros para falhas de serviços externos
 
 ---
 
 ### 5. ExternalServiceClientTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/services/ExternalServiceClientTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/services/ExternalServiceClientTest.java`
 
-**Purpose:** Tests the HTTP client used for inter-service communication with hap-patients, hap-auth, and hap-appointmentrecords.
+**Propósito:** Testa o cliente HTTP usado para comunicação entre serviços com hap-patients, hap-auth e hap-appointmentrecords.
 
-**Typical Scenarios Covered:**
-- Successful retrieval of patient data from hap-patients
-- Successful retrieval of appointment records from hap-appointmentrecords
-- User registration and validation with hap-auth
-- Peer URL configuration and retrieval
-- Error handling for external service failures
-- Circuit breaker behaviour (when applicable)
+**Cenários Típicos Cobertos:**
+- Recuperação bem-sucedida de dados de pacientes do hap-patients
+- Recuperação bem-sucedida de registos de consultas do hap-appointmentrecords
+- Registo e validação de utilizadores com hap-auth
+- Configuração e recuperação de URLs de peers
+- Tratamento de erros para falhas de serviços externos
+- Comportamento do circuit breaker (quando aplicável)
 
-**Key Concerns:**
-- Correct HTTP calls to external services
-- Proper error handling and exception translation
-- Resilience patterns (circuit breaker, retries)
+**Preocupações Principais:**
+- Chamadas HTTP corretas para serviços externos
+- Tratamento adequado de erros e tradução de exceções
+- Padrões de resiliência (circuit breaker, retries)
 
 ---
 
-## HTTP Client Tests
+## Testes de Cliente HTTP
 
 ### 6. ResilientRestTemplateTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/http/ResilientRestTemplateTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/http/ResilientRestTemplateTest.java`
 
-**Purpose:** Tests the HTTP client / RestTemplate configuration for inter‑service calls.
+**Propósito:** Testa a configuração do cliente HTTP / RestTemplate para chamadas entre serviços.
 
-**Typical Scenarios Covered:**
-- Presence of interceptors for adding headers (e.g. auth token, correlation ID)
-- Basic timeout / error handling configuration
-- Retry logic for transient failures
+**Cenários Típicos Cobertos:**
+- Presença de interceptores para adicionar headers (ex: token de autenticação, correlation ID)
+- Configuração básica de timeout / tratamento de erros
+- Lógica de retry para falhas transitórias
 
 ---
 
-## Model / DTO Tests
+## Testes de Model / DTO
 
 ### 7. AppointmentDetailsDTOTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/dto/output/AppointmentDetailsDTOTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/dto/output/AppointmentDetailsDTOTest.java`
 
-**Purpose:** Tests the DTO used for returning appointment details in API responses.
+**Propósito:** Testa o DTO usado para retornar detalhes de consultas em respostas da API.
 
-**Typical Scenarios Covered:**
-- Creation of DTO objects with all relevant fields
-- Getter/setter / Lombok behaviour
-- Mapping from domain entities to DTOs
+**Cenários Típicos Cobertos:**
+- Criação de objetos DTO com todos os campos relevantes
+- Comportamento de getter/setter / Lombok
+- Mapeamento de entidades de domínio para DTOs
 
 ---
 
 ### 8. ConsultationTypeTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/model/ConsultationTypeTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/model/ConsultationTypeTest.java`
 
-**Purpose:** Tests the ConsultationType enum used to categorize appointments.
+**Propósito:** Testa o enum ConsultationType usado para categorizar consultas.
 
-**Typical Scenarios Covered:**
-- Enum value validation
-- String conversion and parsing
+**Cenários Típicos Cobertos:**
+- Validação de valores do enum
+- Conversão e parsing de strings
 
 ---
 
 ### 9. AppointmentStatusTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/model/AppointmentStatusTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/model/AppointmentStatusTest.java`
 
-**Purpose:** Tests the AppointmentStatus enum used to track appointment lifecycle.
+**Propósito:** Testa o enum AppointmentStatus usado para rastrear o ciclo de vida das consultas.
 
-**Typical Scenarios Covered:**
-- Enum value validation
-- Status transition validation
-- String conversion and parsing
+**Cenários Típicos Cobertos:**
+- Validação de valores do enum
+- Validação de transições de estado
+- Conversão e parsing de strings
 
 ---
 
-## Utility Tests
+## Testes de Utilitários
 
 ### 10. AppointmentTimeValidatorTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/util/AppointmentTimeValidatorTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/util/AppointmentTimeValidatorTest.java`
 
-**Purpose:** Tests the utility class responsible for validating appointment time slots.
+**Propósito:** Testa a classe utilitária responsável por validar slots de tempo de consultas.
 
-**Typical Scenarios Covered:**
-- Validation of time slots within physician working hours
-- Detection of overlapping appointments
-- Validation of appointment times in the future
-- Handling of edge cases (boundary times, timezone considerations)
+**Cenários Típicos Cobertos:**
+- Validação de slots de tempo dentro dos horários de trabalho do médico
+- Deteção de consultas sobrepostas
+- Validação de tempos de consulta no futuro
+- Tratamento de casos extremos (tempos limite, considerações de timezone)
 
 ---
 
 ### 11. SlotCalculatorTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/util/SlotCalculatorTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/util/SlotCalculatorTest.java`
 
-**Purpose:** Tests the utility class responsible for calculating available appointment slots.
+**Propósito:** Testa a classe utilitária responsável por calcular slots de consulta disponíveis.
 
-**Typical Scenarios Covered:**
-- Calculation of available slots based on physician working hours
-- Exclusion of already booked time slots
-- Handling of different slot durations
-- Edge cases (no available slots, all slots available)
+**Cenários Típicos Cobertos:**
+- Cálculo de slots disponíveis com base nos horários de trabalho do médico
+- Exclusão de slots de tempo já reservados
+- Tratamento de diferentes durações de slots
+- Casos extremos (sem slots disponíveis, todos os slots disponíveis)
 
 ---
 
-## Exception Handling Tests
+## Testes de Tratamento de Exceções
 
 ### 12. GlobalExceptionHandlerTest
-**File:** `src/test/java/leti_sisdis_6/happhysicians/exceptions/GlobalExceptionHandlerTest.java`
+**Ficheiro:** `src/test/java/leti_sisdis_6/happhysicians/exceptions/GlobalExceptionHandlerTest.java`
 
-**Purpose:** Tests the `@ControllerAdvice` that centralises error handling for the module.
+**Propósito:** Testa o `@ControllerAdvice` que centraliza o tratamento de erros para o módulo.
 
-**Typical Scenarios Covered:**
-- Validation errors translated to HTTP 400 with structured error information
-- Not‑found scenarios mapped to 404
-- Conflict scenarios mapped to 409
-- External service communication errors mapped to appropriate status codes
-- Generic exception handling for unexpected errors
+**Cenários Típicos Cobertos:**
+- Erros de validação traduzidos para HTTP 400 com informações de erro estruturadas
+- Cenários de não encontrado mapeados para 404
+- Cenários de conflito mapeados para 409
+- Erros de comunicação com serviços externos mapeados para códigos de estado apropriados
+- Tratamento genérico de exceções para erros inesperados
 
 ---
 
-## Running the Tests
+## Executar os Testes
 
-From the root of the `hap-physicians` module you can run all tests with Maven:
+A partir da raiz do módulo `hap-physicians` pode executar todos os testes com Maven:
 
 ```bash
 mvn test
 ```
 
-### Run Tests in IntelliJ
-- Right-click on `src/test/java` → **Run 'All Tests'**
-- Right-click on a specific test class → **Run 'ClassNameTest'**
-- Use `Ctrl+Shift+F10` to run the test at cursor
+### Executar Testes no IntelliJ
+- Clique com o botão direito em `src/test/java` → **Run 'All Tests'**
+- Clique com o botão direito numa classe de teste específica → **Run 'ClassNameTest'**
+- Use `Ctrl+Shift+F10` para executar o teste no cursor
 
-### Run Specific Test Classes
+### Executar Classes de Teste Específicas
 ```bash
 mvn test -Dtest=PhysicianControllerTest
 mvn test -Dtest=AppointmentServiceTest
