@@ -98,6 +98,17 @@ Para cumprir os requisitos de resiliência e usabilidade, adotámos uma abordage
 * **RabbitMQ → Serviço (Outros/Query):** AMQP (Processamento em background).
 
 Esta separação assegura que o sistema é responsivo para o utilizador, mas resiliente e escalável nos processos internos.
+### 5.4. RabbitMQ
+
+O RabbitMQ atua como o barramento de eventos assíncrono da plataforma HAP. A sua principal função é desacoplar o processo de escrita (transacional/síncrono) dos processos de leitura e integração, garantindo que a experiência do utilizador permanece rápida e que o sistema é resiliente a falhas parciais.
+* **Comunicação Assíncrona:** Desacoplamento temporal entre serviços (Fire-and-Forget).
+* **Suporte ao CQRS:** Ponte de sincronização entre Base de Dados Relacional (Write) e MongoDB (Read).
+* **Consistência Eventual:** Prioridade à disponibilidade e baixa latência na escrita.
+- **Fluxo de dados:**
+* **Produtor:** Serviço executa transação local (SQL) → Publica Evento
+* **Broker:** RabbitMQ encaminha mensagem para as filas baseadas na Routing Key.
+* **Consumidor:** Listener recebe JSON → Atualiza Projeção no MongoDB.
+
 ## 6. Gestão de Transações Distribuídas: Saga Pattern
 Como as bases de dados estão isoladas por serviço, não podemos utilizar transações ACID globais. Adotámos o padrão **Saga baseada em Coreografia** para garantir a consistência eventual dos dados entre serviços.
 
