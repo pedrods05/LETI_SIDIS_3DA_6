@@ -147,6 +147,25 @@ Este módulo usa RabbitMQ para publicar eventos sempre que um médico é regista
 Os eventos são consumidos localmente por `PhysicianEventHandler` e `AppointmentEventHandler`, que atualizam o modelo de leitura em MongoDB (`PhysicianSummary`, `AppointmentSummary`).
 Além dos logs, o sistema integra com o Zipkin (via Micrometer Tracing) para visualização gráfica das spans e latências. O X-Correlation-Id serve como TraceId, permitindo depurar o fluxo completo: REST Request -> RabbitMQ Publish -> RabbitMQ Consume -> MongoDB Write.
 
+## Observability Integration
+
+O módulo implementa observabilidade completa com:
+- **Logging estruturado** (pronto para ELK Stack)
+- **Métricas customizadas** (Prometheus + Grafana)
+- **Distributed Tracing** (Zipkin)
+- **Health Probes** (Liveness e Readiness)
+- **Resilience Patterns** (Circuit Breaker, Retry, Timeout, Bulkhead)
+
+**Documentação completa**: [OBSERVABILITY.md](./OBSERVABILITY.md)
+
+### Endpoints de Observabilidade:
+- **Health**: `http://localhost:8081/actuator/health`
+- **Liveness**: `http://localhost:8081/actuator/health/liveness`
+- **Readiness**: `http://localhost:8081/actuator/health/readiness`
+- **Metrics**: `http://localhost:8081/actuator/metrics`
+- **Prometheus**: `http://localhost:8081/actuator/prometheus`
+- **Zipkin**: `http://localhost:9411`
+
 ### Correlation IDs (Tracing de ponta a ponta)
 
 Para permitir rastreio de um pedido entre serviços:
