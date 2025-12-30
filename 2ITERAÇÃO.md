@@ -14,6 +14,7 @@ Write Side (Commands): Responsável pela validação de regras de negócio e per
 - PUT /appointments/{id} → Command: UpdateAppointment
 - PUT /appointments/{id}/cancel → Command: CancelAppointment
 - POST /api/appointment-records/{id}/record → Command: CreateAppointmentRecord
+
 Read Side (Queries): Responsável por servir dados rapidamente ao cliente, utilizando projeções de dados desnormalizadas.
 - GET /patients/{id} → Query: GetPatientById
 - GET /physicians/{id} → Query: GetPhysicianById
@@ -25,7 +26,8 @@ No nosso protótipo, o modelo de leitura em MongoDB é utilizado principalmente 
 ## 2. Database per service
 - Cada microserviço (Auth, Patients, Physicians, AppointmentRecords) possui a sua própria base de dados de escrita (H2/relacional em dev, equivalente a PostgreSQL/SQL Server em produção) e, quando aplicável, a sua própria base de dados de leitura (MongoDB).
 - Não existe acesso direto entre bases de dados; os serviços comunicam exclusivamente por HTTP/REST ou eventos AMQP (RabbitMQ).
-- Nota sobre Persistência e Ciclo de Vida dos Dados:
+
+Nota sobre Persistência e Ciclo de Vida dos Dados:
 - Ambiente de Desenvolvimento (Write Model): Utilizamos H2 em memória. Isto significa que a base de dados "vive" dentro da instância do microserviço.
 - Consequência: Se a instância for desligada ou reiniciada, os dados relacionais perdem-se. Cada nova instância arranca com uma base de dados vazia (ou recriada pelo DataBootstrap). Não há partilha de dados entre instâncias do mesmo serviço (daí a necessidade do Peer-Forwarding ou Data Seeding).
 - Ambiente de Desenvolvimento (Read Model): Utilizamos MongoDB em contentor Docker.
