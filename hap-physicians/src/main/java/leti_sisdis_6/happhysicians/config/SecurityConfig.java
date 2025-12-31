@@ -101,6 +101,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/",
                     "/physicians/register",
+                    // /internal/** endpoints are protected by mTLS - only services with valid certificates can access
+                    // The mTLS configuration (server.ssl.client-auth=need) ensures only authenticated services can call these
                     "/internal/**",
                     "/h2-console/**",
                     "/swagger-ui.html",
