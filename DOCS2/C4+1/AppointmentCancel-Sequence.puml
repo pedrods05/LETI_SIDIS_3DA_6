@@ -104,5 +104,13 @@ end
 
 deactivate EventHandler
 
+note right of Controller
+  Este diagrama mostra o cancelamento de uma consulta.
+  O status é atualizado para CANCELED no write model
+  e um evento é publicado no RabbitMQ. O handler
+  atualiza o read model (MongoDB) preservando todos
+  os campos originais e apenas alterando o status.
+end note
+
 @enduml
 

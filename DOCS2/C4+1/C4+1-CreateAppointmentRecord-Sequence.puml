@@ -1,0 +1,93 @@
+@startuml
+' C4+1 — Create Appointment Record (aligned with code)
+skinparam dpi 150
+skinparam shadowing false
+skinparam DefaultFontName Arial
+
+title C4: Sequence Diagram - Create Appointment Record
+
+actor "Physician Client" as C
+participant "Spring Security" as SEC
+participant "AppointmentRecordController" as ARC
+participant "AppointmentRecordService" as ARS
+participant "hap-physicians API (external)" as HPHY
+participant "MongoDB (Write Model)" as MONGO_W
+participant "MongoDB (Projection Read Model)" as MONGO_R
+participant "RabbitMQ Exchange" as RMQ
+
+autonumber
+activate C
+' ---- Request & Security Gate ----
+C -> ARC : POST /api/appointment-records/{appointmentId}/record\nAuthorization, X-User-Id (physicianId), body: AppointmentRecordRequest
+activate ARC
+ARC -> SEC : hasAuthority('PHYSICIAN') ?
+activate SEC
+alt Authorized
+  SEC --> ARC : allow
+  deactivate SEC
+else Not authorized
+  SEC --> C : 403 Forbidden + {"error": "..."}\n(Spring Security)
+  deactivate SEC
+  deactivate ARC
+  return
+end
+
+' ---- Controller -> Service ----
+activate ARC
+ARC -> ARS : createRecord(appointmentId, request, physicianId)
+activate ARS
+
+' ---- External validation & normalization ----
+ARS -> HPHY : GET /appointments/{appointmentId}\n(+ Authorization header)
+activate HPHY
+alt Appointment exists
+  HPHY --> ARS : 200 OK + { patientId, physicianId | physician: { physicianId } }
+  deactivate HPHY
+  ARS -> ARS : normalize physicianId if nested under physician{}
+else Appointment not found
+  HPHY --> ARS : 404 Not Found
+  deactivate HPHY
+end
+
+' ---- Authorization & duplicate guard ----
+ARS -> ARS : if appointmentPhysicianId != physicianId -> throw UnauthorizedException
+ARS -> ARS : if record exists for appointmentId -> throw IllegalStateException (conflict)
+ARS -> ARS : if patientId missing -> throw NotFoundException
+
+' ---- Persist write model ----
+ARS -> MONGO_W : save AppointmentRecord(recordId, appointmentId, diagnosis, ...)
+MONGO_W --> ARS : ack
+
+' ---- Persist projection read model ----
+ARS -> MONGO_R : save AppointmentRecordProjection(recordId, appointmentId, patientId, physicianId, diagnosis, ...)
+MONGO_R --> ARS : ack
+
+' ---- Publish event via RabbitMQ ----
+ARS -> RMQ : publish AppointmentRecordCreatedEvent(recordId, appointmentId, patientId, physicianId, timestamp)
+RMQ --> ARS : ack
+
+' ---- Outcomes mapped às exceções/HTTP do controller ----
+alt Created successfully
+  ARS --> ARC : AppointmentRecordResponse(recordId, appointmentId, message)
+  deactivate ARS
+  ARC --> C : 201 Created + AppointmentRecordResponse
+else NotFoundException
+  ARS --> ARC : throw NotFoundException(msg)
+  deactivate ARS
+  ARC --> C : 404 Not Found + {"error": msg}
+else UnauthorizedException
+  ARS --> ARC : throw UnauthorizedException(msg)
+  deactivate ARS
+  ARC --> C : 403 Forbidden + {"error": msg}
+else IllegalStateException (conflict)
+  ARS --> ARC : throw IllegalStateException(msg)
+  deactivate ARS
+  ARC --> C : 409 Conflict + {"error": msg}
+else Unexpected Exception
+  ARS --> ARC : throw Exception(e)
+  deactivate ARS
+  ARC --> C : 500 Internal Server Error\n+ {"error": "External service communication error: ..."}
+  deactivate ARC
+end
+
+@enduml

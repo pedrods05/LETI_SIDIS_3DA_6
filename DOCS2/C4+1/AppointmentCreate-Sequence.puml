@@ -74,27 +74,60 @@ end note
 RabbitMQ -> EventHandler: AppointmentCreatedEvent
 activate RabbitMQ
 activate EventHandler
-EventHandler -> WriteRepo: findById(appointmentId)
-activate WriteRepo
-WriteRepo --> EventHandler: Optional<Appointment>
-deactivate WriteRepo
 
-alt Appointment not CANCELED in write model
+EventHandler -> ReadRepo: findById(appointmentId)
+activate ReadRepo
+ReadRepo --> EventHandler: Optional<AppointmentSummary>
+deactivate ReadRepo
+
+alt Summary exists
+    EventHandler -> WriteRepo: findById(appointmentId)
+    activate WriteRepo
+    WriteRepo --> EventHandler: Optional<Appointment>
+    deactivate WriteRepo
+
+    alt Appointment found and status is CANCELED
+        EventHandler -> EventHandler: Ignore old creation event
+        note right of EventHandler
+          Prevents overwriting with
+          outdated events
+        end note
+    else Appointment found and status different from event
+        EventHandler -> EventHandler: Update summary with write model data
+        EventHandler -> ReadRepo: save(AppointmentSummary)
+        activate ReadRepo
+        ReadRepo --> EventHandler: Saved
+        deactivate ReadRepo
+    else Appointment not found
+        EventHandler -> EventHandler: Create new summary from event
+        EventHandler -> ReadRepo: save(AppointmentSummary)
+        activate ReadRepo
+        ReadRepo --> EventHandler: Saved
+        deactivate ReadRepo
+    end
+else Summary doesn't exist
+    EventHandler -> EventHandler: Create new summary from event
     EventHandler -> ReadRepo: save(AppointmentSummary)
     activate ReadRepo
     ReadRepo --> EventHandler: Saved
     deactivate ReadRepo
-    EventHandler -> EventHandler: Update MongoDB read model
-else Appointment is CANCELED
-    EventHandler -> EventHandler: Ignore old creation event
 end
 
-deactivate EventHandler
-
+EventHandler -> EventHandler: Update MongoDB read model
 RabbitMQ -> ReminderHandler: AppointmentReminderEvent
+deactivate EventHandler
 deactivate RabbitMQ
 activate ReminderHandler
 ReminderHandler -> ReminderHandler: sendReminderEmail(event)
 ReminderHandler -> ReminderHandler: Log reminder details
+deactivate ReminderHandler
+
+note right of Controller
+  Este diagrama mostra a criação de uma nova consulta.
+  A consulta é salva no write model (H2) e eventos são
+  publicados no RabbitMQ para atualizar o read model
+  (MongoDB) e enviar lembretes ao paciente.
+end note
+
 @enduml
 

@@ -1,66 +1,101 @@
 @startuml
-' C2 - Containers diagram for HAP (Version 2 - CQRS & Messaging)
 skinparam dpi 150
 skinparam shadowing false
-skinparam ArrowColor #555555
-skinparam ArrowThickness 1.2
-skinparam RectangleBorderColor #2E3440
-skinparam RectangleBackgroundColor #ECEFF4
-skinparam DefaultFontName Arial
-skinparam DefaultFontSize 12
-left to right direction
+skinparam linetype ortho
+skinparam roundcorner 15
 
-title C2 — Containers (HAP) - Arquitetura v2 (CQRS + RabbitMQ)
+skinparam nodesep 110
+skinparam ranksep 100
 
-rectangle "Physicians Service\n(hap-physicians)\nPorts: 8081, 8087" as Physicians #A3BE8C
-rectangle "Patients Service\n(hap-patients)\nPorts: 8082, 8088" as Patients #88C0D0
-rectangle "Auth Service\n(hap-auth)\nPorts: 8084, 8089" as Auth #EBCB8B
-rectangle "Appointment Records Service\n(hap-appointmentrecords)\nPorts: 8083, 8090" as Records #D08770
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
 
-rectangle "Message Broker\n(RabbitMQ)\nPorts: 5672, 15672" as Broker #BF616A
+skinparam rectangle {
+    BackgroundColor<<Service>> #88C0D0
+    BorderColor<<Service>> #5E81AC
+    BackgroundColor<<Infra>> #BF616A
+    BorderColor<<Infra>> #4C566A
+    BackgroundColor<<Auth>> #EBCB8B
+    BorderColor<<Auth>> #D08770
+    FontColor #2E3440
+}
 
-Physicians -[hidden]-> Patients
-Patients   -[hidden]-> Auth
-Records    -[hidden]-> Broker
+skinparam database {
+    BackgroundColor #A3BE8C
+    BorderColor #4C566A
+    FontColor #2E3440
+}
 
-Physicians --> Auth : HTTP/REST (Validação/Login)
-Patients --> Auth : HTTP/REST (Registo de Conta)
-Records --> Auth : HTTP/REST (Validação de Token)
+skinparam arrow {
+    Color #4C566A
+    Thickness 1.2
+}
 
-Patients --> Broker : AMQP (Publish: PatientRegistered)
-Physicians --> Broker : AMQP (Publish: AppointmentScheduled, Canceled...)
-Records --> Broker : AMQP (Publish: RecordCreated)
+title **C2 — Containers (HAP)**\nArquitetura v2
 
-' (Tracejado para diferenciar do fluxo de pedido direto)
-Broker .u.> Patients : AMQP (Consume: Atualizar MongoDB Local)
-Broker .u.> Physicians : AMQP (Consume: Atualizar MongoDB / Saga Compensations)
-Broker .u.> Records : AMQP (Consume: Sincronizar dados)
+' -- Camada 1: Segurança --
+rectangle "Auth Service\nPorts: 8084, 8089" as Auth <<Auth>>
 
-' Legenda Atualizada
-legend top left
-Protocolos & Padrões (v2):
-- HTTP/REST (Síncrono):
-  Usado para autenticação crítica e APIs externas.
-- AMQP (Assíncrono):
-  Usado para comunicação interna, CQRS e Sagas.
+' -- Camada 2: Serviços de Negócio --
+rectangle "Physicians Service\nPorts: 8081, 8087" as Physicians <<Service>>
+rectangle "Patients Service\nPorts: 8082, 8088" as Patients <<Service>>
+rectangle "Records Service\nPorts: 8083, 8090" as Records <<Service>>
 
-Armazenamento (Implícito):
-- Cada serviço tem:
-  1. Write DB (SQL/H2) para Comandos
-  2. Read DB (MongoDB) para Queries
-endlegend
+' -- Camada 3: Dados (MongoDB) --
+' Posicionados logo abaixo dos serviços para indicar pertença
+database "Mongo DB\n(Read Model)" as DB_Phys
+database "Mongo DB\n(Read Model)" as DB_Pat
+database "Mongo DB\n(Read Model)" as DB_Rec
+
+' -- Camada 4: Infraestrutura Partilhada --
+rectangle "Infraestrutura Partilhada" {
+    rectangle "Message Broker\n(RabbitMQ)" as Broker <<Infra>>
+    rectangle "Tracing\n(Zipkin)" as Zipkin <<Infra>>
+}
+
+' -- Alinhamentos Horizontais (Hidden) para forçar o layout --
+Physicians -[hidden]r- Patients
+Patients -[hidden]r- Records
+
+DB_Phys -[hidden]r- DB_Pat
+DB_Pat -[hidden]r- DB_Rec
+
+' -- Conexões HTTP (Topo) --
+Physicians -u-> Auth : HTTP
+Patients -u-> Auth : HTTP
+Records -u-> Auth : HTTP
+
+Physicians <--> Patients : HTTP
+Physicians <--> Records : HTTP
+Records <--> Patients : HTTP
+
+' -- Conexões de Base de Dados (Verticais Curtas) --
+Physicians -d-> DB_Phys : Grava/Lê
+Patients -d-> DB_Pat : Grava/Lê
+Records -d-> DB_Rec : Grava/Lê
+
+' -- Conexões Assíncronas (AMQP) --
+' As linhas passam "por trás" ou ao lado das DBs
+Physicians -[#D08770,dashed]d-> Broker : Pub
+Patients -[#D08770,dashed]d-> Broker : Pub
+Records -[#D08770,dashed]d-> Broker : Pub
+
+Broker -[#D08770,dotted]u-> Physicians : Sub
+Broker -[#D08770,dotted]u-> Patients : Sub
+Broker -[#D08770,dotted]u-> Records : Sub
+
+' -- Tracing (Mantido discreto) --
+' Nota: Liguei às DBs visualmente ou aos serviços para limpar
+Physicians -[#D8DEE9]d-> Zipkin
+Patients -[#D8DEE9]d-> Zipkin
+Auth -[#D8DEE9]d-> Zipkin
+Records -[#D8DEE9]d-> Zipkin
 
 legend right
-Fluxo de Eventos (Exemplos):
-- Patients → Broker: "Novo Paciente Criado"
-- Broker → Patients: Listener grava no Mongo (CQRS)
-- Broker → Physicians: Listener copia dados para cache local
-- Physicians → Broker: "Consulta Cancelada"
-- Broker → Patients: Atualiza histórico do paciente
+  <color:#4C566A>───</color>  **HTTP** (Síncrono)
+  <color:#4C566A>═══</color>  **Database** (Persistência)
+  <color:#D08770>- - -</color>  **AMQP** (Pub - Escrita)
+  <color:#D08770>......</color>  **AMQP** (Sub - Leitura)
+  <color:#D8DEE9>───</color>  Zipkin
 endlegend
-
-note bottom of Broker
-RabbitMQ Cluster
-(Infraestrutura Partilhada)
-end note
 @enduml

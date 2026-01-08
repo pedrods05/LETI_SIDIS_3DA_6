@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @Document(collection = "patient_summaries")
 public class PatientSummary {
     @Id
-    private String patientId; // Mudei de 'id' para 'patientId' para bater certo com o JSON que quer
+    private String patientId;
     private String fullName;
     private String email;
     private String phoneNumber;

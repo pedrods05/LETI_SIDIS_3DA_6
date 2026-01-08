@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
     public static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
-    public static final String DEFAULT_EXCHANGE = "hap-appointmentrecords-exchange";
+    public static final String DEFAULT_EXCHANGE = "hap-exchange";
 
     @Value("${hap.rabbitmq.exchange:" + DEFAULT_EXCHANGE + "}")
     private String exchangeName;

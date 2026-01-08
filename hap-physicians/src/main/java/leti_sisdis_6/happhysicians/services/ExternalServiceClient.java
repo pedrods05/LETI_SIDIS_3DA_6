@@ -32,22 +32,23 @@ public class ExternalServiceClient {
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${hap.patients.base-url:http://localhost:8082}")
+    @Value("${hap.patients.base-url:https://localhost:8082}")
     private String patientsServiceUrl;
 
-    @Value("${hap.auth.base-url:http://localhost:8080}")
+    @Value("${hap.auth.base-url:https://localhost:8084}")
     private String authServiceUrl;
 
-    @Value("${hap.appointmentrecords.base-url:http://localhost:8083}")
+    @Value("${hap.appointmentrecords.base-url:https://localhost:8083}")
     private String appointmentRecordsServiceUrl;
 
     @Value("${server.port:8081}")
     private String currentPort;
 
     // Hardcoded peer lists (Initial Approach) - as per slide
+    // Updated to HTTPS for mTLS support
     private final List<String> peers = Arrays.asList(
-        "http://localhost:8081",
-        "http://localhost:8087"
+        "https://localhost:8081",
+        "https://localhost:8087"
     );
 
     @PostConstruct
@@ -234,7 +235,7 @@ public class ExternalServiceClient {
         return peerUrl.contains(":" + currentPort);
     }
     public String getCurrentInstanceUrl() {
-        return "http://localhost:" + currentPort;
+        return "https://localhost:" + currentPort;
     }
     public boolean hasPeers() {
         return !getPeerUrls().isEmpty();

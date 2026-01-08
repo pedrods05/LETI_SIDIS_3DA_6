@@ -1,0 +1,55 @@
+ @startuml GetAppointmentAuditTrail-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Get Appointment Audit Trail - Sequence Diagram
+
+actor Client
+participant "AppointmentController" as Controller
+participant "EventStoreService" as EventStoreService
+participant "EventStoreRepository\n(Event Store - H2)" as EventStoreRepo
+
+autonumber
+activate Client
+Client -> Controller: GET /appointments/{appointmentId}/audit-trail
+activate Controller
+
+Controller -> EventStoreService: getEventHistory(appointmentId)
+activate EventStoreService
+
+EventStoreService -> EventStoreRepo: findByAggregateIdOrderByTimestampAsc(appointmentId)
+activate EventStoreRepo
+EventStoreRepo --> EventStoreService: List<EventStore>
+deactivate EventStoreRepo
+
+EventStoreService --> Controller: List<EventStore>
+deactivate EventStoreService
+
+Controller -> Controller: Map events to AuditTrailDTO
+loop For each EventStore
+    alt Parsing succeeds
+        Controller -> Controller: Parse JSON to Object\n(using ObjectMapper)
+        Controller -> Controller: Build AuditTrailDTO with parsed data
+    else Parsing fails
+        Controller -> Controller: Build AuditTrailDTO with raw strings
+    end
+end
+
+alt Success
+    Controller --> Client: 200 OK\nList<AuditTrailDTO>
+else Exception
+    Controller --> Client: 500 Internal Server Error
+end
+deactivate Controller
+deactivate Client
+
+note right of Controller
+  Este diagrama mostra a recuperação do histórico
+  completo de eventos (audit trail) de uma consulta
+  usando Event Sourcing. Retorna todos os eventos
+  ordenados cronologicamente, permitindo rastrear
+  todas as mudanças e ações realizadas na consulta.
+end note
+
+@enduml

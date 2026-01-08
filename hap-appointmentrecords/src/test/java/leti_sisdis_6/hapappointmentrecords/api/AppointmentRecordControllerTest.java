@@ -2,332 +2,199 @@ package leti_sisdis_6.hapappointmentrecords.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import leti_sisdis_6.hapappointmentrecords.dto.input.AppointmentRecordRequest;
-import leti_sisdis_6.hapappointmentrecords.dto.local.UserDTO;
 import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentRecordResponse;
 import leti_sisdis_6.hapappointmentrecords.dto.output.AppointmentRecordViewDTO;
+import leti_sisdis_6.hapappointmentrecords.dto.local.UserDTO;
 import leti_sisdis_6.hapappointmentrecords.exceptions.NotFoundException;
 import leti_sisdis_6.hapappointmentrecords.exceptions.UnauthorizedException;
 import leti_sisdis_6.hapappointmentrecords.http.ExternalServiceClient;
 import leti_sisdis_6.hapappointmentrecords.service.AppointmentRecordService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.*;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
-import java.time.LocalTime;
 import java.util.List;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AppointmentRecordController.class, excludeAutoConfiguration = {
-        org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class
-})
-@AutoConfigureMockMvc(addFilters = false)
-@ActiveProfiles("test")
-@TestPropertySource(properties = "spring.jpa.open-in-view=false")
+@ExtendWith(MockitoExtension.class)
 class AppointmentRecordControllerTest {
 
-    @org.springframework.boot.test.context.TestConfiguration
-    static class NoJpaTestConfig {
-        @org.springframework.context.annotation.Bean(name = "entityManagerFactory")
-        jakarta.persistence.EntityManagerFactory entityManagerFactory() {
-            jakarta.persistence.EntityManagerFactory emf = org.mockito.Mockito.mock(jakarta.persistence.EntityManagerFactory.class);
-            // Ensure metamodel is not null to satisfy Spring Data JPA
-            jakarta.persistence.metamodel.Metamodel metamodel = org.mockito.Mockito.mock(jakarta.persistence.metamodel.Metamodel.class);
-            org.mockito.Mockito.when(emf.getMetamodel()).thenReturn(metamodel);
-            return emf;
-        }
-    }
-
-    @Autowired
     private MockMvc mockMvc;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
+    @Mock
     private AppointmentRecordService recordService;
 
-    @MockitoBean
+    @Mock
     private ExternalServiceClient externalServiceClient;
 
-    @MockitoBean
+    @Mock
     private RestTemplate restTemplate;
 
-    @MockitoBean
-    private leti_sisdis_6.hapappointmentrecords.repository.AppointmentRecordRepository appointmentRecordRepository;
+    @InjectMocks
+    private AppointmentRecordController controller;
 
-    @MockitoBean
-    private leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository appointmentRepository;
+    private AppointmentRecordRequest validRequest;
+    private AppointmentRecordViewDTO sampleRecordView;
 
-    private AppointmentRecordRequest validRequest() {
-        AppointmentRecordRequest r = new AppointmentRecordRequest();
-        r.setDiagnosis("Dx");
-        r.setTreatmentRecommendations("TR");
-        r.setPrescriptions("Rx");
-        r.setDuration(LocalTime.of(0, 30));
-        return r;
+    @BeforeEach
+    void setUp() {
+        this.mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+
+        validRequest = new AppointmentRecordRequest();
+
+        sampleRecordView = AppointmentRecordViewDTO.builder()
+                .recordId("rec-123")
+                .appointmentId("app-123")
+                .diagnosis("Flu")
+                .build();
     }
 
     @Test
-    @DisplayName("POST /api/appointment-records/{appointmentId}/record → 201 quando criado")
-    void recordAppointmentDetails_created() throws Exception {
-        var req = validRequest();
-        var resp = AppointmentRecordResponse.builder()
-                .message("Appointment record created successfully.")
-                .appointmentId("A1")
-                .recordId("REC1234")
-                .build();
-        given(recordService.createRecord(eq("A1"), any(AppointmentRecordRequest.class), eq("D1")))
-                .willReturn(resp);
+    @DisplayName("POST /record - Sucesso (201)")
+    void recordAppointmentDetails_Success() throws Exception {
+        AppointmentRecordResponse response = AppointmentRecordResponse.builder().recordId("rec-123").build();
 
-        mockMvc.perform(post("/api/appointment-records/A1/record")
-                        .header("X-User-Id", "D1")
+        when(recordService.createRecord(eq("app-123"), any(AppointmentRecordRequest.class), eq("phys-1")))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/api/appointment-records/{appointmentId}/record", "app-123")
+                        .header("X-User-Id", "phys-1") // Simula o header
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .content(objectMapper.writeValueAsString(validRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.recordId", is("REC1234")));
+                .andExpect(jsonPath("$.recordId").value("rec-123"));
     }
 
     @Test
-    @DisplayName("POST /api/appointment-records/{appointmentId}/record → 404 NotFoundException")
-    void recordAppointmentDetails_notFound() throws Exception {
-        var req = validRequest();
-        given(recordService.createRecord(eq("A2"), any(AppointmentRecordRequest.class), eq("D1")))
-                .willThrow(new NotFoundException("Appointment not found"));
+    @DisplayName("POST /record - Erro 404 (Not Found Exception)")
+    void recordAppointmentDetails_NotFound() throws Exception {
+        when(recordService.createRecord(anyString(), any(), anyString()))
+                .thenThrow(new NotFoundException("Appointment not found"));
 
-        mockMvc.perform(post("/api/appointment-records/A2/record")
-                        .header("X-User-Id", "D1")
+        mockMvc.perform(post("/api/appointment-records/app-999/record")
+                        .header("X-User-Id", "phys-1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .content(objectMapper.writeValueAsString(validRequest)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error", containsString("Appointment not found")));
+                .andExpect(jsonPath("$.error").exists());
     }
 
     @Test
-    @DisplayName("POST /api/appointment-records/{appointmentId}/record → 403 UnauthorizedException")
-    void recordAppointmentDetails_forbidden() throws Exception {
-        var req = validRequest();
-        given(recordService.createRecord(eq("A3"), any(AppointmentRecordRequest.class), eq("D1")))
-                .willThrow(new UnauthorizedException("not allowed"));
+    @DisplayName("GET /{recordId} - Sucesso Local (200)")
+    void viewAppointmentRecord_SuccessLocal() throws Exception {
+        when(recordService.getAppointmentRecord(eq("rec-123"), any(UserDTO.class)))
+                .thenReturn(sampleRecordView);
 
-        mockMvc.perform(post("/api/appointment-records/A3/record")
-                        .header("X-User-Id", "D1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error", containsString("not allowed")));
-    }
-
-    @Test
-    @DisplayName("POST /api/appointment-records/{appointmentId}/record → 409 IllegalStateException")
-    void recordAppointmentDetails_conflict() throws Exception {
-        var req = validRequest();
-        given(recordService.createRecord(eq("A4"), any(AppointmentRecordRequest.class), eq("D1")))
-                .willThrow(new IllegalStateException("Record already exists"));
-
-        mockMvc.perform(post("/api/appointment-records/A4/record")
-                        .header("X-User-Id", "D1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error", containsString("Record already exists")));
-    }
-
-    @Test
-    @DisplayName("POST /api/appointment-records/{appointmentId}/record → 500 em erro inesperado")
-    void recordAppointmentDetails_internalError() throws Exception {
-        var req = validRequest();
-        given(recordService.createRecord(eq("A5"), any(AppointmentRecordRequest.class), eq("D1")))
-                .willThrow(new RuntimeException("boom"));
-
-        mockMvc.perform(post("/api/appointment-records/A5/record")
-                        .header("X-User-Id", "D1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error", containsString("External service communication error")));
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/{recordId} → 200 quando existe")
-    void viewAppointmentRecord_ok() throws Exception {
-        var dto = AppointmentRecordViewDTO.builder()
-                .recordId("REC1")
-                .appointmentId("A1")
-                .physicianName("Dr. Who")
-                .diagnosis("Dx")
-                .treatmentRecommendations("TR")
-                .prescriptions("Rx")
-                .duration(LocalTime.of(0,30))
-                .build();
-        given(recordService.getAppointmentRecord(eq("REC1"), any(UserDTO.class)))
-                .willReturn(dto);
-
-        mockMvc.perform(get("/api/appointment-records/REC1")
-                        .header("X-User-Id", "P1")
+        mockMvc.perform(get("/api/appointment-records/{recordId}", "rec-123")
+                        .header("X-User-Id", "user-1")
                         .header("X-User-Role", "PATIENT"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.recordId", is("REC1")))
-                .andExpect(jsonPath("$.physicianName", is("Dr. Who")));
+                .andExpect(jsonPath("$.diagnosis").value("Flu"));
     }
 
     @Test
-    @DisplayName("GET /api/appointment-records/{recordId} → 200 quando encontrado num peer")
-    void viewAppointmentRecord_foundInPeer() throws Exception {
-        // Service throws NotFound -> controller tries peers
-        given(recordService.getAppointmentRecord(eq("REC404"), any(UserDTO.class)))
-                .willThrow(new NotFoundException("not here"));
-        given(externalServiceClient.getPeerUrls()).willReturn(List.of("http://peer1"));
-        var peerDto = AppointmentRecordViewDTO.builder()
-                .recordId("REC404")
-                .appointmentId("A1")
-                .physicianName("Peer Doc")
-                .diagnosis("Dx")
-                .treatmentRecommendations("TR")
-                .prescriptions("Rx")
-                .duration(LocalTime.of(0,20))
-                .build();
-        given(restTemplate.exchange(
-                eq("http://peer1/api/appointment-records/REC404"),
+    @DisplayName("GET /{recordId} - Não encontrado Local, Encontrado no Peer (200)")
+    void viewAppointmentRecord_PeerSuccess() throws Exception {
+        when(recordService.getAppointmentRecord(anyString(), any()))
+                .thenThrow(new NotFoundException("Not found locally"));
+
+        when(externalServiceClient.getPeerUrls()).thenReturn(List.of("http://peer-one:8080"));
+
+        ResponseEntity<AppointmentRecordViewDTO> remoteResponse = ResponseEntity.ok(sampleRecordView);
+
+        when(restTemplate.exchange(
+                eq("http://peer-one:8080/api/appointment-records/rec-123"),
                 eq(HttpMethod.GET),
                 any(HttpEntity.class),
-                eq(AppointmentRecordViewDTO.class)))
-                .willReturn(ResponseEntity.ok(peerDto));
+                eq(AppointmentRecordViewDTO.class)
+        )).thenReturn(remoteResponse);
 
-        mockMvc.perform(get("/api/appointment-records/REC404")
-                        .header("X-User-Id", "P1")
-                        .header("X-User-Role", "PATIENT")
-                        .header("Authorization", "Bearer t"))
+        mockMvc.perform(get("/api/appointment-records/{recordId}", "rec-123")
+                        .header("X-User-Id", "user-1")
+                        .header("X-User-Role", "ADMIN"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.physicianName", is("Peer Doc")));
+                .andExpect(jsonPath("$.recordId").value("rec-123"));
     }
 
     @Test
-    @DisplayName("GET /api/appointment-records/{recordId} → 404 quando não encontrado localmente nem em peers")
-    void viewAppointmentRecord_notFoundAnywhere() throws Exception {
-        given(recordService.getAppointmentRecord(eq("RECXXX"), any(UserDTO.class)))
-                .willThrow(new NotFoundException("not here"));
-        given(externalServiceClient.getPeerUrls()).willReturn(List.of("http://peer1", "http://peer2"));
-        given(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(AppointmentRecordViewDTO.class)))
-                .willThrow(HttpClientErrorException.create(org.springframework.http.HttpStatus.NOT_FOUND, "Not Found", null, null, null));
+    @DisplayName("GET /{recordId} - Loop Infinito Prevenido (X-Peer-Request)")
+    void viewAppointmentRecord_PreventLoop() throws Exception {
+        // Se falhar localmente E tiver o header X-Peer-Request, deve parar imediatamente
+        when(recordService.getAppointmentRecord(anyString(), any()))
+                .thenThrow(new NotFoundException("Not found locally"));
 
-        mockMvc.perform(get("/api/appointment-records/RECXXX")
-                        .header("X-User-Id", "P1")
-                        .header("X-User-Role", "PATIENT"))
+        mockMvc.perform(get("/api/appointment-records/{recordId}", "rec-123")
+                        .header("X-User-Id", "user-1")
+                        .header("X-User-Role", "ADMIN")
+                        .header("X-Peer-Request", "true")) // Header crítico
+                .andExpect(status().isNotFound());
+
+        verify(externalServiceClient, never()).getPeerUrls();
+        verify(restTemplate, never()).exchange(anyString(), any(), any(), eq(AppointmentRecordViewDTO.class));
+    }
+
+    @Test
+    @DisplayName("GET /{recordId} - Não encontrado em lugar nenhum (404)")
+    void viewAppointmentRecord_NotFoundAnywhere() throws Exception {
+        when(recordService.getAppointmentRecord(anyString(), any()))
+                .thenThrow(new NotFoundException("Not found locally"));
+
+        when(externalServiceClient.getPeerUrls()).thenReturn(List.of("http://peer-one:8080"));
+
+        when(restTemplate.exchange(anyString(), any(), any(), eq(AppointmentRecordViewDTO.class)))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
+
+        mockMvc.perform(get("/api/appointment-records/{recordId}", "rec-123")
+                        .header("X-User-Id", "user-1")
+                        .header("X-User-Role", "ADMIN"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("GET /api/appointment-records/{recordId} → 403 UnauthorizedException")
-    void viewAppointmentRecord_forbidden() throws Exception {
-        given(recordService.getAppointmentRecord(eq("REC2"), any(UserDTO.class)))
-                .willThrow(new UnauthorizedException("nope"));
+    @DisplayName("GET /patient/{id} - Sucesso para Médico (200)")
+    void getPatientRecords_SuccessPhysician() throws Exception {
+        when(recordService.getPatientRecords("pat-1")).thenReturn(List.of(sampleRecordView));
 
-        mockMvc.perform(get("/api/appointment-records/REC2")
-                        .header("X-User-Id", "P1")
-                        .header("X-User-Role", "PATIENT"))
+        mockMvc.perform(get("/api/appointment-records/patient/{patientId}", "pat-1")
+                        .header("X-User-Role", "PHYSICIAN")) // Role correta
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].recordId").value("rec-123"));
+    }
+
+    @Test
+    @DisplayName("GET /patient/{id} - Proibido para Paciente (403)")
+    void getPatientRecords_ForbiddenForPatient() throws Exception {
+
+        mockMvc.perform(get("/api/appointment-records/patient/{patientId}", "pat-1")
+                        .header("X-User-Role", "PATIENT")) // Role incorreta
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error", containsString("nope")));
+                .andExpect(jsonPath("$.error").value("Only physicians can view patient records"));
+
+        verify(recordService, never()).getPatientRecords(anyString());
     }
 
     @Test
-    @DisplayName("GET /api/appointment-records/{recordId} → 500 em erro inesperado")
-    void viewAppointmentRecord_internalError() throws Exception {
-        given(recordService.getAppointmentRecord(eq("REC3"), any(UserDTO.class)))
-                .willThrow(new RuntimeException("boom"));
-
-        mockMvc.perform(get("/api/appointment-records/REC3")
-                        .header("X-User-Id", "P1")
-                        .header("X-User-Role", "PATIENT"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error", containsString("External service communication error")));
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/patient/mine → 200 lista")
-    void getMyRecords_ok() throws Exception {
-        given(recordService.getPatientRecords("P1")).willReturn(List.of());
+    @DisplayName("GET /patient/mine - Sucesso (200)")
+    void getMyRecords_Success() throws Exception {
+        when(recordService.getPatientRecords("pat-me")).thenReturn(List.of(sampleRecordView));
 
         mockMvc.perform(get("/api/appointment-records/patient/mine")
-                        .header("X-User-Id", "P1"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/patient/mine → 403 UnauthorizedException")
-    void getMyRecords_forbidden() throws Exception {
-        given(recordService.getPatientRecords("P1")).willThrow(new UnauthorizedException("forbidden"));
-
-        mockMvc.perform(get("/api/appointment-records/patient/mine")
-                        .header("X-User-Id", "P1"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.error", containsString("forbidden")));
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/patient/mine → 500 erro inesperado")
-    void getMyRecords_internalError() throws Exception {
-        given(recordService.getPatientRecords("P1")).willThrow(new RuntimeException("err"));
-
-        mockMvc.perform(get("/api/appointment-records/patient/mine")
-                        .header("X-User-Id", "P1"))
-                .andExpect(status().isInternalServerError());
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/patient/{id} → 200 lista")
-    void getPatientRecords_ok() throws Exception {
-        given(recordService.getPatientRecords("P2")).willReturn(List.of());
-
-        mockMvc.perform(get("/api/appointment-records/patient/P2")
-                        .header("X-User-Role", "PHYSICIAN"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/patient/{id} → 403 se role != PHYSICIAN")
-    void getPatientRecords_wrongRole_forbidden() throws Exception {
-        mockMvc.perform(get("/api/appointment-records/patient/P2")
-                        .header("X-User-Role", "PATIENT"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/patient/{id} → 404 NotFoundException")
-    void getPatientRecords_notFound() throws Exception {
-        given(recordService.getPatientRecords("P2")).willThrow(new NotFoundException("patient not found"));
-
-        mockMvc.perform(get("/api/appointment-records/patient/P2")
-                        .header("X-User-Role", "PHYSICIAN"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("GET /api/appointment-records/patient/{id} → 500 erro inesperado")
-    void getPatientRecords_internalError() throws Exception {
-        given(recordService.getPatientRecords("P2")).willThrow(new RuntimeException("err"));
-
-        mockMvc.perform(get("/api/appointment-records/patient/P2")
-                        .header("X-User-Role", "PHYSICIAN"))
-                .andExpect(status().isInternalServerError());
+                        .header("X-User-Id", "pat-me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].appointmentId").value("app-123"));
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @SpringBootTest
+@ActiveProfiles("test") // <--- ADICIONA ISTO para carregar o application-test.properties
 class HapPatientsApplicationTests {
 
     @Test

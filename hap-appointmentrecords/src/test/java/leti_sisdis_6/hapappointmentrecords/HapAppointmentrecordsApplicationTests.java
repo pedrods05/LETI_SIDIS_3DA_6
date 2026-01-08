@@ -15,8 +15,6 @@ class HapAppointmentrecordsApplicationTests {
     @Test
     @DisplayName("Deve carregar contexto da aplicação")
     void contextLoads() {
-        // Este teste verifica se o contexto Spring carrega corretamente
-        // Se o contexto carregar sem exceções, o teste passa
     }
 
 }

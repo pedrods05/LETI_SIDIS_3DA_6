@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'hap-patients'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+        labels:
+          service: hap-patients
+
+  - job_name: 'hap-physicians'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+        labels:
+          service: hap-physicians
+
+  - job_name: 'hap-appointmentrecords'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8083']
+        labels:
+          service: hap-appointmentrecords

@@ -4,12 +4,15 @@ import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.query.AppointmentQueryRepository;
 import leti_sisdis_6.happhysicians.query.AppointmentSummary;
 import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -22,6 +25,9 @@ public class AppointmentEventHandler {
     private final AppointmentQueryRepository queryRepository;
     private final AppointmentRepository appointmentRepository;
 
+    @Autowired(required = false)
+    private MeterRegistry meterRegistry;
+
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = "q.appointment.summary.updater.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
@@ -29,6 +35,15 @@ public class AppointmentEventHandler {
     ))
     public void handleAppointmentCreated(AppointmentCreatedEvent event) {
         log.info("📥 [Query Side] Recebi evento AppointmentCreated: {}", event.getAppointmentId());
+        
+        // Track AMQP message consumed
+        if (meterRegistry != null) {
+            Counter.builder("amqp.messages.consumed")
+                .tag("event.type", "appointment.created")
+                .tag("application", "hap-physicians")
+                .register(meterRegistry)
+                .increment();
+        }
 
         // Verificar se o summary já existe
         Optional<AppointmentSummary> existingSummary = queryRepository.findById(event.getAppointmentId());

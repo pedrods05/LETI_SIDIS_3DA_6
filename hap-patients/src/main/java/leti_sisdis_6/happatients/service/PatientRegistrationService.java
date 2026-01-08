@@ -141,7 +141,6 @@ public class PatientRegistrationService {
         patient = patientRepository.save(patient);
         log.info("Paciente persistido localmente (SQL). ID: {}", patient.getPatientId());
 
-        // Audit event (event sourcing light)
         try {
             PatientEvent auditEvent = new PatientEvent(
                     "PATIENT_REGISTERED",

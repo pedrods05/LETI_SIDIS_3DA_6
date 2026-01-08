@@ -111,5 +111,13 @@ end
 
 deactivate Controller
 
+note right of Controller
+  Este diagrama mostra a busca de detalhes de um médico
+  por ID. Primeiro tenta no read model (MongoDB) e
+  enriquece com dados do write model (H2). Se não
+  encontrar localmente, consulta instâncias peer
+  para garantir disponibilidade.
+end note
+
 @enduml
 
