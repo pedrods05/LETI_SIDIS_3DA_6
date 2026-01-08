@@ -111,7 +111,63 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+    # ... (Infraestrutura que já tens: rabbit, mongo, elk...)
 
+    # ==========================================
+    # APPS (Microserviços)
+    # ==========================================
+  hap-auth:
+      build: ./hap-auth
+      container_name: hap-auth
+      ports:
+        - "8084:8084"
+      depends_on:
+        - mongodb-primary
+        - rabbitmq
+        - logstash
+      environment:
+        - SPRING_PROFILES_ACTIVE=instance1 # Ou docker
+        - LOGSTASH_HOST=logstash
+
+  hap-physicians:
+      build: ./hap-physicians
+      container_name: hap-physicians
+      ports:
+        - "8081:8081"
+      depends_on:
+        - hap-auth
+        - rabbitmq
+
+  hap-patients:
+      build: ./hap-patients
+      container_name: hap-patients-blue
+      ports:
+        - "8082:8082"
+      depends_on:
+        - hap-auth
+        - rabbitmq
+
+  hap-appointmentrecords:
+      build: ./hap-appointmentrecords
+      container_name: hap-appointmentrecords
+      ports:
+        - "8083:8083"
+      depends_on:
+        - hap-patients
+        - hap-physicians
+
+  # ... (hap-patients nova versão - GREEN)
+  hap-patients-green:
+    build: ./hap-patients
+    container_name: hap-patients-green
+    environment:
+      - SERVER_PORT=8092
+      # ... configs iguais ...
+    ports:
+      - "8092:8092"
+    depends_on:
+    - hap-auth
+    - rabbitmq
 volumes:
   mongo_data:
   es_data:
