@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: hap-auth
+  description: Serviço de autenticação e autorização com OAuth2 e JWT. Gestão de utilizadores e roles.
+  annotations:
+    # Link para o Swagger (Requisito do Slide 10 [cite: 186])
+    prometheus.io/scrape: 'true'
+spec:
+  type: service
+  lifecycle: production
+  owner: hap-team
+  system: hap-system
+  providesApis:
+    - hap-auth-api
