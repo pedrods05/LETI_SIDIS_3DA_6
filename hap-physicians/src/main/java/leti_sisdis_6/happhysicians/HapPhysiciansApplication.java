@@ -20,9 +20,9 @@ import jakarta.annotation.PostConstruct;
         "leti_sisdis_6.happhysicians.repository",
         "leti_sisdis_6.happhysicians.eventsourcing"
 })
-@EnableMongoRepositories(basePackages = {
-        "leti_sisdis_6.happhysicians.query"
-})
+//@EnableMongoRepositories(basePackages = {
+//        "leti_sisdis_6.happhysicians.query"
+//})
 @EnableRabbit
 @EntityScan(basePackages = {
         "leti_sisdis_6.happhysicians.model",

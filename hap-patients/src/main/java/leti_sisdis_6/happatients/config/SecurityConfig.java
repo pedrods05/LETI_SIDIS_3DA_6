@@ -1,5 +1,6 @@
 package leti_sisdis_6.happatients.config;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -23,7 +24,14 @@ import java.util.stream.Collectors;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-
+    @org.springframework.beans.factory.annotation.Value("${jwt.secret.key}")
+    private String jwtSecretKey;
+    @PostConstruct
+    public void logSecretKey() {
+        System.out.println("==============================================");
+        System.out.println(">>> JWT SECRET LOADED: " + jwtSecretKey);
+        System.out.println("==============================================");
+    }
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -59,22 +67,36 @@ public class SecurityConfig {
             Collection<GrantedAuthority> scopeAuth = scopesConverter.convert(jwt);
             if (scopeAuth != null) merged.addAll(scopeAuth);
 
+            // --- CORREÇÃO: Lidar com 'authorities' (Lista ou String) ---
             Object authorities = jwt.getClaim("authorities");
             if (authorities instanceof List<?> list) {
                 merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
-                    .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+                        .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+            } else if (authorities instanceof String strAuth) {
+                // Se vier como string única
+                Arrays.stream(strAuth.split(",")).map(String::trim).filter(s -> !s.isEmpty())
+                        .map(SimpleGrantedAuthority::new).forEach(merged::add);
             }
+
+            // --- CORREÇÃO CRÍTICA: Lidar com 'roles' (Lista ou String) ---
             Object rolesClaim = jwt.getClaim("roles");
             if (rolesClaim instanceof List<?> list) {
                 merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
-                    .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+                        .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+            } else if (rolesClaim instanceof String strRole) {
+                // *** AQUI ESTÁ A CURA PARA O TEU PROBLEMA ***
+                // Se for "ADMIN", adiciona a authority "ADMIN"
+                Arrays.stream(strRole.split(",")).map(String::trim).filter(s -> !s.isEmpty())
+                        .map(SimpleGrantedAuthority::new).forEach(merged::add);
             }
+
+            // --- Realm Access (Keycloak style) ---
             Map<String, Object> realmAccess = jwt.getClaim("realm_access");
             if (realmAccess != null) {
                 Object realmRoles = realmAccess.get("roles");
                 if (realmRoles instanceof List<?> list) {
                     merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
-                        .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+                            .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
                 }
             }
             return merged;
@@ -82,14 +104,13 @@ public class SecurityConfig {
         return converter;
     }
 
-    // Provide a local HS256 JwtDecoder so tests and basic auth can coexist without external issuer
     @Bean
     public JwtDecoder jwtDecoder() {
-        // NOTE: This secret is for dev/test; if you use a real issuer, replace with JwtDecoders.fromIssuerLocation(...)
-        byte[] secret = "dev-signing-key-please-change".getBytes();
+        byte[] secret = jwtSecretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         SecretKeySpec key = new SecretKeySpec(secret, "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(key).build();
-    }
+        return NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                .build();    }
 
     @Bean
     public UserDetailsService userDetailsService(org.springframework.security.crypto.password.PasswordEncoder encoder) {

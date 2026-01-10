@@ -39,8 +39,8 @@ import leti_sisdis_6.hapauth.usermanagement.repository.UserInMemoryRepository;
 public class SecurityConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
-    private static final String SECRET = "chave-super-secreta-para-dev-256bits-PCM";
-
+    @org.springframework.beans.factory.annotation.Value("${jwt.secret.key}")
+    private String jwtSecretKey;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -143,7 +143,8 @@ public class SecurityConfig {
     }
 
     private SecretKey getSecretKey() {
-        byte[] keyBytes = SECRET.getBytes(StandardCharsets.UTF_8);
+        // Usa UTF-8 explicitamente
+        byte[] keyBytes = jwtSecretKey.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 }
