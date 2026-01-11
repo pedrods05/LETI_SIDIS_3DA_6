@@ -1,0 +1,145 @@
+@startuml RegisterPhysician-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Register Physician - Sequence Diagram v3\n(With Resilience, Observability & Event Sourcing)
+
+actor Client
+participant "PhysicianController\n(@PreAuthorize)" as Controller
+participant "PhysicianCommandService" as CommandService
+participant "PhysicianService" as Service
+participant "ExternalServiceClient\n(@CircuitBreaker, @Retry, @TimeLimiter)" as ExternalClient
+participant "PhysicianRepository\n(Write Model - H2)" as WriteRepo
+participant "EventStoreService" as EventStoreService
+participant "RabbitMQ\nExchange" as RabbitMQ
+participant "PhysicianEventHandler" as EventHandler
+participant "PhysicianQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+
+autonumber
+activate Client
+
+note over Client, ReadRepo
+  **Assignment 3 Features:**
+  • Security: JWT (@PreAuthorize), mTLS, RBAC
+  • Resilience: Circuit Breaker, Retry, Timeout
+  • Observability: Zipkin (tracing), Prometheus (metrics), ELK (logs)
+  • Event Sourcing: Immutable event storage
+  • Correlation ID: End-to-end traceability
+end note
+
+Client -> Controller: POST /physicians/register\n(RegisterPhysicianRequest)\nJWT Token
+activate Controller
+
+Controller -> CommandService: registerPhysician(request)\n[Trace ID propagated]
+activate CommandService
+
+CommandService -> Service: register(request)
+activate Service
+
+Service -> Service: Validate physician data
+Service -> Service: Generate physicianId
+
+' External call with Circuit Breaker and Retry
+Service -> ExternalClient: registerUser(username, password, "PHYSICIAN")\n[Circuit Breaker + Retry + mTLS]
+activate ExternalClient
+
+note right of ExternalClient
+  Circuit Breaker checks state
+  Retry with exponential backoff
+  Metrics sent to Prometheus
+  Trace sent to Zipkin
+end note
+
+ExternalClient --> Service: User registered in auth service
+deactivate ExternalClient
+
+Service -> Service: Create Physician entity
+Service -> WriteRepo: save(physician)
+activate WriteRepo
+WriteRepo --> Service: Physician (saved)
+deactivate WriteRepo
+
+Service --> CommandService: PhysicianIdResponse
+deactivate Service
+
+' Event Sourcing - Save event to Event Store
+CommandService -> EventStoreService: saveEvent(physicianId,\nEventType.PHYSICIAN_REGISTERED,\nphysicianData,\ncorrelationId,\nuserId)
+activate EventStoreService
+
+note right of EventStoreService
+  Event Sourcing:
+  • Calculate version
+  • Serialize to JSON
+  • Save immutable event
+  • Metrics to Prometheus
+end note
+
+EventStoreService --> CommandService: EventStore (saved)
+deactivate EventStoreService
+
+CommandService -> WriteRepo: findById(physicianId)
+activate WriteRepo
+WriteRepo --> CommandService: Physician
+deactivate WriteRepo
+
+' Publish to RabbitMQ with Circuit Breaker and Retry
+CommandService -> RabbitMQ: convertAndSend("physician.registered", event)\n[Retry + Circuit Breaker]
+activate RabbitMQ
+
+note right of RabbitMQ
+  AMQP publishing:
+  • Retry on failure
+  • Metrics to Prometheus
+  • Correlation ID in message
+end note
+
+RabbitMQ --> CommandService: Event published
+deactivate RabbitMQ
+
+CommandService --> Controller: PhysicianIdResponse
+deactivate CommandService
+
+Controller --> Client: 200 OK\nPhysicianIdResponse
+deactivate Controller
+deactivate Client
+
+note right of RabbitMQ
+  **Asynchronous processing:**
+  Events consumed by handlers
+  with correlation ID propagation
+end note
+
+RabbitMQ -> EventHandler: PhysicianRegisteredEvent\n[Correlation ID]
+deactivate RabbitMQ
+activate EventHandler
+
+note right of EventHandler
+  Handler processing:
+  • Extract Correlation ID
+  • Trace to Zipkin
+  • Metrics to Prometheus
+end note
+
+EventHandler -> EventHandler: Create PhysicianSummary from event
+EventHandler -> ReadRepo: save(PhysicianSummary)
+activate ReadRepo
+ReadRepo --> EventHandler: Saved
+deactivate ReadRepo
+
+EventHandler -> EventHandler: Update MongoDB read model
+deactivate EventHandler
+
+note right of Controller
+  **Este diagrama mostra o registro de um novo médico**
+  com todas as implementações do Assignment 3:
+  
+  • **Security:** JWT validation, mTLS, RBAC
+  • **Resilience:** Circuit Breaker, Retry, Timeout
+  • **Observability:** Distributed tracing (Zipkin),
+    Metrics (Prometheus), Structured logging (ELK)
+  • **Event Sourcing:** Immutable event storage
+  • **Correlation ID:** End-to-end traceability
+end note
+
+@enduml

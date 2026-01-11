@@ -1,0 +1,260 @@
+@startuml
+' Permite misturar Classes com Retângulos da Infraestrutura
+allowmixing
+
+' -- Configurações Visuais --
+skinparam classAttributeIconSize 0
+skinparam classBackgroundColor white
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 60
+hide circle
+hide methods
+hide attributes
+
+title Logical View - HAP Architecture
+
+' --- PACOTE 1: AUTH ---
+package "hap-auth" #LightBlue {
+    class User
+    enum Role
+    class AuthApi <<RestController>>
+    class InternalAuthApi <<RestController>>
+    class AuthService <<Service>>
+    class UserService <<Service>>
+    class UserRepository <<Repository>>
+
+    User ..> Role
+    AuthApi --> AuthService
+    AuthApi --> UserService
+    ' Conexão em falta resolvida:
+    InternalAuthApi --> UserService
+    UserService --> UserRepository
+    UserRepository --> User
+}
+
+' --- PACOTE 2: PATIENTS ---
+package "hap-patients" #LightGreen {
+    class Patient
+    class PatientDetailsDTO
+    class HealthConcern
+    class Address
+    class InsuranceInfo
+    class Photo
+    class PatientEvent
+
+    class PatientController <<RestController>>
+    class PatientRegistrationController <<RestController>>
+    class InternalPatientController <<RestController>>
+
+    class PatientService <<Service>>
+    class PatientRegistrationService <<Service>>
+    class PatientQueryService <<Service>>
+    class PatientEventHandler <<EventHandler>>
+
+    class PatientRepository <<Repository>>
+    class PatientLocalRepository <<Repository>>
+    class PatientQueryRepository <<Repository>>
+    class PatientEventRepository <<Repository>>
+    class AddressRepository <<Repository>>
+    class InsuranceInfoRepository <<Repository>>
+    class PhotoRepository <<Repository>>
+
+    PatientController --> PatientService
+    PatientController --> PatientLocalRepository
+    PatientController --> PatientQueryService
+    PatientRegistrationController --> PatientRegistrationService
+    ' Conexão em falta resolvida:
+    InternalPatientController --> PatientService
+
+    PatientService --> PatientRepository
+    PatientService --> PhotoRepository
+    PatientService --> AddressRepository
+    PatientService --> InsuranceInfoRepository
+
+    PatientRegistrationService --> PatientRepository
+    PatientQueryService --> PatientQueryRepository
+    PatientEventHandler --> PatientQueryRepository
+    PatientEventHandler --> PatientEventRepository
+
+    PatientRepository --> Patient
+    PatientLocalRepository --> PatientDetailsDTO
+
+    Patient "1" --> "0..*" HealthConcern
+    Patient "1" --> "0..1" Address
+    Patient "1" --> "0..1" InsuranceInfo
+    Patient "1" --> "0..1" Photo
+}
+
+' --- PACOTE 3: PHYSICIANS ---
+package "hap-physicians" #LightYellow {
+    class Physician
+    class Appointment
+    class Specialty
+    class Department
+    class EventStore
+
+    class PhysicianController <<RestController>>
+    class AppointmentController <<RestController>>
+    ' CORREÇÃO: Aspas para permitir alias sem erro de sintaxe
+    class "InternalController" as PhysInternalController <<RestController>>
+
+    class PhysicianService <<Service>>
+    class AppointmentService <<Service>>
+    class ExternalServiceClient <<Service>>
+    class PhysicianCommandService <<CommandService>>
+    class AppointmentCommandService <<CommandService>>
+    class PhysicianQueryService <<QueryService>>
+    class AppointmentQueryService <<QueryService>>
+    class EventStoreService <<Service>>
+
+    class AppointmentEventHandler <<EventHandler>>
+    class AppointmentReminderHandler <<EventHandler>>
+    class PhysicianEventHandler <<EventHandler>>
+
+    class AppointmentTimeValidator <<Utility>>
+    class SlotCalculator <<Utility>>
+
+    class PhysicianRepository <<Repository>>
+    class AppointmentRepository <<Repository>>
+    class DepartmentRepository <<Repository>>
+    class SpecialtyRepository <<Repository>>
+    class LocalDataRepository <<Repository>>
+    class PhysicianQueryRepository <<Repository>>
+    class AppointmentQueryRepository <<Repository>>
+    class EventStoreRepository <<Repository>>
+
+    ' Controllers
+    PhysicianController --> PhysicianService
+    PhysicianController --> PhysicianCommandService
+    PhysicianController --> PhysicianQueryService
+
+    AppointmentController --> AppointmentService
+    AppointmentController --> AppointmentCommandService
+    AppointmentController --> AppointmentQueryService
+    AppointmentController --> EventStoreService
+
+    ' Conexão em falta resolvida:
+    PhysInternalController --> PhysicianRepository
+
+    ' Services & Utilities (Conexões em falta resolvidas)
+    PhysicianService --> PhysicianRepository
+    PhysicianService --> DepartmentRepository
+    PhysicianService --> SpecialtyRepository
+    PhysicianService --> SlotCalculator : uses
+
+    AppointmentService --> AppointmentRepository
+    AppointmentService --> ExternalServiceClient
+    AppointmentService --> AppointmentTimeValidator : uses
+
+    PhysicianCommandService --> PhysicianRepository
+    AppointmentCommandService --> AppointmentRepository
+    AppointmentCommandService --> EventStoreService
+
+    PhysicianQueryService --> PhysicianQueryRepository
+    AppointmentQueryService --> AppointmentQueryRepository
+
+    ' Handlers
+    PhysicianEventHandler --> PhysicianQueryRepository
+    AppointmentEventHandler --> AppointmentQueryRepository
+    AppointmentReminderHandler --> AppointmentRepository
+
+    EventStoreService --> EventStoreRepository
+    EventStoreRepository --> EventStore
+
+    Physician "1" --> "1" Specialty
+    Physician "1" --> "1" Department
+    Physician "1" --> "0..*" Appointment
+    Appointment "1" --> "1" Physician
+}
+
+' --- PACOTE 4: RECORDS ---
+package "hap-appointmentrecords" #LightCoral {
+    class AppointmentRecord
+    class AppointmentRecordProjection
+
+    class AppointmentRecordController <<RestController>>
+    class AppointmentQueryController <<RestController>>
+    ' CORREÇÃO: Aspas para evitar conflito de nomes e erro de sintaxe
+    class "InternalController" as RecInternalController <<RestController>>
+    class PeerHealthController <<RestController>>
+
+    class AppointmentRecordService <<Service>>
+    class "ExternalServiceClient" as RecExternalClient <<Service>>
+    class AppointmentEventsListener <<EventListener>>
+    class AppointmentEventsPublisher <<EventPublisher>>
+
+    class AppointmentRecordRepository <<Repository>>
+    class "AppointmentRepository" as RecApptRepo <<Repository>>
+    class AppointmentRecordProjectionRepository <<Repository>>
+
+    AppointmentRecordController --> AppointmentRecordService
+    AppointmentQueryController --> RecApptRepo
+    AppointmentQueryController --> RecExternalClient
+
+    ' Conexões em falta resolvidas:
+    RecInternalController --> RecApptRepo
+    PeerHealthController --> RecExternalClient
+
+    AppointmentRecordService --> AppointmentRecordRepository
+    AppointmentRecordService --> AppointmentRecordProjectionRepository
+    AppointmentRecordService --> RecExternalClient
+
+    AppointmentEventsListener --> AppointmentRecordProjectionRepository
+    AppointmentEventsPublisher --> AppointmentRecordService
+
+    AppointmentRecordRepository --> AppointmentRecord
+    RecApptRepo --> AppointmentRecord
+    AppointmentRecordProjectionRepository --> AppointmentRecordProjection
+}
+
+' --- INFRAESTRUTURA ---
+package "Infrastructure" #LightGray {
+    rectangle "RabbitMQ" as RabbitMQ #BF616A
+    rectangle "Zipkin" as Zipkin #B48EAD
+    rectangle "Prometheus" as Prometheus #EBCB8B
+    rectangle "Grafana" as Grafana #A3BE8C
+    rectangle "ELK Stack" as ELK #D08770
+}
+
+' --- LAYOUT VERTICAL ---
+' Usa os nomes dos pacotes definidos acima (hap-auth, etc.)
+"hap-auth" -[hidden]d- "hap-patients"
+"hap-auth" -[hidden]d- "hap-physicians"
+"hap-patients" -[hidden]r- "hap-physicians"
+"hap-patients" -[hidden]d- "hap-appointmentrecords"
+"hap-physicians" -[hidden]d- "hap-appointmentrecords"
+"hap-appointmentrecords" -[hidden]d- "Infrastructure"
+
+' --- MESSAGING & TRACING ---
+PatientRegistrationService ..> RabbitMQ : Pub
+AppointmentEventsPublisher ..> RabbitMQ : Pub
+AppointmentCommandService ..> RabbitMQ : Pub
+
+RabbitMQ ..> PatientEventHandler : Sub
+RabbitMQ ..> PhysicianEventHandler : Sub
+RabbitMQ ..> AppointmentEventsListener : Sub
+RabbitMQ ..> AppointmentEventHandler : Sub
+RabbitMQ ..> AppointmentReminderHandler : Sub
+
+' --- TRACING ---
+AuthService ..> Zipkin : Traces
+PatientService ..> Zipkin : Traces
+PhysicianService ..> Zipkin : Traces
+AppointmentRecordService ..> Zipkin : Traces
+
+' --- METRICS ---
+AuthService ..> Prometheus : Metrics
+PatientService ..> Prometheus : Metrics
+PhysicianService ..> Prometheus : Metrics
+AppointmentRecordService ..> Prometheus : Metrics
+AppointmentCommandService ..> Prometheus : Metrics\n(Saga, Circuit Breaker)
+
+Prometheus ..> Grafana : Query Metrics
+
+' --- LOGGING ---
+AuthService ..> ELK : Logs
+PatientService ..> ELK : Logs
+PhysicianService ..> ELK : Logs
+AppointmentRecordService ..> ELK : Logs
+@enduml
