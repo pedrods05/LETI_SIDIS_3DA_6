@@ -1,15 +1,14 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: hap-patients
+  name: hap-physicians
   annotations:
-    hap/description: "Gestão de dados demográficos e médicos de pacientes."
-    
-    backstage.io/view-url: "https://localhost:8082/swagger-ui/index.html"
-    
-    prometheus.io/scrape: "true"
-    
-    backstage.io/techdocs-ref: dir:.
+    hap/description: "Gestão de médicos, consultas (appointments) e Event Sourcing com audit trail."
+
+    backstage.io/view-url: "https://localhost:8081/swagger-ui/index.html"
+
+    prometheus.io/scrape: 'true'
+
     java/version: "17"
     spring-boot/version: "3.3.0"
 
@@ -18,9 +17,9 @@ spec:
   lifecycle: production
   owner: hap-team
   system: hap-system
-  
+
   providesApis:
-    - hap-patients-api
+    - hap-physicians-api
 
   dependsOn:
     - component:hap-auth
@@ -31,9 +30,9 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
-  name: hap-patients-api
+  name: hap-physicians-api
   annotations:
-    hap/description: "API REST para gestão de pacientes (CRUD e Pesquisa)."
+    hap/description: "API REST para gestão de médicos e marcação de consultas."
 spec:
   type: openapi
   lifecycle: production
@@ -42,12 +41,12 @@ spec:
   definition: |
     openapi: 3.0.1
     info:
-      title: HAP Patients API
+      title: HAP Physicians API
       version: 1.0.0
     paths:
-      /patients:
+      /physicians:
         get:
-          summary: Listar pacientes
+          summary: Listar médicos
           responses:
             '200':
               description: OK

@@ -1,30 +1,34 @@
 services:
   # ==========================================
-  # 1. RabbitMQ (Broker de Mensagens)
+  # INFRAESTRUTURA
   # ==========================================
+
+  # 1. RabbitMQ (Broker de Mensagens)
   rabbitmq:
     image: rabbitmq:3.12-management
     container_name: hap-rabbitmq
     ports:
-      - "5672:5672"   # Porta para o Java
-      - "15672:15672" # Porta para o Dashboard Web
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+      # ADICIONA ESTA LINHA: Define o cookie manualmente para evitar erro de leitura
+      RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - hap-net
 
-  # ==========================================
-  # 2. MongoDB (Base de Dados Partilhada)
-  # ==========================================
+  # 2. MongoDB (Base de Dados)
   mongodb:
     image: mongo:6.0
     container_name: hap-mongo
     ports:
-      - "27017:27017" # Porta padrão
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: secretpassword
@@ -35,60 +39,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - hap-net
 
-  # ==========================================
-  # 3. Zipkin (Distributed Tracing)
-  # ==========================================
+  # 3. Observabilidade (Zipkin, Prometheus, Grafana...)
   zipkin:
     image: openzipkin/zipkin
     container_name: hap-zipkin
     ports:
       - "9411:9411"
+    networks:
+      - hap-net
 
-  # ==========================================
-  # 4. Elasticsearch
-  # ==========================================
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
-    container_name: hap-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-
-  # ==========================================
-  # 5. Logstash
-  # ==========================================
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.15.3
-    container_name: hap-logstash
-    ports:
-      - "5000:5000"   # TCP input for logback
-    volumes:
-      - ./monitoring/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-    depends_on:
-      - elasticsearch
-
-  # ==========================================
-  # 6. Kibana
-  # ==========================================
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.15.3
-    container_name: hap-kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
-    depends_on:
-      - elasticsearch
-
-  # ==========================================
-  # 7. Prometheus
-  # ==========================================
   prometheus:
     image: prom/prometheus:v2.55.1
     container_name: hap-prometheus
@@ -98,76 +60,262 @@ services:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - hap-net
 
-  # ==========================================
-  # 8. Grafana
-  # ==========================================
   grafana:
     image: grafana/grafana:11.1.3
     container_name: hap-grafana
     ports:
       - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
-    # ... (Infraestrutura que já tens: rabbit, mongo, elk...)
+    networks:
+      - hap-net
 
-    # ==========================================
-    # APPS (Microserviços)
-    # ==========================================
+  # ==========================================
+  # 4. Elasticsearch
+  # ==========================================
+  # ==========================================
+  #  elasticsearch:
+  #    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+  #    container_name: hap-elasticsearch
+  #    environment:
+  #      - discovery.type=single-node
+  #      - xpack.security.enabled=false
+  #      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+  #    ports:
+  #      - "9200:9200"
+  #    volumes:
+  #      - es_data:/usr/share/elasticsearch/data
+
+  # ==========================================
+  # 5. Logstash
+  # ==========================================
+  #  logstash:
+  #    image: docker.elastic.co/logstash/logstash:8.15.3
+  #    container_name: hap-logstash
+  #    ports:
+  #      - "5000:5000"   # TCP input for logback
+  #    volumes:
+  #      - ./monitoring/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+  #    depends_on:
+  #      - elasticsearch
+
+  # ==========================================
+  # 6. Kibana
+  # ==========================================
+  #  kibana:
+  #    image: docker.elastic.co/kibana/kibana:8.15.3
+  #    container_name: hap-kibana
+  #    environment:
+  #      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+  #    ports:
+  #      - "5601:5601"
+  #    depends_on:
+  #      - elasticsearch
+
+
+
+  # ==========================================
+  # MICROSERVIÇOS (HAP)
+  # ==========================================
+
+  # 4. Serviço de Autenticação (Core)
   hap-auth:
-      build: ./hap-auth
-      container_name: hap-auth
-      ports:
-        - "8084:8084"
-      depends_on:
-        - mongodb-primary
-        - rabbitmq
-        - logstash
-      environment:
-        - SPRING_PROFILES_ACTIVE=instance1 # Ou docker
-        - LOGSTASH_HOST=logstash
-
-  hap-physicians:
-      build: ./hap-physicians
-      container_name: hap-physicians
-      ports:
-        - "8081:8081"
-      depends_on:
-        - hap-auth
-        - rabbitmq
-
-  hap-patients:
-      build: ./hap-patients
-      container_name: hap-patients-blue
-      ports:
-        - "8082:8082"
-      depends_on:
-        - hap-auth
-        - rabbitmq
-
-  hap-appointmentrecords:
-      build: ./hap-appointmentrecords
-      container_name: hap-appointmentrecords
-      ports:
-        - "8083:8083"
-      depends_on:
-        - hap-patients
-        - hap-physicians
-
-  # ... (hap-patients nova versão - GREEN)
-  hap-patients-green:
-    build: ./hap-patients
-    container_name: hap-patients-green
-    environment:
-      - SERVER_PORT=8092
-      # ... configs iguais ...
+    build: ./hap-auth
+    container_name: hap-auth
     ports:
-      - "8092:8092"
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/hap_auth_db?authSource=admin
+      - SPRING_RABBITMQ_HOST=hap-rabbitmq
+      - JWT_SECRET_KEY=MinhaChaveSuperSecretaDeDesenvolvimento123!
+      - hap.mtls.enabled=true
+      - hap.mtls.truststore.path=/certs/hap-truststore.p12
+      - hap.mtls.truststore.password=secretpassword
+      - hap.mtls.keystore.path=/certs/hap-keystore.p12
+      - hap.mtls.keystore.password=secretpassword
     depends_on:
-    - hap-auth
-    - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      # Verifica se o endpoint do Actuator responde 200 OK
+      test: wget --no-check-certificate --no-verbose --tries=1 --spider https://localhost:8084/actuator/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s  # ADICIONA ISTO: Dá 40s de "graça" no início antes de começar a contar falhas
+    restart: unless-stopped
+    networks:
+      - hap-net
+    volumes:
+      - ./hap-auth/src/main/resources/certs:/certs:ro
+
+  # 5. Serviço de Médicos
+  hap-physicians:
+    build: ./hap-physicians
+    container_name: hap-physicians
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      # MUDANÇA: URL aponta para HTTPS
+      - HAP_AUTH_BASE_URL=https://hap-auth:8084
+      - SPRING_RABBITMQ_HOST=hap-rabbitmq
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://hap-zipkin:9411/api/v2/spans
+      - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/happhysicians_db?authSource=admin
+      - JWT_SECRET_KEY=MinhaChaveSuperSecretaDeDesenvolvimento123!
+
+      - hap.mtls.enabled=true
+      - hap.mtls.truststore.path=/certs/hap-truststore.p12
+      - hap.mtls.truststore.password=secretpassword
+      - hap.mtls.keystore.path=/certs/hap-keystore.p12
+      - hap.mtls.keystore.password=secretpassword
+    depends_on:
+      hap-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: nc -z localhost 8081 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s  # ADICIONA ISTO: Dá 40s de "graça" no início antes de começar a contar falhas
+
+    restart: unless-stopped
+    networks:
+      - hap-net
+    volumes:
+      - ./hap-physicians/src/main/resources/certs:/certs:ro
+
+  # Blue/Green appointmentrecords
+  hap-appointmentrecords-blue:
+    build: ./hap-appointmentrecords
+    container_name: hap-appointmentrecords-blue
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8083
+      - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/hap_appointmentrecords_db?authSource=admin
+      - HAP_PATIENTS_BASE_URL=https://hap-patients-blue:8082
+      - HAP_PHYSICIANS_BASE_URL=https://hap-physicians:8081
+      - HAP_AUTH_BASE_URL=https://hap-auth:8084
+      - SPRING_RABBITMQ_HOST=hap-rabbitmq
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://hap-zipkin:9411/api/v2/spans
+      - hap.mtls.enabled=true
+      - hap.mtls.truststore.path=/certs/hap-truststore.p12
+      - hap.mtls.truststore.password=secretpassword
+      - hap.mtls.keystore.path=/certs/hap-keystore.p12
+      - hap.mtls.keystore.password=secretpassword
+    depends_on:
+      hap-patients-blue:
+        condition: service_healthy
+      hap-physicians:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-check-certificate", "--no-verbose", "--tries=1", "--spider", "https://localhost:8083/actuator/health/readiness" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - ./hap-appointmentrecords/src/main/resources/certs:/certs:ro
+    restart: unless-stopped
+    networks:
+      - hap-net
+
+  hap-appointmentrecords-green:
+    build: ./hap-appointmentrecords
+    container_name: hap-appointmentrecords-green
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8090
+      - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/hap_appointmentrecords_db_green?authSource=admin
+      - HAP_PATIENTS_BASE_URL=https://hap-patients-blue:8082
+      - HAP_PHYSICIANS_BASE_URL=https://hap-physicians:8081
+      - HAP_AUTH_BASE_URL=https://hap-auth:8084
+      - SPRING_RABBITMQ_HOST=hap-rabbitmq
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://hap-zipkin:9411/api/v2/spans
+      - hap.mtls.enabled=true
+      - hap.mtls.truststore.path=/certs/hap-truststore.p12
+      - hap.mtls.truststore.password=secretpassword
+      - hap.mtls.keystore.path=/certs/hap-keystore.p12
+      - hap.mtls.keystore.password=secretpassword
+    depends_on:
+      hap-patients-blue:
+        condition: service_healthy
+      hap-physicians:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-check-certificate", "--no-verbose", "--tries=1", "--spider", "https://localhost:8090/actuator/health/readiness" ]
+
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - ./hap-appointmentrecords/src/main/resources/certs:/certs:ro
+    restart: unless-stopped
+    networks:
+      - hap-net
+
+  hap-patients-blue:
+    build: ./hap-patients
+    container_name: hap-patients-blue
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SERVER_PORT=8082
+      - INFO_APP_VERSION=1.0.0-BLUE
+      - HAP_PATIENTS_PEERS=http://hap-patients-green:8088
+      - HAP_AUTH_BASE_URL=https://hap-auth:8084
+      - JWT_SECRET_KEY=MinhaChaveSuperSecretaDeDesenvolvimento123!
+      - SPRING_RABBITMQ_HOST=hap-rabbitmq
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://hap-zipkin:9411/api/v2/spans
+      - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/happatients_db?authSource=admin
+      - hap.mtls.enabled=true
+      - hap.mtls.truststore.path=/certs/hap-truststore.p12
+      - hap.mtls.truststore.password=secretpassword
+      - hap.mtls.keystore.path=/certs/hap-keystore.p12
+      - hap.mtls.keystore.password=secretpassword
+    depends_on:
+      hap-auth:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: nc -z localhost 8082 || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    volumes:
+      - ./hap-patients/src/main/resources/certs:/certs:ro
+    networks:
+      - hap-net
 volumes:
   mongo_data:
   es_data:
+
+networks:
+  hap-net:
+    driver: bridge

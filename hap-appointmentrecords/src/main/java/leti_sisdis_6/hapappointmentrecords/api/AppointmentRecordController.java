@@ -38,9 +38,10 @@ public class AppointmentRecordController {
     private final RestTemplate restTemplate;
 
     @PostMapping("/{appointmentId}/record")
-    @PreAuthorize("hasAuthority('PHYSICIAN')")
+    // Permite perfis PHYSICIAN/DOCTOR/ADMIN na criação do registo
+    @PreAuthorize("hasAnyRole('PHYSICIAN','DOCTOR','ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "Record appointment details", description = "Record diagnosis, treatment recommendations, and prescriptions for a consultation. This endpoint demonstrates HTTP communication with hap-physicians service.")
+    @Operation(summary = "Record appointment details", description = "Record diagnosis, treatment recommendations, and prescriptions for a consultation.")
     @ApiResponse(responseCode = "201", description = "Record created successfully")
     @ApiResponse(responseCode = "403", description = "Access denied. Only physicians can record appointment details")
     @ApiResponse(responseCode = "404", description = "Appointment not found")
@@ -53,14 +54,11 @@ public class AppointmentRecordController {
             AppointmentRecordResponse response = recordService.createRecord(appointmentId, request, physicianId);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (NotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "External service communication error: " + e.getMessage()));
@@ -68,9 +66,10 @@ public class AppointmentRecordController {
     }
 
     @GetMapping("/{recordId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'PATIENT')")
+    // MUDANÇA: hasAnyRole procura por 'ROLE_ADMIN' ou 'ROLE_PATIENT'
+    @PreAuthorize("hasAnyRole('ADMIN', 'PATIENT')")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "View appointment record", description = "View appointment record details by record ID. This endpoint demonstrates HTTP communication with hap-physicians and hap-patients services.")
+    @Operation(summary = "View appointment record", description = "View appointment record details by record ID.")
     @ApiResponse(responseCode = "200", description = "Record found successfully")
     @ApiResponse(responseCode = "403", description = "Access denied. You are not authorized to view this record")
     @ApiResponse(responseCode = "404", description = "Record not found")
@@ -81,19 +80,14 @@ public class AppointmentRecordController {
             @RequestHeader("X-User-Role") String userRole,
             HttpServletRequest request) {
         try {
-            UserDTO currentUser = UserDTO.builder()
-                    .id(userId)
-                    .role(userRole)
-                    .build();
+            UserDTO currentUser = UserDTO.builder().id(userId).role(userRole).build();
             AppointmentRecordViewDTO record = recordService.getAppointmentRecord(recordId, currentUser);
             return ResponseEntity.ok(record);
         } catch (NotFoundException e) {
-            // Prevent infinite loops: if this is already a peer-forwarded request, stop here
             if (request.getHeader("X-Peer-Request") != null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("error", e.getMessage()));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
             }
-            // Try peers via the SAME external endpoint, forwarding caller headers
+            // Peer forwarding logic...
             HttpHeaders fwd = new HttpHeaders();
             String auth = request.getHeader("Authorization");
             if (auth != null && !auth.isBlank()) fwd.add("Authorization", auth);
@@ -109,17 +103,11 @@ public class AppointmentRecordController {
                     if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
                         return ResponseEntity.ok(resp.getBody());
                     }
-                } catch (HttpClientErrorException.NotFound ignored404) {
-                    // try next peer
-                } catch (Exception ignored) {
-                    // ignore and try next
-                }
+                } catch (Exception ignored) { }
             }
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "External service communication error: " + e.getMessage()));
@@ -127,19 +115,16 @@ public class AppointmentRecordController {
     }
 
     @GetMapping("/patient/mine")
-    @PreAuthorize("hasAuthority('PATIENT')")
+    // MUDANÇA: hasRole procura por 'ROLE_PATIENT'
+    @PreAuthorize("hasRole('PATIENT')")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "View my appointment records", description = "Patients can view all their appointment records. This endpoint demonstrates HTTP communication with hap-physicians service.")
-    @ApiResponse(responseCode = "200", description = "Records retrieved successfully")
-    @ApiResponse(responseCode = "403", description = "Access denied. Only patients can view their records")
-    @ApiResponse(responseCode = "500", description = "External service communication error")
+    @Operation(summary = "View my appointment records", description = "Patients can view all their appointment records.")
     public ResponseEntity<?> getMyRecords(@RequestHeader("X-User-Id") String patientId) {
         try {
             List<AppointmentRecordViewDTO> records = recordService.getPatientRecords(patientId);
             return ResponseEntity.ok(records);
         } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "External service communication error: " + e.getMessage()));
@@ -147,13 +132,10 @@ public class AppointmentRecordController {
     }
 
     @GetMapping("/patient/{patientId}")
-    @PreAuthorize("hasAuthority('PHYSICIAN')")
+    // MUDANÇA: hasRole procura por 'ROLE_PHYSICIAN'
+    @PreAuthorize("hasRole('PHYSICIAN')")
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "View patient's appointment records", description = "Physicians can view all appointment records of a specific patient. This endpoint demonstrates HTTP communication with hap-physicians service.")
-    @ApiResponse(responseCode = "200", description = "Records retrieved successfully")
-    @ApiResponse(responseCode = "403", description = "Access denied. Only physicians can view patient records")
-    @ApiResponse(responseCode = "404", description = "Patient not found")
-    @ApiResponse(responseCode = "500", description = "External service communication error")
+    @Operation(summary = "View patient's appointment records", description = "Physicians can view all appointment records of a specific patient.")
     public ResponseEntity<?> getPatientRecords(
             @PathVariable String patientId,
             @RequestHeader("X-User-Role") String userRole) {
@@ -161,15 +143,12 @@ public class AppointmentRecordController {
             if (!"PHYSICIAN".equals(userRole)) {
                 throw new UnauthorizedException("Only physicians can view patient records");
             }
-
             List<AppointmentRecordViewDTO> records = recordService.getPatientRecords(patientId);
             return ResponseEntity.ok(records);
         } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         } catch (NotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "External service communication error: " + e.getMessage()));

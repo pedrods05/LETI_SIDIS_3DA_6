@@ -1,0 +1,24 @@
+groups:
+  - name: hap-availability
+    rules:
+      - alert: AppointmentRecordsHighLatency
+-        expr: http_server_requests_seconds_sum{service="hap-appointmentrecords"} / http_server_requests_seconds_count{service="hap-appointmentrecords"} > 2
+-        for: 2m
++        expr: http_server_requests_seconds_sum{service="hap-appointmentrecords"} / http_server_requests_seconds_count{service="hap-appointmentrecords"} > 0.5
++        for: 2m
+        labels:
+          severity: warning
+        annotations:
+-          summary: "hap-appointmentrecords latency > 2s"
+-          description: "Average response time above 2s for >2m (SLA breach risk)."
++          summary: "hap-appointmentrecords latency > 500ms"
++          description: "Average response time above 500ms for >2m (SLA breach risk)."
+      - alert: AppointmentRecordsInstanceDown
+        expr: up{service="hap-appointmentrecords"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "hap-appointmentrecords instance is down"
+          description: "No scrape target reachable for hap-appointmentrecords."
+
