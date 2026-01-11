@@ -158,6 +158,28 @@ O módulo implementa observabilidade completa com:
 
 **Documentação completa**: [OBSERVABILITY.md](./OBSERVABILITY.md)
 
+## Resilience and Fault Tolerance
+
+O módulo implementa padrões de resiliência utilizando Resilience4j:
+- **Circuit Breaker** para proteção contra falhas em cascata
+- **Retry** com exponential backoff para falhas temporárias
+- **Timeout** para prevenir bloqueios indefinidos
+- **Bulkhead** para isolamento de recursos
+- **Integração explícita com Saga Pattern** para transações distribuídas
+
+**Documentação completa**: [RESILIENCE.md](./RESILIENCE.md)
+
+## Security Implementation
+
+O módulo implementa segurança em múltiplas camadas:
+- **OAuth2 Resource Server** para autorização
+- **JWT (JSON Web Tokens)** para autenticação stateless
+- **mTLS (Mutual TLS)** para encriptação mútua em chamadas service-to-service
+- **RBAC (Role-Based Access Control)** para controlo de acesso baseado em roles
+- **GDPR Compliance** através de audit trails e proteção de endpoints sensíveis
+
+**Documentação completa**: [SECURITY.md](./SECURITY.md)
+
 ### Endpoints de Observabilidade:
 - **Health**: `http://localhost:8081/actuator/health`
 - **Liveness**: `http://localhost:8081/actuator/health/liveness`

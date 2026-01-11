@@ -147,15 +147,4 @@ Observabilidade permite entender o que está acontecendo dentro do sistema atrav
 - Estado dos Circuit Breakers (quais estão abertos)
 - Saúde de todos os componentes (banco de dados, fila de mensagens, etc.)
 
-## ✅ Resumo
-
-O sistema agora tem:
-- **Visibilidade completa** através de logs, métricas e tracing
-- **Proteção contra falhas** através de Circuit Breaker, Retry, Timeout e Bulkhead
-- **Monitoramento automático** de transações distribuídas e mensagens
-- **Alertas configuráveis** para detectar problemas rapidamente
-- **Degradação graciosa** quando partes do sistema estão com problemas
-
-Tudo isso garante que o sistema seja **confiável**, **observável** e **resiliente** a falhas.
-
 ---
