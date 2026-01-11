@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: hap-appointmentrecords
+  description: Gestão de registos clínicos de consultas completadas. Armazena diagnósticos, prescrições e notas médicas.
+  annotations:
+    # Link para o Swagger (Requisito do Slide 10 [cite: 186])
+    prometheus.io/scrape: 'true'
+spec:
+  type: service
+  lifecycle: production
+  owner: hap-team
+  system: hap-system
+  providesApis:
+    - hap-appointmentrecords-api

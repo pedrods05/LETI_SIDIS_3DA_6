@@ -1,113 +1,131 @@
 package leti_sisdis_6.happatients.config;
 
-import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
-import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-
-    private static final String SECRET = "chave-super-secreta-para-dev-256bits-PCM";
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    @org.springframework.beans.factory.annotation.Value("${jwt.secret.key}")
+    private String jwtSecretKey;
+    @PostConstruct
+    public void logSecretKey() {
+        System.out.println("==============================================");
+        System.out.println(">>> JWT SECRET LOADED: " + jwtSecretKey);
+        System.out.println("==============================================");
     }
-
     @Bean
-    public JwtDecoder jwtDecoder() {
-        SecretKey key = getSecretKey();
-        return NimbusJwtDecoder.withSecretKey(key).build();
-    }
-
-    @Bean
-    public JwtEncoder jwtEncoder() {
-        SecretKey key = getSecretKey();
-        return new NimbusJwtEncoder(new ImmutableSecret<>(key));
-    }
-
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        grantedAuthoritiesConverter.setAuthorityPrefix("");
-        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
-
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-        return converter;
-    }
-
-    @Bean
-    public BearerTokenResolver bearerTokenResolver() {
-        DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
-        delegate.setAllowFormEncodedBodyParameter(true);
-        delegate.setAllowUriQueryParameter(true);
-        return request -> {
-            String path = request.getRequestURI();
-            if (path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui")
-                || path.equals("/swagger-ui.html")
-                || path.startsWith("/swagger-resources")
-                || path.startsWith("/webjars/")
-                || path.startsWith("/h2-console")) {
-                return null;
-            }
-            return delegate.resolve(request);
-        };
-    }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+            .httpBasic(basic -> {})
+            .oauth2ResourceServer(oauth -> oauth
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+            )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/internal/**").permitAll()
+                .requestMatchers("/api/v2/patients/register").permitAll()
+                // Require either ADMIN authority from JWT or ROLE_ADMIN from Basic users
+                .requestMatchers("/patients/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
                 .requestMatchers(
-                    "/",
-                    "/api/v2/patients/register",
-                    "/internal/**",
-                    "/h2-console/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/**",
-                    "/v3/api-docs",
                     "/v3/api-docs/**",
-                    "/swagger-resources",
-                    "/swagger-resources/**",
-                    "/configuration/ui",
-                    "/configuration/security",
-                    "/webjars/**",
-                    "/actuator/**"
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
                 ).permitAll()
                 .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .bearerTokenResolver(bearerTokenResolver())
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
             );
         return http.build();
     }
 
-    private SecretKey getSecretKey() {
-        byte[] keyBytes = SECRET.getBytes(StandardCharsets.UTF_8);
-        return new SecretKeySpec(keyBytes, "HmacSHA256");
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtGrantedAuthoritiesConverter scopesConverter = new JwtGrantedAuthoritiesConverter();
+        scopesConverter.setAuthorityPrefix("");
+        scopesConverter.setAuthoritiesClaimName("scope");
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            Set<GrantedAuthority> merged = new HashSet<>();
+            Collection<GrantedAuthority> scopeAuth = scopesConverter.convert(jwt);
+            if (scopeAuth != null) merged.addAll(scopeAuth);
+
+            // --- CORREÇÃO: Lidar com 'authorities' (Lista ou String) ---
+            Object authorities = jwt.getClaim("authorities");
+            if (authorities instanceof List<?> list) {
+                merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
+                        .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+            } else if (authorities instanceof String strAuth) {
+                // Se vier como string única
+                Arrays.stream(strAuth.split(",")).map(String::trim).filter(s -> !s.isEmpty())
+                        .map(SimpleGrantedAuthority::new).forEach(merged::add);
+            }
+
+            // --- CORREÇÃO CRÍTICA: Lidar com 'roles' (Lista ou String) ---
+            Object rolesClaim = jwt.getClaim("roles");
+            if (rolesClaim instanceof List<?> list) {
+                merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
+                        .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+            } else if (rolesClaim instanceof String strRole) {
+                // *** AQUI ESTÁ A CURA PARA O TEU PROBLEMA ***
+                // Se for "ADMIN", adiciona a authority "ADMIN"
+                Arrays.stream(strRole.split(",")).map(String::trim).filter(s -> !s.isEmpty())
+                        .map(SimpleGrantedAuthority::new).forEach(merged::add);
+            }
+
+            // --- Realm Access (Keycloak style) ---
+            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
+            if (realmAccess != null) {
+                Object realmRoles = realmAccess.get("roles");
+                if (realmRoles instanceof List<?> list) {
+                    merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
+                            .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
+                }
+            }
+            return merged;
+        });
+        return converter;
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        byte[] secret = jwtSecretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        SecretKeySpec key = new SecretKeySpec(secret, "HmacSHA256");
+        return NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                .build();    }
+
+    @Bean
+    public UserDetailsService userDetailsService(org.springframework.security.crypto.password.PasswordEncoder encoder) {
+        UserDetails admin = User.withUsername("admin")
+                .password(encoder.encode("admin"))
+                .roles("ADMIN")
+                .build();
+        UserDetails physician = User.withUsername("physician")
+                .password(encoder.encode("physician"))
+                .roles("PHYSICIAN")
+                .build();
+        UserDetails patient = User.withUsername("patient")
+                .password(encoder.encode("patient"))
+                .roles("PATIENT")
+                .build();
+        return new InMemoryUserDetailsManager(admin, physician, patient);
     }
 }

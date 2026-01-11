@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.Objects;
 
 @Service
+@Slf4j
 public class AppointmentService {
 
     @Autowired
@@ -87,13 +89,12 @@ public class AppointmentService {
                     appointmentBuilder.patientName((String) patientData.get("fullName"));
                     appointmentBuilder.patientEmail((String) patientData.get("email"));
                     appointmentBuilder.patientPhone((String) patientData.get("phoneNumber"));
-                    System.out.println("✅ Patient data fetched for appointment: " + dto.getAppointmentId());
+                    log.debug("✅ Patient data fetched for appointment: {}", dto.getAppointmentId());
                 } else {
-                    System.out.println("⚠️ Warning: Patient data is null for ID " + dto.getPatientId());
+                    log.warn("⚠️ Warning: Patient data is null for ID {}", dto.getPatientId());
                 }
             } catch (Exception e) {
-                System.err.println("⚠️ Warning: Could not fetch patient data for ID " + dto.getPatientId() + ": " + e.getMessage());
-                e.printStackTrace();
+                log.warn("⚠️ Warning: Could not fetch patient data for ID {}: {}", dto.getPatientId(), e.getMessage());
             }
 
             return appointmentRepository.save(appointmentBuilder.build());
@@ -254,12 +255,12 @@ public class AppointmentService {
         if (dto.getDateTime() != null) appointment.setDateTime(dto.getDateTime());
         if (dto.getConsultationType() != null) appointment.setConsultationType(dto.getConsultationType());
         if (dto.getStatus() != null) {
-            System.out.println("🔍 [Service] Setting status from DTO: " + dto.getStatus() + " for appointment: " + appointmentId);
+            log.debug("🔍 [Service] Setting status from DTO: {} for appointment: {}", dto.getStatus(), appointmentId);
             appointment.setStatus(dto.getStatus());
         }
         if (dto.getWasRescheduled() != null) appointment.setWasRescheduled(dto.getWasRescheduled());
 
-        System.out.println("🔍 [Service] Final appointment status before save: " + appointment.getStatus() + " for appointment: " + appointmentId);
+        log.debug("🔍 [Service] Final appointment status before save: {} for appointment: {}", appointment.getStatus(), appointmentId);
         return appointmentRepository.save(appointment);
     }
 

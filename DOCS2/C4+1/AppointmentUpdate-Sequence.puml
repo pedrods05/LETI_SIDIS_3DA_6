@@ -98,23 +98,58 @@ alt Event is appointment.updated
     deactivate EventHandler
     activate ReminderHandler
     ReminderHandler -> ReminderHandler: sendReminderEmail(event)
+    ReminderHandler -> ReminderHandler: Log reminder details
 else Event is appointment.canceled
     RabbitMQ -> EventHandler: AppointmentCanceledEvent
-    deactivate ReminderHandler
     deactivate RabbitMQ
+    deactivate ReminderHandler
     activate EventHandler
-    EventHandler -> WriteRepo: findById(appointmentId)
-    activate WriteRepo
-    WriteRepo --> EventHandler: Optional<Appointment>
-    deactivate WriteRepo
 
-    EventHandler -> ReadRepo: save(AppointmentSummary with status CANCELED)
+    EventHandler -> ReadRepo: findById(appointmentId)
     activate ReadRepo
-    ReadRepo --> EventHandler: Saved
+    ReadRepo --> EventHandler: Optional<AppointmentSummary>
     deactivate ReadRepo
 
+    alt Summary exists and status is SCHEDULED or COMPLETED
+        EventHandler -> EventHandler: Ignore old cancellation event
+        note right of EventHandler
+          Prevents overwriting with
+          outdated events
+        end note
+    else Summary doesn't exist or status allows cancellation
+        EventHandler -> WriteRepo: findById(appointmentId)
+        activate WriteRepo
+        WriteRepo --> EventHandler: Optional<Appointment>
+        deactivate WriteRepo
+
+        alt Appointment found in write model
+            EventHandler -> EventHandler: Preserve all appointment fields
+            EventHandler -> ReadRepo: save(AppointmentSummary with status CANCELED)
+            activate ReadRepo
+            ReadRepo --> EventHandler: Saved
+            deactivate ReadRepo
+            note right of EventHandler
+              Preserves all fields from
+              write model, only updates status
+            end note
+        else Appointment not found
+            EventHandler -> ReadRepo: save(AppointmentSummary from event)
+            activate ReadRepo
+            ReadRepo --> EventHandler: Saved
+            deactivate ReadRepo
+        end
+    end
     EventHandler -> EventHandler: Update MongoDB read model
+    deactivate EventHandler
 end
+
+note right of Controller
+  Este diagrama mostra a atualização de uma consulta.
+  Dependendo do status, publica evento de atualização
+  ou cancelamento. Se atualizado, também envia lembrete.
+  O handler atualiza o read model (MongoDB) de forma
+  assíncrona através do RabbitMQ.
+end note
 
 @enduml
 

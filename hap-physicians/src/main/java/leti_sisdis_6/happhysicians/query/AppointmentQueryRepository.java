@@ -11,5 +11,6 @@ public interface AppointmentQueryRepository extends MongoRepository<AppointmentS
     List<AppointmentSummary> findByDateTimeAfterOrderByDateTimeAsc(LocalDateTime dateTime);
     List<AppointmentSummary> findByStatus(String status);
     List<AppointmentSummary> findByPhysicianId(String physicianId);
+    List<AppointmentSummary> findByPatientId(String patientId);
 }
 

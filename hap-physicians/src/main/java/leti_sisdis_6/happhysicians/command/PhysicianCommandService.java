@@ -10,6 +10,7 @@ import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.services.PhysicianService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PhysicianCommandService {
 
     private final PhysicianService physicianService;
@@ -28,10 +30,15 @@ public class PhysicianCommandService {
 
     @Transactional
     public PhysicianIdResponse registerPhysician(RegisterPhysicianRequest request) {
+        return registerPhysician(request, null);
+    }
+
+    @Transactional
+    public PhysicianIdResponse registerPhysician(RegisterPhysicianRequest request, String correlationId) {
         // Delegate to existing service
         PhysicianIdResponse response = physicianService.register(request);
         
-        // Publish event
+        // Publish event (correlation ID is automatically propagated via MDC in RabbitTemplate)
         publishPhysicianRegisteredEvent(response.getPhysicianId());
         
         return response;
@@ -39,10 +46,15 @@ public class PhysicianCommandService {
 
     @Transactional
     public PhysicianFullDTO updatePhysician(String physicianId, UpdatePhysicianRequest request) {
+        return updatePhysician(physicianId, request, null);
+    }
+
+    @Transactional
+    public PhysicianFullDTO updatePhysician(String physicianId, UpdatePhysicianRequest request, String correlationId) {
         // Delegate to existing service
         PhysicianFullDTO response = physicianService.partialUpdate(physicianId, request);
         
-        // Publish event
+        // Publish event (correlation ID is automatically propagated via MDC in RabbitTemplate)
         publishPhysicianUpdatedEvent(physicianId);
         
         return response;
@@ -65,9 +77,9 @@ public class PhysicianCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "physician.registered", event);
-            System.out.println("⚡ Evento PhysicianRegisteredEvent enviado para o RabbitMQ: " + physicianId);
+            log.info("⚡ Evento PhysicianRegisteredEvent enviado para o RabbitMQ: {}", physicianId);
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento RabbitMQ: {}", e.getMessage(), e);
         }
     }
 
@@ -88,9 +100,9 @@ public class PhysicianCommandService {
             );
 
             rabbitTemplate.convertAndSend(exchangeName, "physician.updated", event);
-            System.out.println("⚡ Evento PhysicianUpdatedEvent enviado para o RabbitMQ: " + physicianId);
+            log.info("⚡ Evento PhysicianUpdatedEvent enviado para o RabbitMQ: {}", physicianId);
         } catch (Exception e) {
-            System.err.println("⚠️ FALHA ao enviar evento RabbitMQ: " + e.getMessage());
+            log.error("⚠️ FALHA ao enviar evento RabbitMQ: {}", e.getMessage(), e);
         }
     }
 }

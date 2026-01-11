@@ -26,8 +26,8 @@ import java.nio.charset.StandardCharsets;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private static final String SECRET = "chave-super-secreta-para-dev-256bits-PCM";
-
+    @org.springframework.beans.factory.annotation.Value("${jwt.secret.key}")
+    private String jwtSecretKey;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -36,7 +36,10 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         SecretKey key = getSecretKey();
-        return NimbusJwtDecoder.withSecretKey(key).build();
+        return NimbusJwtDecoder.withSecretKey(key)
+                // MUDANÇA 2: Forçar o algoritmo HS256 para evitar ambiguidades
+                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                .build();
     }
 
     @Bean
@@ -101,6 +104,8 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/",
                     "/physicians/register",
+                    // /internal/** endpoints are protected by mTLS - only services with valid certificates can access
+                    // The mTLS configuration (server.ssl.client-auth=need) ensures only authenticated services can call these
                     "/internal/**",
                     "/h2-console/**",
                     "/swagger-ui.html",
@@ -125,7 +130,7 @@ public class SecurityConfig {
     }
 
     private SecretKey getSecretKey() {
-        byte[] keyBytes = SECRET.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = jwtSecretKey.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 }

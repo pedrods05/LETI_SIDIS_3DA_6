@@ -1,57 +1,29 @@
-# ADR 0004 — Adopção de CQRS + AMQP (RabbitMQ) para hap-appointmentrecords
+# ADR 0004 — Adoção Global de CQRS e Event-Driven Architecture (RabbitMQ)
 
 Status: Aceite
 Data: 2025-12-04
 
 Contexto
 --------
-O `hap-appointmentrecords` é responsável pelo armazenamento e disponibilização de registos de consultas. Para melhorar escalabilidade, desempenho das consultas e integração entre domínios, foi necessária uma solução para sincronizar o write-model (transacional) com um read-model otimizado e para propagar eventos de negócio a outros serviços.
+A plataforma HAP requer alta disponibilidade para leituras (consultas de pacientes, médicos e agendamentos) e integridade estrita para escritas (registos, atualizações). A arquitetura monolítica ou puramente síncrona cria acoplamento temporal e dificulta a escalabilidade de leitura independente da escrita.
 
 Decisão
 -------
-Adotar CQRS (Command Query Responsibility Segregation) no módulo `hap-appointmentrecords` com eventos assíncronos transportados via RabbitMQ (AMQP). Implementação inicial sem Event Sourcing (persistimos no write DB e publicamos eventos que constroem projeções para leitura).
+Adotar o padrão **CQRS (Command Query Responsibility Segregation)** transversalmente aos microserviços principais (`hap-patients`, `hap-physicians`, `hap-appointmentrecords`), suportado por uma arquitetura orientada a eventos (EDA) utilizando **RabbitMQ**.
 
-Justificativa
+Justificação
 ------------
-- Separação clara entre regras de negócio (write) e otimização de consultas (read).
-- Possibilidade de escalar independentemente consumidores/servidores de leitura.
-- Desacoplamento temporal entre produtores e consumidores (outros serviços podem escutar os mesmos eventos sem ligação direta).
-- Permite evoluir para event sourcing no futuro se necessário.
+- **Desempenho Assimétrico:** O volume de leituras é muito superior ao de escritas. O CQRS permite otimizar o *Read Model* (MongoDB desnormalizado) separadamente do *Write Model* (Relacional normalizado).
+- **Desacoplamento:** O uso de eventos (AMQP) permite que os serviços de leitura sejam atualizados sem bloquear a transação de escrita.
+- **Evolutividade:** Facilita a introdução futura de novos consumidores (ex: serviço de Notificações ou Analytics) sem alterar os emissores.
 
 Implicações
 -----------
-- A aplicação passa a publicar eventos como `AppointmentCreatedEvent` após gravação no write-model.
-- Um listener consumidor atualiza a projeção (`AppointmentProjection`) que servirá as queries rápidas.
-- As queries podem usar uma base otimizada (projeções desnormalizadas) sem impactar transações de escrita.
-- A consistência entre write/read passa a ser eventual; UIs devem tratar possíveis latências.
+1. **Infraestrutura:** Necessidade de manter RabbitMQ e MongoDB partilhado (ou por instância).
+2. **Complexidade:** A aplicação deve gerir dois modelos de dados (JPA e Mongo Document) e garantir a sua sincronização via `EventHandlers`.
+3. **Consistência Eventual:** A UI deve estar preparada para ligeiros atrasos entre a escrita e a disponibilidade do dado na leitura.
 
-Detalhes de implementação (resumo técnico)
------------------------------------------
-- Dependências: `spring-boot-starter-amqp` (RabbitMQ), Jackson message converter.
-- Beans AMQP: `TopicExchange`, `Queue`, `Binding`, `RabbitTemplate` com `Jackson2JsonMessageConverter`.
-- Entidades/Classes principais:
-  - `CreateAppointmentCommand` + `CreateAppointmentCommandHandler` (write side)
-  - `AppointmentCreatedEvent` (evento publicado)
-  - `AppointmentEventsListener` (consumer que actualiza `AppointmentProjection`)
-  - `AppointmentProjection` + `AppointmentProjectionRepository` (read model)
-- Testes: Unit tests para handler e listener; integração com Testcontainers RabbitMQ recomendada para CI.
-
-Riscos e mitigação
-------------------
-- Eventual consistency: Mitigar na UI com estados e leituras opcionais do write-model quando necessário.
-- Duplicidade de mensagens: Implementar idempotência na projeção (upsert por appointmentId, ou eventId dedup).
-- Operacional: gerir RabbitMQ (DLQ, retry, TLS, credenciais) e monitorizar filas.
-
-Estado atual
-------------
-Implementação inicial entregue: publicador no handler, listener que grava projeção local, configuração AMQP e testes unitários. Próximos passos incluem ativar listeners via `@RabbitListener` em runtime, criar testes de integração com Testcontainers e adicionar políticas de retry/DLQ.
-
-Referências
-----------
-- Arquitetura: `2ITERAÇÃO.md` (raiz do repositório)
-- Código: `hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/`
-
-Decisão tomada por: equipa HAP (implementador)
-
----
-
+Detalhes de Implementação
+-------------------------
+- **Write Side:** H2/PostgreSQL (JPA) garante ACID. Publica eventos (`PatientRegistered`, `AppointmentCreated`) no Exchange `hap-exchange`.
+- **Read Side:** Listeners (`PatientEventHandler`, etc.) consomem eventos e atualizam projeções (`*Summary`) no MongoDB.

@@ -1,43 +1,83 @@
-package leti_sisdis_6.happatients.config;
+package leti_sisdis_6.happatients.config; // ⚠️ ATENÇÃO: Confirma o package de cada serviço!
 
-import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier; // <--- NOVO IMPORT
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.retry.annotation.EnableRetry;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.web.client.RestTemplate;
 
-import java.time.Duration;
+import javax.net.ssl.SSLContext;
 import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
-@EnableRetry
 public class HttpClientConfig {
 
+    @Value("classpath:certs/hap-keystore.p12")
+    private Resource keystore;
+
+    @Value("classpath:certs/hap-truststore.p12")
+    private Resource truststore;
+
+    @Value("${server.ssl.key-store-password}")
+    private String keystorePassword;
+
+    @Value("${server.ssl.trust-store-password}")
+    private String truststorePassword;
+
     @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        RestTemplate restTemplate = builder
-                .setConnectTimeout(Duration.ofSeconds(3))
-                .setReadTimeout(Duration.ofSeconds(5))
+    public RestTemplate restTemplate() throws Exception {
+
+
+        SSLContext sslContext = SSLContextBuilder.create()
+                .loadKeyMaterial(keystore.getURL(), keystorePassword.toCharArray(), keystorePassword.toCharArray())
+                .loadTrustMaterial(truststore.getURL(), truststorePassword.toCharArray())
                 .build();
 
-        List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>(restTemplate.getInterceptors());
+        SSLConnectionSocketFactory sslSocketFactory = SSLConnectionSocketFactoryBuilder.create()
+                .setSslContext(sslContext)
+                .setHostnameVerifier(NoopHostnameVerifier.INSTANCE) // <--- A CORREÇÃO MÁGICA
+                .build();
+
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
+                        .setSSLSocketFactory(sslSocketFactory)
+                        .build())
+                .build();
+
+        HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        RestTemplate restTemplate = new RestTemplate(requestFactory);
+
+
+
+        List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
         interceptors.add((request, body, execution) -> {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.getCredentials() instanceof String) {
-                String token = (String) authentication.getCredentials();
-                if (token != null && !token.isBlank()) {
-                    request.getHeaders().set("Authorization", "Bearer " + token);
-                }
+
+            if (authentication instanceof JwtAuthenticationToken) {
+                JwtAuthenticationToken jwtToken = (JwtAuthenticationToken) authentication;
+                String tokenValue = jwtToken.getToken().getTokenValue();
+                request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + tokenValue);
             }
+
             return execution.execute(request, body);
         });
+
         restTemplate.setInterceptors(interceptors);
+
         return restTemplate;
     }
 }
-
-

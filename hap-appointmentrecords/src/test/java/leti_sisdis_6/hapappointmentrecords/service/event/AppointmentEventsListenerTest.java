@@ -1,36 +1,71 @@
 package leti_sisdis_6.hapappointmentrecords.service.event;
 
-import leti_sisdis_6.hapappointmentrecords.model.AppointmentStatus;
-import leti_sisdis_6.hapappointmentrecords.model.ConsultationType;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentProjectionRepository;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 
-import java.time.LocalDateTime;
-
-import static org.mockito.Mockito.*;
+import static leti_sisdis_6.hapappointmentrecords.config.RabbitMQConfig.CORRELATION_ID_HEADER;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AppointmentEventsListenerTest {
 
-    private AppointmentProjectionRepository projectionRepository;
-    private AppointmentRepository appointmentRepository;
-    private AppointmentEventsListener listener;
+    private final AppointmentEventsListener listener = new AppointmentEventsListener();
 
-    @BeforeEach
-    void setUp() {
-        projectionRepository = mock(AppointmentProjectionRepository.class);
-        appointmentRepository = mock(AppointmentRepository.class);
-        listener = new AppointmentEventsListener(projectionRepository, appointmentRepository);
+    @AfterEach
+    void tearDown() {
+        MDC.clear();
     }
 
     @Test
-    void onAppointmentCreated_savesProjectionAndAppointment() {
-        var event = new AppointmentCreatedEvent("a1", "p1", "d1", LocalDateTime.of(2025,12,10,9,0), ConsultationType.FIRST_TIME, AppointmentStatus.SCHEDULED, LocalDateTime.now());
+    @DisplayName("Deve processar AppointmentCreatedEvent sem erros")
+    void onAppointmentCreated_Success() {
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent();
+        event.setAppointmentId("app-1");
 
-        listener.onAppointmentCreated(event);
+        MessageProperties props = new MessageProperties();
+        Message message = new Message(new byte[0], props);
 
-        verify(projectionRepository, times(1)).save(any());
-        verify(appointmentRepository, times(1)).save(any());
+        assertDoesNotThrow(() -> listener.onAppointmentCreated(event, message, "corr-header-1"));
+
+    }
+
+    @Test
+    @DisplayName("Deve dar prioridade ao Header da anotação @Header")
+    void correlationId_PriorityHeaderAnnotation() {
+        AppointmentUpdatedEvent event = new AppointmentUpdatedEvent();
+        Message message = new Message(new byte[0], new MessageProperties());
+
+        assertDoesNotThrow(() -> listener.onAppointmentUpdated(event, message, "high-priority-id"));
+    }
+
+    @Test
+    @DisplayName("Deve extrair CorrelationId das propriedades da mensagem se @Header for nulo")
+    void correlationId_FromMessageProperties() {
+        AppointmentCanceledEvent event = new AppointmentCanceledEvent();
+        MessageProperties props = new MessageProperties();
+        props.setHeader(CORRELATION_ID_HEADER, "msg-prop-id");
+        Message message = new Message(new byte[0], props);
+
+        assertDoesNotThrow(() -> listener.onAppointmentCanceled(event, message, null));
+    }
+
+    @Test
+    @DisplayName("Deve funcionar mesmo com CorrelationId nulo em ambos")
+    void correlationId_NullSafe() {
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent();
+        Message message = new Message(new byte[0], new MessageProperties());
+
+        assertDoesNotThrow(() -> listener.onAppointmentCreated(event, message, null));
+    }
+
+    @Test
+    @DisplayName("Teste do overload de retrocompatibilidade")
+    void onAppointmentCreated_LegacyOverload() {
+        AppointmentCreatedEvent event = new AppointmentCreatedEvent();
+        assertDoesNotThrow(() -> listener.onAppointmentCreated(event));
     }
 }

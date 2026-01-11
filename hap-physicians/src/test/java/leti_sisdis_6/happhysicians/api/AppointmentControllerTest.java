@@ -1,16 +1,20 @@
 package leti_sisdis_6.happhysicians.api;
 
+import leti_sisdis_6.happhysicians.command.AppointmentCommandService;
 import leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest;
 import leti_sisdis_6.happhysicians.dto.output.AppointmentDetailsDTO;
+import leti_sisdis_6.happhysicians.eventsourcing.EventStoreService;
 import leti_sisdis_6.happhysicians.model.Appointment;
 import leti_sisdis_6.happhysicians.model.AppointmentStatus;
 import leti_sisdis_6.happhysicians.model.ConsultationType;
 import leti_sisdis_6.happhysicians.model.Department;
 import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.model.Specialty;
+import leti_sisdis_6.happhysicians.query.AppointmentQueryService;
 import leti_sisdis_6.happhysicians.services.AppointmentService;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +41,18 @@ class AppointmentControllerTest {
 
     @Mock
     private AppointmentService appointmentService;
+
+    @Mock
+    private AppointmentCommandService appointmentCommandService;
+
+    @Mock
+    private AppointmentQueryService appointmentQueryService;
+
+    @Mock
+    private EventStoreService eventStoreService;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @Mock
     private ExternalServiceClient externalServiceClient;
@@ -106,7 +122,7 @@ class AppointmentControllerTest {
                 .patientId("PAT01")
                 .build();
 
-        when(appointmentService.getAppointmentById(appointmentId))
+        when(appointmentQueryService.getAppointmentById(appointmentId))
                 .thenReturn(Optional.empty());
         when(externalServiceClient.getPeerUrls()).thenReturn(Collections.singletonList(peerUrl));
         when(restTemplate.getForObject(eq(peerUrl + "/internal/appointments/" + appointmentId), eq(Appointment.class)))

@@ -1,13 +1,17 @@
 package leti_sisdis_6.happhysicians.api;
 
+import leti_sisdis_6.happhysicians.command.PhysicianCommandService;
 import leti_sisdis_6.happhysicians.dto.request.RegisterPhysicianRequest;
 import leti_sisdis_6.happhysicians.dto.response.PhysicianIdResponse;
 import leti_sisdis_6.happhysicians.model.Department;
 import leti_sisdis_6.happhysicians.model.Physician;
 import leti_sisdis_6.happhysicians.model.Specialty;
+import leti_sisdis_6.happhysicians.query.PhysicianQueryService;
+import leti_sisdis_6.happhysicians.repository.AppointmentRepository;
 import leti_sisdis_6.happhysicians.repository.PhysicianRepository;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
 import leti_sisdis_6.happhysicians.services.PhysicianService;
+import leti_sisdis_6.happhysicians.util.SlotCalculator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +40,18 @@ class PhysicianControllerTest {
 
     @Mock
     private PhysicianService physicianService;
+
+    @Mock
+    private PhysicianCommandService physicianCommandService;
+
+    @Mock
+    private PhysicianQueryService physicianQueryService;
+
+    @Mock
+    private SlotCalculator slotCalculator;
+
+    @Mock
+    private AppointmentRepository appointmentRepository;
 
     @Mock
     private ExternalServiceClient externalServiceClient;
@@ -80,7 +96,7 @@ class PhysicianControllerTest {
     void testGetPhysician_Success() {
         // Arrange
         String physicianId = "PHY01";
-        when(physicianRepository.findById(physicianId)).thenReturn(Optional.of(testPhysician));
+        when(physicianQueryService.getPhysicianById(physicianId)).thenReturn(testPhysician);
 
         // Act
         ResponseEntity<Physician> response = physicianController.getPhysician(physicianId);
@@ -90,14 +106,14 @@ class PhysicianControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(physicianId, response.getBody().getPhysicianId());
-        verify(physicianRepository, times(1)).findById(physicianId);
+        verify(physicianQueryService, times(1)).getPhysicianById(physicianId);
     }
 
     @Test
     void testGetPhysician_NotFound() {
         // Arrange
         String physicianId = "PHY99";
-        when(physicianRepository.findById(physicianId)).thenReturn(Optional.empty());
+        when(physicianQueryService.getPhysicianById(physicianId)).thenThrow(new RuntimeException("Not found"));
         when(externalServiceClient.getPeerUrls()).thenReturn(Collections.emptyList());
 
         // Act
@@ -106,7 +122,7 @@ class PhysicianControllerTest {
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(physicianRepository, times(1)).findById(physicianId);
+        verify(physicianQueryService, times(1)).getPhysicianById(physicianId);
     }
 
     @Test
@@ -119,7 +135,7 @@ class PhysicianControllerTest {
                 .fullName("Dr. Peer Physician")
                 .build();
 
-        when(physicianRepository.findById(physicianId)).thenReturn(Optional.empty());
+        when(physicianQueryService.getPhysicianById(physicianId)).thenThrow(new RuntimeException("Not found"));
         when(externalServiceClient.getPeerUrls()).thenReturn(Collections.singletonList(peerUrl));
         when(restTemplate.getForObject(eq(peerUrl + "/internal/physicians/" + physicianId), eq(Physician.class)))
                 .thenReturn(peerPhysician);
@@ -147,31 +163,32 @@ class PhysicianControllerTest {
         request.setSpecialtyId("SPEC01");
 
         PhysicianIdResponse response = new PhysicianIdResponse("PHY02", "Success", null);
-        when(physicianService.register(request)).thenReturn(response);
+        when(physicianCommandService.registerPhysician(any(RegisterPhysicianRequest.class), anyString()))
+                .thenReturn(response);
 
         // Act
-        ResponseEntity<?> result = physicianController.registerPhysician(request);
+        ResponseEntity<?> result = physicianController.registerPhysician(null, request);
 
         // Assert
         assertNotNull(result);
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        verify(physicianService, times(1)).register(request);
+        verify(physicianCommandService, times(1)).registerPhysician(any(RegisterPhysicianRequest.class), anyString());
     }
 
     @Test
     void testRegisterPhysician_IllegalArgument() {
         // Arrange
         RegisterPhysicianRequest request = new RegisterPhysicianRequest();
-        when(physicianService.register(request))
+        when(physicianCommandService.registerPhysician(any(RegisterPhysicianRequest.class), anyString()))
                 .thenThrow(new IllegalArgumentException("Username already in use"));
 
         // Act
-        ResponseEntity<?> result = physicianController.registerPhysician(request);
+        ResponseEntity<?> result = physicianController.registerPhysician(null, request);
 
         // Assert
         assertNotNull(result);
         assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
-        verify(physicianService, times(1)).register(request);
+        verify(physicianCommandService, times(1)).registerPhysician(any(RegisterPhysicianRequest.class), anyString());
     }
 
 }

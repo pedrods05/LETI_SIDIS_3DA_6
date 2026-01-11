@@ -73,6 +73,51 @@ public class AppointmentEventsPublisher {
         }
     }
 
+    public void publishAppointmentUpdated(AppointmentUpdatedEvent event) {
+        String correlationId = resolveCorrelationId();
+        try {
+            byte[] payload = objectMapper.writeValueAsBytes(event);
+            MessageProperties props = new MessageProperties();
+            props.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+            props.setHeader(CORRELATION_ID_HEADER, correlationId);
+
+            Message message = new Message(payload, props);
+            rabbitTemplate.send(exchange, "appointment.updated", message);
+
+            log.info("⚡ Evento AppointmentUpdatedEvent enviado | correlationId={} | appointmentId={} | status={}→{}",
+                    correlationId,
+                    event != null ? event.getAppointmentId() : "null",
+                    event != null ? event.getPreviousStatus() : "null",
+                    event != null ? event.getNewStatus() : "null");
+        } catch (Exception ex) {
+            log.error("Failed to publish AppointmentUpdatedEvent | correlationId={}", correlationId, ex);
+        } finally {
+            cleanupCorrelationId(correlationId);
+        }
+    }
+
+    public void publishAppointmentCanceled(AppointmentCanceledEvent event) {
+        String correlationId = resolveCorrelationId();
+        try {
+            byte[] payload = objectMapper.writeValueAsBytes(event);
+            MessageProperties props = new MessageProperties();
+            props.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+            props.setHeader(CORRELATION_ID_HEADER, correlationId);
+
+            Message message = new Message(payload, props);
+            rabbitTemplate.send(exchange, "appointment.canceled", message);
+
+            log.info("⚡ Evento AppointmentCanceledEvent enviado | correlationId={} | appointmentId={} | reason={}",
+                    correlationId,
+                    event != null ? event.getAppointmentId() : "null",
+                    event != null ? event.getReason() : "null");
+        } catch (Exception ex) {
+            log.error("Failed to publish AppointmentCanceledEvent | correlationId={}", correlationId, ex);
+        } finally {
+            cleanupCorrelationId(correlationId);
+        }
+    }
+
     private String resolveCorrelationId() {
         String correlationId = MDC.get(CORRELATION_ID_HEADER);
         if (correlationId == null || correlationId.isBlank()) {

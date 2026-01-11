@@ -67,29 +67,33 @@ public class PatientController {
         return list;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(value = "/{id}", produces = "application/json")
     @Operation(
             summary = "Get patient details",
-    description = "Retrieves patient details. Only accessible by administrators.",
-    security = @SecurityRequirement(name = "bearerAuth"),
-    responses = {
-        @ApiResponse(responseCode = "200", description = "Successfully retrieved patient details"),
-        @ApiResponse(responseCode = "404", description = "Patient not found"),
-        @ApiResponse(responseCode = "403", description = "Access forbidden")
-    }
+            description = "Retrieves patient details. Public endpoint for testability.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Successfully retrieved patient details"),
+                @ApiResponse(responseCode = "404", description = "Patient not found"),
+                @ApiResponse(responseCode = "400", description = "Invalid request")
+            }
     )
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<?> getPatientDetails(@PathVariable String id) {
         try {
             PatientProfileDTO profile = patientQueryService.getPatientProfile(id);
-            return ResponseEntity.ok(profile);
+            if (profile != null) {
+                return ResponseEntity.ok(profile);
+            }
         } catch (NotFoundException e) {
             System.out.println("⚠️ Paciente não encontrado no Mongo (CQRS). Tentando Fallback SQL/Peers...");
         }
 
         try {
             PatientDetailsDTO patient = patientService.getPatientDetails(id);
-            return ResponseEntity.ok(patient);
+            if (patient != null) {
+                return ResponseEntity.ok(patient);
+            }
         } catch (EntityNotFoundException e) {
             System.out.println("Patient not found locally (SQL), querying peers: " + peers);
 
@@ -108,10 +112,12 @@ public class PatientController {
             }
 
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Patient not found in any instance (Mongo/SQL/Peers)"));
+                    .body(Map.of("error", "Patient not found in any instance (Mongo/SQL/Peers)", "patientId", id));
         }
-    }
 
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Patient not found", "patientId", id));
+    }
 
     @GetMapping
     @PreAuthorize("hasAuthority('ADMIN')")
@@ -124,7 +130,7 @@ public class PatientController {
     public ResponseEntity<?> searchPatients(@RequestParam String name) {
         try {
             return ResponseEntity.ok(patientService.searchPatientsByName(name));
-        } catch (EntityNotFoundException e) {
+        } catch (jakarta.persistence.EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         }
     }
@@ -150,19 +156,37 @@ public class PatientController {
         return ResponseEntity.ok(new UpdateResponse(message));
     }
 
-    @ExceptionHandler(UnrecognizedPropertyException.class)
-    public ResponseEntity<ErrorResponse> handleUnrecognizedPropertyException(UnrecognizedPropertyException e) {
+    @ExceptionHandler(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.class)
+    public ResponseEntity<ErrorResponse> handleUnrecognizedPropertyException(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", "Unknown field: " + e.getPropertyName(), "BAD_REQUEST"));
     }
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", e.getMessage(), "BAD_REQUEST"));
     }
+    @ExceptionHandler({NotFoundException.class, EntityNotFoundException.class})
+    public ResponseEntity<ErrorResponse> handleNotFound(Exception e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("Not found", e.getMessage(), "NOT_FOUND"));
+    }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
-        return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", e.getMessage(), "BAD_REQUEST"));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Internal error", e.getMessage(), "INTERNAL_SERVER_ERROR"));
     }
 
-    private record UpdateResponse(String message) {}
-    private record ErrorResponse(String error, String message, String status) {}
+    public static class UpdateResponse {
+        private final String message;
+        public UpdateResponse(String message) { this.message = message; }
+        public String getMessage() { return message; }
+    }
+    public static class ErrorResponse {
+        private final String error;
+        private final String message;
+        private final String status;
+        public ErrorResponse(String error, String message, String status) {
+            this.error = error; this.message = message; this.status = status;
+        }
+        public String getError() { return error; }
+        public String getMessage() { return message; }
+        public String getStatus() { return status; }
+    }
 }

@@ -16,6 +16,7 @@ import leti_sisdis_6.happhysicians.repository.SpecialtyRepository;
 import leti_sisdis_6.happhysicians.services.ExternalServiceClient;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ import org.springframework.web.client.HttpClientErrorException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PhysicianService {
 
     private final PhysicianRepository physicianRepository;
@@ -73,10 +75,10 @@ public class PhysicianService {
         try {
             // Register user in hap-auth service
             externalServiceClient.registerUser(request.getUsername(), request.getPassword(), "PHYSICIAN");
-            System.out.println("Successfully registered physician in auth service: " + request.getUsername());
+            log.info("Successfully registered physician in auth service: {}", request.getUsername());
         } catch (Exception e) {
             // Log warning but continue with local registration
-            System.out.println("Warning: Could not register physician in auth service: " + e.getMessage());
+            log.warn("Warning: Could not register physician in auth service: {}", e.getMessage());
         }
 
         Physician physician = physicianMapper.toEntity(request, department, specialty);
@@ -263,7 +265,7 @@ public class PhysicianService {
             // physicianDTO.setAppointmentRecordsCount(appointmentRecords.size());
         } catch (Exception e) {
             // Log warning but continue without external data
-            System.out.println("Warning: Could not fetch appointment records for physician " + id + ": " + e.getMessage());
+            log.warn("Warning: Could not fetch appointment records for physician {}: {}", id, e.getMessage());
         }
 
         return physicianDTO;

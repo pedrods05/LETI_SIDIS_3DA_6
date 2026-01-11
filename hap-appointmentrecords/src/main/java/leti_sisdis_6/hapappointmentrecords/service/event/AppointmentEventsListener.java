@@ -1,9 +1,6 @@
 package leti_sisdis_6.hapappointmentrecords.service.event;
 
-import leti_sisdis_6.hapappointmentrecords.model.Appointment;
-import leti_sisdis_6.hapappointmentrecords.model.AppointmentProjection;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentProjectionRepository;
-import leti_sisdis_6.hapappointmentrecords.repository.AppointmentRepository;
+import io.micrometer.core.annotation.Counted;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.amqp.core.Message;
@@ -16,16 +13,15 @@ import org.springframework.stereotype.Component;
 
 import static leti_sisdis_6.hapappointmentrecords.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
+/**
+ * Listens to appointment events from physicians service for logging/monitoring purposes.
+ * AppointmentRecords does NOT store appointment data locally - it queries physicians service when needed.
+ */
 @Component
 @Slf4j
 public class AppointmentEventsListener {
 
-    private final AppointmentProjectionRepository projectionRepository;
-    private final AppointmentRepository appointmentRepository;
-
-    public AppointmentEventsListener(AppointmentProjectionRepository projectionRepository, AppointmentRepository appointmentRepository) {
-        this.projectionRepository = projectionRepository;
-        this.appointmentRepository = appointmentRepository;
+    public AppointmentEventsListener() {
     }
 
     // Backward-compatible overload used by existing tests
@@ -33,12 +29,12 @@ public class AppointmentEventsListener {
         onAppointmentCreated(event, null, null);
     }
 
-    // Método público que processa eventos; pode ser anotado com @RabbitListener em runtime/config se necessário
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.appointmentrecords.projection", durable = "true"),
+            value = @Queue(value = "q.appointmentrecords.projection.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
             key = "appointment.created"
     ))
+    @Counted(value = "saga.appointment.created.consumed", description = "Count of appointment created events consumed")
     public void onAppointmentCreated(AppointmentCreatedEvent event,
                                      Message message,
                                      @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {
@@ -47,35 +43,65 @@ public class AppointmentEventsListener {
             MDC.put(CORRELATION_ID_HEADER, correlationId);
         }
 
-        log.info("📥 Evento AppointmentCreatedEvent recebido | correlationId={} | appointmentId={}",
-                correlationId, event != null ? event.getAppointmentId() : "null");
+        log.info("📥 Evento AppointmentCreatedEvent recebido | correlationId={} | appointmentId={} | patientId={} | physicianId={} | dateTime={}",
+                correlationId,
+                event != null ? event.getAppointmentId() : "null",
+                event != null ? event.getPatientId() : "null",
+                event != null ? event.getPhysicianId() : "null",
+                event != null ? event.getDateTime() : "null");
 
         try {
-            if (event == null || event.getAppointmentId() == null) return;
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
+        }
+    }
 
-            AppointmentProjection projection = AppointmentProjection.builder()
-                    .appointmentId(event.getAppointmentId())
-                    .patientId(event.getPatientId())
-                    .physicianId(event.getPhysicianId())
-                    .dateTime(event.getDateTime())
-                    .consultationType(event.getConsultationType())
-                    .status(event.getStatus())
-                    .lastUpdated(event.getOccurredAt())
-                    .build();
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(value = "q.appointmentrecords.projection", durable = "true"),
+            exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
+            key = "appointment.updated"
+    ))
+    @Counted(value = "saga.appointment.updated.consumed", description = "Count of appointment updated events consumed")
+    public void onAppointmentUpdated(AppointmentUpdatedEvent event,
+                                     Message message,
+                                     @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {
+        String correlationId = extractCorrelationId(message, correlationIdHeader);
+        if (correlationId != null) {
+            MDC.put(CORRELATION_ID_HEADER, correlationId);
+        }
 
-            projectionRepository.save(projection);
+        log.info("📥 Evento AppointmentUpdatedEvent recebido | correlationId={} | appointmentId={} | status={}→{}",
+                correlationId,
+                event != null ? event.getAppointmentId() : "null",
+                event != null ? event.getPreviousStatus() : "null",
+                event != null ? event.getNewStatus() : "null");
 
-            // Optionally keep a local source-of-truth in the write model as well
-            Appointment appointment = Appointment.builder()
-                    .appointmentId(event.getAppointmentId())
-                    .patientId(event.getPatientId())
-                    .physicianId(event.getPhysicianId())
-                    .dateTime(event.getDateTime())
-                    .consultationType(event.getConsultationType())
-                    .status(event.getStatus())
-                    .build();
+        try {
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
+        }
+    }
 
-            appointmentRepository.save(appointment);
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(value = "q.appointmentrecords.projection", durable = "true"),
+            exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-appointmentrecords-exchange}", type = "topic"),
+            key = "appointment.canceled"
+    ))
+    @Counted(value = "saga.appointment.canceled.consumed", description = "Count of appointment canceled events consumed")
+    public void onAppointmentCanceled(AppointmentCanceledEvent event,
+                                      Message message,
+                                      @Header(name = CORRELATION_ID_HEADER, required = false) String correlationIdHeader) {
+        String correlationId = extractCorrelationId(message, correlationIdHeader);
+        if (correlationId != null) {
+            MDC.put(CORRELATION_ID_HEADER, correlationId);
+        }
+
+        log.info("📥 Evento AppointmentCanceledEvent recebido | correlationId={} | appointmentId={} | reason={}",
+                correlationId,
+                event != null ? event.getAppointmentId() : "null",
+                event != null ? event.getReason() : "null");
+
+        try {
         } finally {
             MDC.remove(CORRELATION_ID_HEADER);
         }

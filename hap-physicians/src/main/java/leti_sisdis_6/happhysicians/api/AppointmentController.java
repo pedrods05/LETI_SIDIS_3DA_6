@@ -22,14 +22,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.MDC;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+
+import static leti_sisdis_6.happhysicians.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @RestController
 @RequestMapping("/appointments")
 @Tag(name = "Appointment", description = "Appointment management endpoints")
+@Slf4j
 public class AppointmentController {
 
    @Autowired
@@ -73,62 +79,130 @@ public class AppointmentController {
         }
 
         // Fallback to peer forwarding if not found
-        System.out.println("Appointment not found locally, querying peers");
+        log.debug("Appointment not found locally, querying peers");
         List<String> peers = externalServiceClient.getPeerUrls();
         for (String peer : peers) {
             String url = peer + "/internal/appointments/" + appointmentId;
-            System.out.println("Querying peer: " + url);
+            log.debug("Querying peer: {}", url);
             try {
                 Appointment remoteAppointment = restTemplate.getForObject(url, Appointment.class);
                 if (remoteAppointment != null) {
-                    System.out.println("Found appointment in peer: " + url);
+                    log.info("Found appointment in peer: {}", url);
                     return ResponseEntity.ok(remoteAppointment);
                 }
             } catch (Exception e) {
-                System.out.println("Failed to query peer " + peer + ": " + e.getMessage());
+                log.debug("Failed to query peer {}: {}", peer, e.getMessage());
             }
         }
-        System.out.println("Appointment not found in any peer");
+        log.debug("Appointment not found in any peer");
         return ResponseEntity.notFound().build();
     }
 
     @PostMapping
-    @Operation(summary = "Create a new appointment")
-    public ResponseEntity<?> createAppointment(@RequestBody leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest appointmentDTO) {
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN', 'PATIENT')")
+    @Operation(
+            summary = "Create a new appointment",
+            description = "Creates a new appointment. Requires ADMIN, PHYSICIAN, or PATIENT role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Appointment created successfully"),
+                    @ApiResponse(responseCode = "400", description = "Invalid request"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
+    public ResponseEntity<?> createAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @RequestBody leti_sisdis_6.happhysicians.dto.input.ScheduleAppointmentRequest appointmentDTO) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             // Use Command Service (writes to write model and publishes event)
-            Appointment createdAppointment = appointmentCommandService.createAppointment(appointmentDTO);
+            Appointment createdAppointment = appointmentCommandService.createAppointment(appointmentDTO, correlationId);
             return ResponseEntity.ok(createdAppointment);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 
     @GetMapping
-    @Operation(summary = "Get all appointments")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN')")
+    @Operation(
+            summary = "Get all appointments",
+            description = "Retrieves all appointments. Requires ADMIN or PHYSICIAN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved appointments"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
     public List<Appointment> getAllAppointments() {
         // Use Query Service (reads from MongoDB read model)
         return appointmentQueryService.getAllAppointments();
     }
 
     @GetMapping("/physician/{physicianId}")
-    @Operation(summary = "Get appointments by physician")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN')")
+    @Operation(
+            summary = "Get appointments by physician",
+            description = "Retrieves appointments for a specific physician. Requires ADMIN or PHYSICIAN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved appointments"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
     public List<Appointment> getAppointmentsByPhysician(@PathVariable String physicianId) {
-        return appointmentService.getAppointmentsByPhysician(physicianId);
+        // Use Query Service (reads from MongoDB read model with fallback to write model)
+        return appointmentQueryService.getAppointmentsByPhysician(physicianId);
     }
 
     @GetMapping("/patient/{patientId}")
-    @Operation(summary = "Get appointments by patient")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN', 'PATIENT')")
+    @Operation(
+            summary = "Get appointments by patient",
+            description = "Retrieves appointments for a specific patient. Requires ADMIN, PHYSICIAN, or PATIENT role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved appointments"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
     public List<Appointment> getAppointmentsByPatient(@PathVariable String patientId) {
-        return appointmentService.getAppointmentsByPatient(patientId);
+        // Use Query Service (reads from MongoDB read model with fallback to write model)
+        return appointmentQueryService.getAppointmentsByPatient(patientId);
     }
 
     @PutMapping("/{appointmentId}")
-    @Operation(summary = "Update appointment by ID")
-    public ResponseEntity<?> updateAppointment(@PathVariable String appointmentId, @RequestBody leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest updateDTO) {
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN')")
+    @Operation(
+            summary = "Update appointment by ID",
+            description = "Updates an appointment. Requires ADMIN or PHYSICIAN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Appointment updated successfully"),
+                    @ApiResponse(responseCode = "404", description = "Appointment not found"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
+    public ResponseEntity<?> updateAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @PathVariable String appointmentId, 
+            @RequestBody leti_sisdis_6.happhysicians.dto.input.UpdateAppointmentRequest updateDTO) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             // Use Command Service (writes to write model and publishes event)
-            Appointment updatedAppointment = appointmentCommandService.updateAppointment(appointmentId, updateDTO);
+            Appointment updatedAppointment = appointmentCommandService.updateAppointment(appointmentId, updateDTO, correlationId);
             if (updatedAppointment != null) {
                 return ResponseEntity.ok(updatedAppointment);
             } else {
@@ -136,11 +210,23 @@ public class AppointmentController {
             }
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 
     @DeleteMapping("/{appointmentId}")
-    @Operation(summary = "Delete appointment by ID")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(
+            summary = "Delete appointment by ID",
+            description = "Deletes an appointment. Requires ADMIN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Appointment deleted successfully"),
+                    @ApiResponse(responseCode = "404", description = "Appointment not found"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
     public ResponseEntity<Void> deleteAppointment(@PathVariable String appointmentId) {
         if (appointmentService.deleteAppointment(appointmentId)) {
             return ResponseEntity.noContent().build();
@@ -152,7 +238,17 @@ public class AppointmentController {
 
 
     @GetMapping("/{appointmentId}/full-details")
-    @Operation(summary = "Get appointment with full details")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN')")
+    @Operation(
+            summary = "Get appointment with full details",
+            description = "Retrieves appointment with full patient and record details. Requires ADMIN or PHYSICIAN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved appointment details"),
+                    @ApiResponse(responseCode = "404", description = "Appointment not found"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
     public ResponseEntity<AppointmentDetailsDTO> getAppointmentWithPatientAndRecord(@PathVariable String appointmentId) {
         try {
             AppointmentDetailsDTO details = appointmentService.getAppointmentWithPatientAndRecord(appointmentId);
@@ -163,7 +259,16 @@ public class AppointmentController {
     }
 
     @GetMapping("/physician/{physicianId}/with-patients")
-    @Operation(summary = "Get physician appointments with patients")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN')")
+    @Operation(
+            summary = "Get physician appointments with patients",
+            description = "Retrieves physician appointments with patient details. Requires ADMIN or PHYSICIAN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved appointments"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
     public ResponseEntity<List<AppointmentDetailsDTO>> getAppointmentsByPhysicianWithPatients(@PathVariable String physicianId) {
         try {
             List<AppointmentDetailsDTO> appointments = appointmentService.getAppointmentsByPhysicianWithPatients(physicianId);
@@ -190,20 +295,48 @@ public class AppointmentController {
     }
 
     @PutMapping("/{appointmentId}/cancel")
-    @Operation(summary = "Cancel appointment by ID")
-    public ResponseEntity<?> cancelAppointment(@PathVariable String appointmentId) {
-        // Use Command Service (writes to write model and publishes event)
-        Appointment updated = appointmentCommandService.cancelAppointment(appointmentId);
-        if (updated != null) {
-            return ResponseEntity.ok(updated);
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN', 'PATIENT')")
+    @Operation(
+            summary = "Cancel appointment by ID",
+            description = "Cancels an appointment. Requires ADMIN, PHYSICIAN, or PATIENT role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Appointment cancelled successfully"),
+                    @ApiResponse(responseCode = "404", description = "Appointment not found"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
+    )
+    public ResponseEntity<?> cancelAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
+            @PathVariable String appointmentId) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
+        try {
+            // Use Command Service (writes to write model and publishes event)
+            Appointment updated = appointmentCommandService.cancelAppointment(appointmentId, correlationId);
+            if (updated != null) {
+                return ResponseEntity.ok(updated);
+            }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Appointment not found"));
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Appointment not found"));
     }
 
     @GetMapping("/{appointmentId}/audit-trail")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN')")
     @Operation(
             summary = "Get appointment audit trail",
-            description = "Retrieves the complete event history (audit trail) for an appointment using Event Sourcing. Returns all events: ConsultationScheduled, NoteAdded, ConsultationCompleted, etc."
+            description = "Retrieves the complete event history (audit trail) for an appointment using Event Sourcing. Returns all events: ConsultationScheduled, NoteAdded, ConsultationCompleted, etc. Requires ADMIN or PHYSICIAN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved audit trail"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
     )
     public ResponseEntity<List<AuditTrailDTO>> getAuditTrail(@PathVariable String appointmentId) {
         try {
@@ -253,13 +386,27 @@ public class AppointmentController {
     }
 
     @PostMapping("/{appointmentId}/notes")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'PHYSICIAN')")
     @Operation(
             summary = "Add note to appointment",
-            description = "Adds a note to an appointment and generates a NoteAdded event in the Event Store"
+            description = "Adds a note to an appointment and generates a NoteAdded event in the Event Store. Requires ADMIN or PHYSICIAN role.",
+            security = @SecurityRequirement(name = "bearerAuth"),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Note added successfully"),
+                    @ApiResponse(responseCode = "400", description = "Invalid request"),
+                    @ApiResponse(responseCode = "403", description = "Access forbidden")
+            }
     )
     public ResponseEntity<?> addNoteToAppointment(
+            @RequestHeader(value = CORRELATION_ID_HEADER, required = false) String incomingCorrelationId,
             @PathVariable String appointmentId,
             @RequestBody Map<String, String> request) {
+        // Capture correlation ID from header or generate new one
+        String correlationId = (incomingCorrelationId == null || incomingCorrelationId.isBlank())
+                ? UUID.randomUUID().toString()
+                : incomingCorrelationId;
+        MDC.put(CORRELATION_ID_HEADER, correlationId);
+        
         try {
             String note = request.get("note");
             String userId = request.get("userId"); // Opcional
@@ -274,6 +421,8 @@ public class AppointmentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
+        } finally {
+            MDC.remove(CORRELATION_ID_HEADER);
         }
     }
 

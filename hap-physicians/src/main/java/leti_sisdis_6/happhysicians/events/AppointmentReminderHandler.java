@@ -1,6 +1,7 @@
 package leti_sisdis_6.happhysicians.events;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
@@ -9,26 +10,27 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentReminderHandler {
 
     @RabbitListener(bindings = @QueueBinding(
-            value = @Queue(value = "q.appointment.reminders", durable = "true"),
+            value = @Queue(value = "q.appointment.reminders.${spring.profiles.active}", durable = "true"),
             exchange = @Exchange(value = "${hap.rabbitmq.exchange:hap-exchange}", type = "topic"),
             key = "appointment.reminder"
     ))
     public void handleAppointmentReminder(AppointmentReminderEvent event) {
-        System.out.println("📧 [Reminder Handler] Processando lembrete de appointment: " + event.getAppointmentId());
-        System.out.println("   Tipo: " + event.getReminderType());
-        System.out.println("   Paciente: " + event.getPatientName() + " (" + event.getPatientEmail() + ")");
-        System.out.println("   Médico: " + event.getPhysicianName());
-        System.out.println("   Data/Hora: " + event.getDateTime());
+        log.info("📧 [Reminder Handler] Processando lembrete de appointment: {}", event.getAppointmentId());
+        log.info("   Tipo: {}", event.getReminderType());
+        log.info("   Paciente: {} ({})", event.getPatientName(), event.getPatientEmail());
+        log.info("   Médico: {}", event.getPhysicianName());
+        log.info("   Data/Hora: {}", event.getDateTime());
 
         // Simular envio de email/SMS (em produção, integrar com serviço de email/SMS)
         try {
             sendReminderEmail(event);
-            System.out.println("✅ [Reminder Handler] Lembrete enviado com sucesso para: " + event.getPatientEmail());
+            log.info("✅ [Reminder Handler] Lembrete enviado com sucesso para: {}", event.getPatientEmail());
         } catch (Exception e) {
-            System.err.println("⚠️ [Reminder Handler] Falha ao enviar lembrete: " + e.getMessage());
+            log.error("⚠️ [Reminder Handler] Falha ao enviar lembrete: {}", e.getMessage(), e);
         }
     }
 
@@ -52,9 +54,9 @@ public class AppointmentReminderHandler {
         );
 
         // Log do email (em produção, enviar realmente)
-        System.out.println("📨 [Email] Para: " + event.getPatientEmail());
-        System.out.println("📨 [Email] Assunto: " + subject);
-        System.out.println("📨 [Email] Corpo: " + body);
+        log.info("📨 [Email] Para: {}", event.getPatientEmail());
+        log.info("📨 [Email] Assunto: {}", subject);
+        log.info("📨 [Email] Corpo: {}", body);
     }
 }
 

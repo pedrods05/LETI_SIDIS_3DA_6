@@ -1,20 +1,28 @@
-# ADR 0001: DDD Bounded Contexts for HAP
-  - Optional async events (future): Publish domain events for eventual consistency.
-  - Synchronous REST (reads): AppointmentRecords validates patient/physician existence via dedicated endpoints.
-- Interaction patterns:
-- AppointmentRecords does not store patient/physician PII; it only references IDs.
-- Clear service boundaries and data ownership; each context will be implemented as an independent microservice.
-Consequences
+Contexto
+--------
+A plataforma HAP é um sistema complexo com múltiplas responsabilidades distintas: autenticação, gestão de pacientes, gestão de médicos e o registo clínico de consultas. Uma arquitetura monolítica ou com fronteiras mal definidas levaria a um acoplamento forte, dificultando a manutenção e a evolução independente de cada área de negócio.
 
-  4. AppointmentRecords Context: Scheduling and lifecycle of appointments; references PatientId and PhysicianId; responsibility for enforcing scheduling rules.
-  3. Physicians Context: Physician profiles, specialties, availability templates; responsibility for physician identity and availability definition.
-  2. Patients Context: Patient profiles, demographics, contacts; responsibility for patient identity and profile lifecycle.
-  1. Auth Context: Users, Roles, Tokens; responsibility for authentication/authorization.
-- Adopt Domain-Driven Design with four bounded contexts:
-Decision
+Decisão
+-------
+Adotar **Domain-Driven Design (DDD)** para decompor o sistema em quatro **Bounded Contexts** autónomos, implementados como microserviços independentes:
 
-- The repository already includes modules: `hap-auth`, `hap-patients`, `hap-physicians`, `hap-appointmentrecords`.
-- The HAP project manages authentication, patient profiles, physician profiles, and scheduling of appointments.
-Context
+1.  **Auth Context (`hap-auth`):**
+    * **Responsabilidade:** Gestão de identidades, credenciais, roles e emissão de tokens de segurança.
+    * **Dados:** Users, Roles.
+2.  **Patients Context (`hap-patients`):**
+    * **Responsabilidade:** Gestão do ciclo de vida e perfil dos pacientes (incluindo dados sensíveis/PII).
+    * **Dados:** Patient Profile, Medical History (resumo), Contacts.
+3.  **Physicians Context (`hap-physicians`):**
+    * **Responsabilidade:** Gestão de perfis médicos, especialidades e agendamento de consultas futuras (disponibilidade).
+    * **Dados:** Physician Profile, Availability, Scheduled Appointments.
+4.  **AppointmentRecords Context (`hap-appointmentrecords`):**
+    * **Responsabilidade:** Arquivo histórico e clínico de consultas realizadas.
+    * **Dados:** Clinical Records, Diagnoses, Prescriptions.
 
-
+Consequências e Padrões de Interação
+------------------------------------
+- **Share-Nothing Architecture:** Cada Bounded Context possui a sua própria base de dados e não partilha esquema nem tabelas com outros serviços.
+- **Referência por ID:** Os serviços não armazenam dados duplicados de outros domínios (ex: `hap-appointmentrecords` guarda apenas `patientId` e `physicianId`, não o nome ou morada).
+- **Comunicação Híbrida:**
+    - **Síncrona (REST):** Para validações em tempo real e obtenção de dados de referência (ex: obter nome do médico a partir do ID para exibir na UI).
+    - **Assíncrona (Eventos):** Para consistência eventual e efeitos colaterais (ex: quando um paciente é registado, emitir evento para criar modelos de leitura).
