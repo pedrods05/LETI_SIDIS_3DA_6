@@ -70,15 +70,18 @@ public class PatientController {
     @GetMapping(value = "/{id}", produces = "application/json")
     @Operation(
             summary = "Get patient details",
-            description = "Retrieves patient details. Public endpoint for testability.",
+            description = "Retrieves patient details.",
             security = @SecurityRequirement(name = "bearerAuth"),
             responses = {
-                @ApiResponse(responseCode = "200", description = "Successfully retrieved patient details"),
-                @ApiResponse(responseCode = "404", description = "Patient not found"),
-                @ApiResponse(responseCode = "400", description = "Invalid request")
+                    @ApiResponse(responseCode = "200", description = "Successfully retrieved patient details"),
+                    @ApiResponse(responseCode = "404", description = "Patient not found"),
+                    @ApiResponse(responseCode = "403", description = "Access Denied"),
+                    @ApiResponse(responseCode = "401", description = "Invalid Token")
             }
     )
-    @PreAuthorize("hasAuthority('ADMIN')")
+    // MUDANÇA 1: Usar hasAnyRole para bater certo com o prefixo ROLE_
+    // Adicionei PHYSICIAN também, senão os médicos não conseguem ver os pacientes
+    @PreAuthorize("hasAnyRole('ADMIN', 'PHYSICIAN')")
     public ResponseEntity<?> getPatientDetails(@PathVariable String id) {
         try {
             PatientProfileDTO profile = patientQueryService.getPatientProfile(id);
@@ -95,24 +98,18 @@ public class PatientController {
                 return ResponseEntity.ok(patient);
             }
         } catch (EntityNotFoundException e) {
-            System.out.println("Patient not found locally (SQL), querying peers: " + peers);
-
+            // Lógica de fallback para peers...
             for (String peer : peers) {
                 String url = (peer.endsWith("/")) ? (peer + "internal/patients/" + id) : (peer + "/internal/patients/" + id);
-                System.out.println("Querying peer: " + url);
                 try {
                     PatientDetailsDTO remote = resilientRestTemplate.getForObjectWithFallback(url, PatientDetailsDTO.class);
-                    if (remote != null) {
-                        System.out.println("Found patient in peer: " + url);
-                        return ResponseEntity.ok(remote);
-                    }
+                    if (remote != null) return ResponseEntity.ok(remote);
                 } catch (Exception ex) {
                     System.out.println("Failed to query peer " + url + ": " + ex.getMessage());
                 }
             }
-
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Patient not found in any instance (Mongo/SQL/Peers)", "patientId", id));
+                    .body(Map.of("error", "Patient not found", "patientId", id));
         }
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -120,13 +117,15 @@ public class PatientController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ADMIN')")
+    // MUDANÇA 2: hasRole em vez de hasAuthority
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<PatientDetailsDTO>> listAllPatients() {
         return ResponseEntity.ok(patientService.listAllPatients());
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    // MUDANÇA 3: hasRole em vez de hasAuthority
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> searchPatients(@RequestParam String name) {
         try {
             return ResponseEntity.ok(patientService.searchPatientsByName(name));
@@ -136,7 +135,8 @@ public class PatientController {
     }
 
     @GetMapping("/{id}/profile")
-    @PreAuthorize("hasAuthority('PHYSICIAN')")
+    // MUDANÇA 4: hasRole em vez de hasAuthority
+    @PreAuthorize("hasRole('PHYSICIAN')")
     public ResponseEntity<?> getPatientProfile(
             @PathVariable String id,
             @RequestHeader(name = "Authorization", required = false) String authorizationHeader) {
@@ -148,7 +148,8 @@ public class PatientController {
     }
 
     @PatchMapping("/me")
-    @PreAuthorize("hasAuthority('PATIENT')")
+    // MUDANÇA 5: hasRole em vez de hasAuthority
+    @PreAuthorize("hasRole('PATIENT')")
     public ResponseEntity<?> updateContactDetails(@Valid @RequestBody ContactDetailsUpdateDTO dto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
@@ -156,22 +157,20 @@ public class PatientController {
         return ResponseEntity.ok(new UpdateResponse(message));
     }
 
+    // --- EXCEPTION HANDLERS ---
+
     @ExceptionHandler(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.class)
     public ResponseEntity<ErrorResponse> handleUnrecognizedPropertyException(com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", "Unknown field: " + e.getPropertyName(), "BAD_REQUEST"));
     }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse("Invalid request", e.getMessage(), "BAD_REQUEST"));
     }
-    @ExceptionHandler({NotFoundException.class, EntityNotFoundException.class})
-    public ResponseEntity<ErrorResponse> handleNotFound(Exception e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("Not found", e.getMessage(), "NOT_FOUND"));
-    }
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse("Internal error", e.getMessage(), "INTERNAL_SERVER_ERROR"));
-    }
+
+    // MUDANÇA 6: REMOVI O @ExceptionHandler(Exception.class) QUE ESTAVA AQUI!
+    // Isto permite que o GlobalExceptionHandler apanhe o AccessDeniedException e devolva 403.
 
     public static class UpdateResponse {
         private final String message;

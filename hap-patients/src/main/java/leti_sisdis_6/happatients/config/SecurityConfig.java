@@ -1,131 +1,101 @@
 package leti_sisdis_6.happatients.config;
 
-import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 
 import javax.crypto.spec.SecretKeySpec;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
+@EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    @org.springframework.beans.factory.annotation.Value("${jwt.secret.key}")
+
+    @Value("${jwt.secret.key}")
     private String jwtSecretKey;
-    @PostConstruct
-    public void logSecretKey() {
-        System.out.println("==============================================");
-        System.out.println(">>> JWT SECRET LOADED: " + jwtSecretKey);
-        System.out.println("==============================================");
-    }
+
+    /**
+     * Define a resposta JSON personalizada para erros 401 (Token inválido/ausente no GET)
+     */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public AuthenticationEntryPoint restAuthenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setStatus(401);
+            response.setContentType("application/json;charset=UTF-8");
+
+            // Mensagem simples e direta para evitar erros de parsing
+            String body = String.format("""
+                    {
+                      "message": "Invalid or missing token",
+                      "details": ["%s"],
+                      "path": "%s"
+                    }
+                    """,
+                    "Bearer token is malformed or missing", // Mensagem fixa ou authException.getMessage()
+                    request.getRequestURI());
+
+            response.getWriter().write(body);
+        };
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .httpBasic(basic -> {})
-            .oauth2ResourceServer(oauth -> oauth
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-            )
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/internal/**").permitAll()
-                .requestMatchers("/api/v2/patients/register").permitAll()
-                // Require either ADMIN authority from JWT or ROLE_ADMIN from Basic users
-                .requestMatchers("/patients/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
-                ).permitAll()
-                .anyRequest().authenticated()
-            );
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+                .authorizeHttpRequests(auth -> auth
+                        // 1. Permitir endpoints de infraestrutura
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+
+                        // 2. CORREÇÃO: Permitir TODOS os POSTs (Criar paciente não pede token)
+                        .requestMatchers(HttpMethod.POST, "/**").permitAll()
+
+                        // 3. Exigir autenticação para qualquer outra coisa (principalmente GETs)
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        // Liga o nosso EntryPoint para devolver o JSON no erro 401
+                        .authenticationEntryPoint(restAuthenticationEntryPoint())
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                );
+
         return http.build();
+    }
+
+    // --- Configuração Standard do Token (HS256) ---
+
+    @Bean
+    public JwtDecoder jwtDecoder() {
+        byte[] secretBytes = jwtSecretKey.getBytes(StandardCharsets.UTF_8);
+        SecretKeySpec secretKey = new SecretKeySpec(secretBytes, "HmacSHA256");
+        return NimbusJwtDecoder.withSecretKey(secretKey)
+                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                .build();
     }
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter scopesConverter = new JwtGrantedAuthoritiesConverter();
-        scopesConverter.setAuthorityPrefix("");
-        scopesConverter.setAuthoritiesClaimName("scope");
+        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+        grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            Set<GrantedAuthority> merged = new HashSet<>();
-            Collection<GrantedAuthority> scopeAuth = scopesConverter.convert(jwt);
-            if (scopeAuth != null) merged.addAll(scopeAuth);
-
-            // --- CORREÇÃO: Lidar com 'authorities' (Lista ou String) ---
-            Object authorities = jwt.getClaim("authorities");
-            if (authorities instanceof List<?> list) {
-                merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
-                        .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
-            } else if (authorities instanceof String strAuth) {
-                // Se vier como string única
-                Arrays.stream(strAuth.split(",")).map(String::trim).filter(s -> !s.isEmpty())
-                        .map(SimpleGrantedAuthority::new).forEach(merged::add);
-            }
-
-            // --- CORREÇÃO CRÍTICA: Lidar com 'roles' (Lista ou String) ---
-            Object rolesClaim = jwt.getClaim("roles");
-            if (rolesClaim instanceof List<?> list) {
-                merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
-                        .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
-            } else if (rolesClaim instanceof String strRole) {
-                // *** AQUI ESTÁ A CURA PARA O TEU PROBLEMA ***
-                // Se for "ADMIN", adiciona a authority "ADMIN"
-                Arrays.stream(strRole.split(",")).map(String::trim).filter(s -> !s.isEmpty())
-                        .map(SimpleGrantedAuthority::new).forEach(merged::add);
-            }
-
-            // --- Realm Access (Keycloak style) ---
-            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
-            if (realmAccess != null) {
-                Object realmRoles = realmAccess.get("roles");
-                if (realmRoles instanceof List<?> list) {
-                    merged.addAll(list.stream().filter(Objects::nonNull).map(Object::toString).map(String::trim)
-                            .filter(s -> !s.isEmpty()).map(SimpleGrantedAuthority::new).collect(Collectors.toSet()));
-                }
-            }
-            return merged;
-        });
+        converter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
         return converter;
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        byte[] secret = jwtSecretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        SecretKeySpec key = new SecretKeySpec(secret, "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(key)
-                .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
-                .build();    }
-
-    @Bean
-    public UserDetailsService userDetailsService(org.springframework.security.crypto.password.PasswordEncoder encoder) {
-        UserDetails admin = User.withUsername("admin")
-                .password(encoder.encode("admin"))
-                .roles("ADMIN")
-                .build();
-        UserDetails physician = User.withUsername("physician")
-                .password(encoder.encode("physician"))
-                .roles("PHYSICIAN")
-                .build();
-        UserDetails patient = User.withUsername("patient")
-                .password(encoder.encode("patient"))
-                .roles("PATIENT")
-                .build();
-        return new InMemoryUserDetailsManager(admin, physician, patient);
     }
 }

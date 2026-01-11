@@ -185,18 +185,18 @@
           "v": "17",
           "name": "Criar paciente",
           "method": "POST",
-          "endpoint": "http://localhost:8082/api/v2/patients/register",
+          "endpoint": "https://localhost:8082/api/v2/patients/register",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
-            "authType": "inherit",
+            "authType": "none",
             "authActive": true
           },
           "body": {
             "contentType": "application/json",
-            "body": "{ \"fullName\": \"Paulo\", \"email\": \"paulo@example.com\", \"password\": \"Pa#1234567\", \"phoneNumber\": \"+351987657852\", \"birthDate\": \"1996-06-12\", \"address\": { \"street\": \"Rua B\", \"city\": \"Porto\", \"postalCode\": \"1000-002\", \"country\": \"PT\" }, \"insuranceInfo\": { \"policyNumber\": \"POL00012\", \"companyName\": \"MinhaSeguradoraTua\", \"coverageType\": \"STANDARD\" }, \"photo\": { \"url\": \"http://example.com/photo.jpg\", \"uploadedAt\": \"2025-10-17T16:40:00Z\" }, \"healthConcerns\": [], \"dataConsentGiven\": true }"
+            "body": "{ \"fullName\": \"Paulinhnnnnao\", \"email\": \"paulinha@example.com\", \"password\": \"Pa#1234567\", \"phoneNumber\": \"+351917547230\", \"birthDate\": \"1996-06-19\", \"address\": { \"street\": \"Rua B\", \"city\": \"Porto\", \"postalCode\": \"1000-002\", \"country\": \"PT\" }, \"insuranceInfo\": { \"policyNumber\": \"POL00120\", \"companyName\": \"MinhaSeguradoraTua\", \"coverageType\": \"STANDARD\" }, \"photo\": { \"url\": \"http://example.com/photo.jpg\", \"uploadedAt\": \"2025-10-17T16:40:00Z\" }, \"healthConcerns\": [], \"dataConsentGiven\": true }"
           },
           "requestVariables": [],
           "responses": {},
@@ -217,7 +217,7 @@
           },
           "body": {
             "contentType": "application/json",
-            "body": "{ \"username\": \"paulo@example.com\", \"password\": \"Pa#1234567\" }"
+            "body": "{ \"username\": \"paulinhlk@example.com\", \"password\": \"Pa#1234567\" }"
           },
           "requestVariables": [],
           "responses": {},
@@ -227,18 +227,18 @@
           "v": "17",
           "name": "Registar User",
           "method": "POST",
-          "endpoint": "http://localhost:8084/api/public/register",
+          "endpoint": "https://localhost:8084/api/public/register",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
-            "authType": "inherit",
+            "authType": "none",
             "authActive": true
           },
           "body": {
             "contentType": "application/json",
-            "body": "{\n \"username\": \"pedroSousa@clinic.pt\", \"password\": \"1230773\", \"role\": \"ADMIN\" }"
+            "body": "{\n \"username\": \"pedrinho@clinic.pt\", \"password\": \"1230773\", \"role\": \"ADMIN\" }"
           },
           "requestVariables": [],
           "responses": {},
@@ -248,7 +248,7 @@
           "v": "17",
           "name": "Login Admin",
           "method": "POST",
-          "endpoint": "http://localhost:8084/api/public/login",
+          "endpoint": "https://localhost:8084/api/public/login",
           "params": [],
           "headers": [],
           "preRequestScript": "",
@@ -269,7 +269,7 @@
           "v": "17",
           "name": "Create physician",
           "method": "POST",
-          "endpoint": "http://localhost:8081/physicians/register",
+          "endpoint": "https://localhost:8081/physicians/register",
           "params": [],
           "headers": [],
           "preRequestScript": "",
@@ -290,7 +290,7 @@
           "v": "17",
           "name": "Login Physician ",
           "method": "POST",
-          "endpoint": "http://localhost:8084/api/public/login",
+          "endpoint": "https://localhost:8084/api/public/login",
           "params": [],
           "headers": [],
           "preRequestScript": "",
@@ -311,14 +311,14 @@
           "v": "17",
           "name": "View Physician Details ",
           "method": "GET",
-          "endpoint": "http://localhost:8081/physicians/PHY03",
+          "endpoint": "https://localhost:8081/physicians/PHY03",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicGVkcm9Tb3VzYUBjbGluaWMucHQiLCJleHAiOjE3NjE3NzIxMTgsImlhdCI6MTc2MTc2ODUxOCwicm9sZXMiOiJST0xFX0FETUlOIn0.tqe0tD8oDPRJVnQp3GM_V83HjzCACpqgTysWlSDEhkQ",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjI5MzkzOTgsImlhdCI6MTc2MjkzNTc5OCwicm9sZXMiOiJBRE1JTiJ9.1Q8Q8QninEMSGINr50rERj6VqzlviTgiVZfl-i7mCJ8",
             "authActive": true
           },
           "body": {
@@ -333,14 +333,14 @@
           "v": "17",
           "name": "Schedule an appointment ",
           "method": "POST",
-          "endpoint": "http://localhost:8081/appointments",
+          "endpoint": "https://localhost:8081/appointments",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4NTExOTQsImlhdCI6MTc2NDg0NzU5NCwicm9sZXMiOiJBRE1JTiJ9.DUaosni-gHvGYVwosQPzn7WoJL9X-kK06yjXV_owLyY",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjcxOTYzNjYsImlhdCI6MTc2NzE5Mjc2Niwicm9sZXMiOiJBRE1JTiJ9.NVAc--QBgoZmpK6t_qxQClNLisAUMfB3QGEp3t48iZw",
             "authActive": true
           },
           "body": {
@@ -353,21 +353,21 @@
         },
         {
           "v": "17",
-          "name": "Get all appointments",
+          "name": "Get all appointment ",
           "method": "GET",
-          "endpoint": "http://localhost:8081/appointments",
+          "endpoint": "https://localhost:8081/appointments",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4MDMyMDksImlhdCI6MTc2NDc5OTYwOSwicm9sZXMiOiJBRE1JTiJ9.pNqRJNnkoqKlgVuTRiBeiwgIZi2KlDDXCu5qMWOerJU",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjgwNzAyNDEsImlhdCI6MTc2ODA2NjY0MSwicm9sZXMiOiJBRE1JTiJ9.JMKJy71vAjqZA5Y9M4i_z2_gUFo9opNdWqsWfw3UT4s",
             "authActive": true
           },
           "body": {
-            "contentType": null,
-            "body": null
+            "contentType": "application/json",
+            "body": "{\n  \"patientId\": \"PAT03\",\n  \"physicianId\": \"PHY03\",\n  \"dateTime\": \"2025-11-05T10:00:00\",\n  \"consultationType\": \"PRESENTIAL\",\n  \"status\": \"SCHEDULED\"\n}\n\n"
           },
           "requestVariables": [],
           "responses": {},
@@ -377,14 +377,14 @@
           "v": "17",
           "name": "Update Appointment",
           "method": "PUT",
-          "endpoint": "http://localhost:8081/appointments/APT20",
+          "endpoint": "https://localhost:8081/appointments/APT20",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjI5MzkzOTgsImlhdCI6MTc2MjkzNTc5OCwicm9sZXMiOiJBRE1JTiJ9.1Q8Q8QninEMSGINr50rERj6VqzlviTgiVZfl-i7mCJ8",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjgwNzAyNDEsImlhdCI6MTc2ODA2NjY0MSwicm9sZXMiOiJBRE1JTiJ9.JMKJy71vAjqZA5Y9M4i_z2_gUFo9opNdWqsWfw3UT4s",
             "authActive": true
           },
           "body": {
@@ -399,14 +399,14 @@
           "v": "17",
           "name": "Cancel appointment",
           "method": "PUT",
-          "endpoint": "http://localhost:8081/appointments/APT20/cancel",
+          "endpoint": "https://localhost:8081/appointments/APT20/cancel",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjUyMjAzMDAsImlhdCI6MTc2NTIxNjcwMCwicm9sZXMiOiJBRE1JTiJ9.wBtSyu4z6GQhjH7oqvwLJsnyjud8_4j_L4AwRIloGOw",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjgwNzAyNDEsImlhdCI6MTc2ODA2NjY0MSwicm9sZXMiOiJBRE1JTiJ9.JMKJy71vAjqZA5Y9M4i_z2_gUFo9opNdWqsWfw3UT4s",
             "authActive": true
           },
           "body": {
@@ -421,14 +421,14 @@
           "v": "17",
           "name": "Update physician",
           "method": "PUT",
-          "endpoint": "http://localhost:8081/physicians/PHY04",
+          "endpoint": "https://localhost:8081/physicians/PHY03",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4NTExOTQsImlhdCI6MTc2NDg0NzU5NCwicm9sZXMiOiJBRE1JTiJ9.DUaosni-gHvGYVwosQPzn7WoJL9X-kK06yjXV_owLyY",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjcxOTYzNjYsImlhdCI6MTc2NzE5Mjc2Niwicm9sZXMiOiJBRE1JTiJ9.NVAc--QBgoZmpK6t_qxQClNLisAUMfB3QGEp3t48iZw",
             "authActive": true
           },
           "body": {
@@ -472,7 +472,7 @@
           "v": "17",
           "name": "Ver appointment record",
           "method": "GET",
-          "endpoint": "http://localhost:8083/api/appointment-records/REC782C797D",
+          "endpoint": "https://localhost:8083/api/appointment-records/RECB41D60CD",
           "params": [],
           "headers": [
             {
@@ -492,7 +492,7 @@
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoicHVsZ2FAaG90bWFpbC5jb20iLCJleHAiOjE3NjE5NDQ2MTksImlhdCI6MTc2MTk0MTAxOSwicm9sZXMiOiJQSFlTSUNJQU4ifQ.282dJX3HypCrFSsaVqoLA70pQ_xfEu-0DueLfzUiojY",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjgwNzU5MzMsImlhdCI6MTc2ODA3MjMzMywicm9sZXMiOiJBRE1JTiJ9.1n2NdvWAJWfCmfj3sXeq23q3QrEGPe3YXeOj2uL4JkM",
             "authActive": true
           },
           "body": {
@@ -507,14 +507,14 @@
           "v": "17",
           "name": "View Patients Details",
           "method": "GET",
-          "endpoint": "http://localhost:8082/patients/PAT03",
+          "endpoint": "https://localhost:8088/patients/PAT03",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjE5NDUzMzEsImlhdCI6MTc2MTk0MTczMSwicm9sZXMiOiJBRE1JTiJ9.xF8QAhFVu-6V-hAktNJ1-VUAfiOWgIiT5DePsRqcoCk",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjU5ODY2MDEsImlhdCI6MTc2NTk4MzAwMSwicm9sZXMiOiJBRE1JTiJ9.v6SzlnGRwauYf4fr7SEnLL5-LKUjKH93_7a4xSH7Jrk",
             "authActive": true
           },
           "body": {
@@ -529,14 +529,14 @@
           "v": "17",
           "name": "View future appointments",
           "method": "GET",
-          "endpoint": "http://localhost:8081/appointments/upcoming",
+          "endpoint": "https://localhost:8081/appointments/upcoming",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjIwNTA3OTIsImlhdCI6MTc2MjA0NzE5Miwicm9sZXMiOiJBRE1JTiJ9.3JTd1xljlS7tQ7WsRaz34sbIRiFAYraf5Vd0o4ETexI",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjUyMjAzMDAsImlhdCI6MTc2NTIxNjcwMCwicm9sZXMiOiJBRE1JTiJ9.wBtSyu4z6GQhjH7oqvwLJsnyjud8_4j_L4AwRIloGOw",
             "authActive": true
           },
           "body": {
@@ -551,14 +551,14 @@
           "v": "17",
           "name": "Slots - appointments",
           "method": "GET",
-          "endpoint": "http://localhost:8081/physicians/PHY03/slots?startDate=2025-12-01&endDate=2025-12-31",
+          "endpoint": "https://localhost:8081/physicians/PHY03/slots?startDate=2025-12-01&endDate=2025-12-31",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ4NTA4NTAsImlhdCI6MTc2NDg0NzI1MCwicm9sZXMiOiJBRE1JTiJ9.6_yHPffh_2QVJfg1umGwsf8j39OMcfJ3siKuB0l5eQs",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjUyMjAzMDAsImlhdCI6MTc2NTIxNjcwMCwicm9sZXMiOiJBRE1JTiJ9.wBtSyu4z6GQhjH7oqvwLJsnyjud8_4j_L4AwRIloGOw",
             "authActive": true
           },
           "body": {
@@ -573,14 +573,14 @@
           "v": "17",
           "name": "Notas nos appointments",
           "method": "POST",
-          "endpoint": "http://localhost:8081/appointments/APT23/notes",
+          "endpoint": "https://localhost:8081/appointments/APT23/notes",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ5NTg2NjAsImlhdCI6MTc2NDk1NTA2MCwicm9sZXMiOiJBRE1JTiJ9.G8xVX_4wMZPX2G87y791QS-4HzCHvp8_WAESpxtcnj4",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjcxOTYzNjYsImlhdCI6MTc2NzE5Mjc2Niwicm9sZXMiOiJBRE1JTiJ9.NVAc--QBgoZmpK6t_qxQClNLisAUMfB3QGEp3t48iZw",
             "authActive": true
           },
           "body": {
@@ -595,14 +595,14 @@
           "v": "17",
           "name": "TRAIL - Appointments",
           "method": "GET",
-          "endpoint": "http://localhost:8081/appointments/APT20/audit-trail",
+          "endpoint": "https://localhost:8081/appointments/APT23/audit-trail",
           "params": [],
           "headers": [],
           "preRequestScript": "",
           "testScript": "",
           "auth": {
             "authType": "bearer",
-            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjQ5NTg2NjAsImlhdCI6MTc2NDk1NTA2MCwicm9sZXMiOiJBRE1JTiJ9.G8xVX_4wMZPX2G87y791QS-4HzCHvp8_WAESpxtcnj4",
+            "token": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwY21jbGluaWMtYXBpIiwic3ViIjoibHVsdUBjbGluaWMucHQiLCJleHAiOjE3NjcxOTYzNjYsImlhdCI6MTc2NzE5Mjc2Niwicm9sZXMiOiJBRE1JTiJ9.NVAc--QBgoZmpK6t_qxQClNLisAUMfB3QGEp3t48iZw",
             "authActive": true
           },
           "body": {
