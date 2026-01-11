@@ -169,6 +169,7 @@ services:
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://hap-zipkin:9411/api/v2/spans
       - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/happhysicians_db?authSource=admin
       - JWT_SECRET_KEY=MinhaChaveSuperSecretaDeDesenvolvimento123!
+
       - hap.mtls.enabled=true
       - hap.mtls.truststore.path=/certs/hap-truststore.p12
       - hap.mtls.truststore.password=secretpassword
@@ -207,7 +208,6 @@ services:
       - HAP_AUTH_BASE_URL=https://hap-auth:8084
       - SPRING_RABBITMQ_HOST=hap-rabbitmq
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://hap-zipkin:9411/api/v2/spans
-      - JWT_SECRET_KEY=MinhaChaveSuperSecretaDeDesenvolvimento123!
       - hap.mtls.enabled=true
       - hap.mtls.truststore.path=/certs/hap-truststore.p12
       - hap.mtls.truststore.password=secretpassword

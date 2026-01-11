@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.net.ssl.SSLParameters;
 
+
 import static leti_sisdis_6.hapappointmentrecords.config.RabbitMQConfig.CORRELATION_ID_HEADER;
 
 @Configuration
@@ -47,14 +48,8 @@ public class HttpClientConfig {
     @Value("${hap.mtls.keystore.password:}")
     private String keystorePassword;
 
-    @Value("${hap.ssl.disable-hostname-verification:false}")
-    private boolean disableHostnameVerification;
-
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        if (disableHostnameVerification) {
-            System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true");
-        }
         RestTemplate restTemplate = builder
                 .requestFactory(() -> {
                     HttpClient.Builder clientBuilder = HttpClient.newBuilder()
@@ -64,11 +59,13 @@ public class HttpClientConfig {
                         clientBuilder.sslContext(buildSslContext());
                     }
 
+
                     if (disableHostnameVerification) {
                         SSLParameters sslParams = new SSLParameters();
                         sslParams.setEndpointIdentificationAlgorithm(null);
                         clientBuilder.sslParameters(sslParams);
                     }
+
 
                     HttpClient httpClient = clientBuilder.build();
 
