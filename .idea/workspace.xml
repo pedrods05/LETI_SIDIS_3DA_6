@@ -5,18 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="updated maven version">
-      <change afterPath="$PROJECT_DIR$/.idea/deviceManager.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/InternalPatientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/InternalPatientController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientController.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/api/PatientController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/main/java/leti_sisdis_6/happatients/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/InternalPatientControllerTest.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerPeerForwardingTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerPeerForwardingTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientControllerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientSecurityTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-patients/src/test/java/leti_sisdis_6/happatients/api/PatientSecurityTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/compose.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/catalog-info.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/catalog-info.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/config/HttpClientConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/config/HttpClientConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,16 +37,16 @@
     &quot;assignee&quot;: &quot;pedrocunha4&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/pedrods05/LETI_SIDIS_3DA_6.git&quot;,
-    &quot;accountId&quot;: &quot;8d59ecb3-d26e-4eef-b16d-368cfb6d257b&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/pedrods05/LETI_SIDIS_3DA_6.git",
+    "accountId": "9ffb78ac-de39-423c-9770-012ea8195c42"
   }
-}</component>
-  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
-  <component name="KubernetesApiProvider"><![CDATA[{
-  "isMigrated": true
 }]]></component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -66,62 +59,62 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "JUnit.GlobalExceptionHandlerTest.executor": "Run",
-    "JUnit.HapPatientsApplicationTests.executor": "Run",
-    "JUnit.InternalPatientControllerTest.executor": "Run",
-    "JUnit.JpaSimpleRepositoriesTest.executor": "Run",
-    "JUnit.PatientControllerPeerForwardingTest.executor": "Run",
-    "JUnit.PatientControllerTest.executor": "Run",
-    "JUnit.PatientMapperTest.executor": "Run",
-    "JUnit.PatientRegistrationControllerTest.executor": "Run",
-    "JUnit.PatientRegistrationServiceTest.executor": "Run",
-    "JUnit.PatientSecurityTest.executor": "Run",
-    "JUnit.ResilientRestTemplateTest.executor": "Run",
-    "JUnit.api in hap-appointmentrecords.executor": "Run",
-    "JUnit.hapappointmentrecords in hap-appointmentrecords.executor": "Run",
-    "JUnit.leti_sisdis_6.happatients in hap-patients.executor": "Run",
-    "JUnit.leti_sisdis_6.happatients.api in hap-patients.executor": "Run",
-    "JUnit.leti_sisdis_6.happatients.repository in hap-patients.executor": "Run",
-    "JUnit.leti_sisdis_6.happatients.service in hap-patients.executor": "Run",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Spring Boot.HapAppointmentrecordsApplication.executor": "Run",
-    "Spring Boot.HapAuthApplication.executor": "Run",
-    "Spring Boot.HapPatientsApplication.executor": "Run",
-    "Spring Boot.HapPhysiciansApplication.executor": "Run",
-    "Spring Boot.hap-appointmentrecords-instance1.executor": "Run",
-    "Spring Boot.hap-appointmentrecords-instance2.executor": "Run",
-    "Spring Boot.hap-auth-instance1.executor": "Run",
-    "Spring Boot.hap-auth-instance2.executor": "Run",
-    "Spring Boot.hap-patients-instance1.executor": "Run",
-    "Spring Boot.hap-patients-instance2.executor": "Run",
-    "Spring Boot.hap-physicians-instance1.executor": "Run",
-    "Spring Boot.hap-physicians-instance2.executor": "Run",
-    "git-widget-placeholder": "pedro",
-    "jdk.selected.JAVA_MODULE": "openjdk-23",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/test/resources",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.17",
-    "project.structure.side.proportion": "0.2",
-    "run.configurations.included.in.services": "true",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;JUnit.GlobalExceptionHandlerTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.HapPatientsApplicationTests.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.InternalPatientControllerTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.JpaSimpleRepositoriesTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.PatientControllerPeerForwardingTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.PatientControllerTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.PatientMapperTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.PatientRegistrationControllerTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.PatientRegistrationServiceTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.PatientSecurityTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.ResilientRestTemplateTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.api in hap-appointmentrecords.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.hapappointmentrecords in hap-appointmentrecords.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.leti_sisdis_6.happatients in hap-patients.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.leti_sisdis_6.happatients.api in hap-patients.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.leti_sisdis_6.happatients.repository in hap-patients.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.leti_sisdis_6.happatients.service in hap-patients.executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Spring Boot.HapAppointmentrecordsApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.HapAuthApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.HapPatientsApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.HapPhysiciansApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-appointmentrecords-instance1.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-appointmentrecords-instance2.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-auth-instance1.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-auth-instance2.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-patients-instance1.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-patients-instance2.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-physicians-instance1.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.hap-physicians-instance2.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;pedro&quot;,
+    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;openjdk-23&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/pedro/CLionProjects/SIDIS/LETI_SIDIS_3DA_6/hap-patients/src/test/resources&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.17&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\pedro\CLionProjects\SIDIS\LETI_SIDIS_3DA_6\hap-patients\src\test\resources" />
@@ -142,29 +135,14 @@
         <option value="SpringBootApplicationConfigurationType" />
       </set>
     </option>
-    <option name="hiddenConfigurations">
-      <map>
-        <entry key="SpringBootApplicationConfigurationType">
-          <value>
-            <set>
-              <option value="HapAppointmentrecordsApplication" />
-              <option value="HapAuthApplication" />
-              <option value="HapPatientsApplication" />
-              <option value="HapPhysiciansApplication" />
-            </set>
-          </value>
-        </entry>
-      </map>
-    </option>
     <option name="configurationStatuses">
       <map>
         <entry key="SpringBootApplicationConfigurationType">
           <value>
             <map>
-              <entry key="HapAppointmentrecordsApplication" value="STOPPED" />
               <entry key="hap-appointmentrecords-instance1" value="STOPPED" />
               <entry key="hap-appointmentrecords-instance2" value="STOPPED" />
-              <entry key="hap-auth-instance1" value="STOPPED" />
+              <entry key="hap-auth-instance1" value="FAILED" />
               <entry key="hap-auth-instance2" value="STOPPED" />
               <entry key="hap-patients-instance1" value="STOPPED" />
               <entry key="hap-patients-instance2" value="STOPPED" />
@@ -389,6 +367,10 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="JUnit.JpaSimpleRepositoriesTest" />
+      <item itemvalue="JUnit.PatientRegistrationServiceTest" />
+      <item itemvalue="JUnit.PatientSecurityTest" />
+      <item itemvalue="JUnit.leti_sisdis_6.happatients in hap-patients" />
       <item itemvalue="JUnit.GlobalExceptionHandlerTest" />
       <item itemvalue="JUnit.ResilientRestTemplateTest" />
       <item itemvalue="JUnit.leti_sisdis_6.happatients.repository in hap-patients" />
@@ -420,8 +402,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.28238.7" />
-        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-IU-252.28238.7" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.28539.13" />
+        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-IU-252.28539.13" />
       </set>
     </attachedChunks>
   </component>
@@ -439,6 +421,7 @@
       <workItem from="1760732535112" duration="865000" />
       <workItem from="1765142102816" duration="3832000" />
       <workItem from="1765156494693" duration="2311000" />
+      <workItem from="1768129090863" duration="17258000" />
     </task>
     <task id="LOCAL-00001" summary="updated maven version">
       <option name="closed" value="true" />
@@ -457,7 +440,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="new modules name" />
     <MESSAGE value="updated maven version" />
-    <option name="LAST_COMMIT_MESSAGE" value="updated maven version" />
+    <MESSAGE value="updated" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
