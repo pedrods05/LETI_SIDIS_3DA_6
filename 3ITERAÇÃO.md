@@ -275,4 +275,57 @@ Para garantir a sustentabilidade, a qualidade do serviço e a manutenibilidade a
 
 **Funcionamento:**
 - Cada serviço inclui um ficheiro `catalog-info.yaml` que define o seu ownership, dependências e tipo de API.
-- Isto facilita a governação a longo prazo, permitindo que novos membros da equipa percebam rapidamente a árvore de dependências do sistema HAP sem necessidade de analisar o código fonte..
+- Isto facilita a governação a longo prazo, permitindo que novos membros da equipa percebam rapidamente a árvore de dependências do sistema HAP sem necessidade de analisar o código fonte.
+
+---
+
+## 5. Deployment e Orquestração: Docker Compose vs Kubernetes
+
+### 5.1. Decisão: Docker Compose para Orquestração
+
+**Decisão:** Adotar **Docker Compose** para orquestração de containers em vez de Kubernetes.
+
+**Justificação:**
+
+**1. Complexidade vs Necessidade:**
+- **Kubernetes** é uma plataforma complexa que requer conhecimento significativo de conceitos como Pods, Services, Deployments, ConfigMaps, Secrets, Ingress, etc.
+- Para o contexto académico e de desenvolvimento do projeto HAP, a complexidade adicional do Kubernetes não traz benefícios proporcionais ao esforço de configuração e manutenção.
+- **Docker Compose** oferece uma solução mais simples e direta para orquestrar múltiplos containers numa única máquina.
+
+**2. Ambiente de Desenvolvimento:**
+- O projeto é desenvolvido principalmente em ambientes locais (máquinas de desenvolvimento).
+- Docker Compose é ideal para desenvolvimento local, permitindo levantar toda a infraestrutura (RabbitMQ, MongoDB, Zipkin, ELK Stack, Prometheus, Grafana) e todos os microserviços com um único comando (`docker compose up`).
+- Kubernetes requer um cluster (mesmo que local com minikube/kind), adicionando overhead desnecessário para desenvolvimento.
+
+**3. Recursos e Infraestrutura:**
+- Kubernetes requer mais recursos (CPU, memória) para o próprio cluster (control plane, etcd, kubelet, etc.).
+- Docker Compose é mais leve e adequado para máquinas de desenvolvimento com recursos limitados.
+- Para um projeto académico, a simplicidade e eficiência de recursos são mais importantes do que a escalabilidade horizontal que Kubernetes oferece.
+
+**4. Configuração e Manutenção:**
+- **Docker Compose:** Um único ficheiro `compose.yaml` define toda a infraestrutura de forma declarativa e fácil de entender.
+- **Kubernetes:** Requer múltiplos manifestos YAML (Deployments, Services, ConfigMaps, etc.) e conhecimento de conceitos avançados para configuração adequada.
+- A curva de aprendizagem do Docker Compose é muito menor, permitindo que a equipa foque nos aspectos de negócio e arquitetura do sistema.
+
+**5. Funcionalidades Necessárias:**
+- O projeto precisa de: orquestração de containers, networking entre serviços, volumes para persistência, health checks, e dependências entre serviços.
+- **Docker Compose** fornece todas estas funcionalidades de forma simples e adequada para o contexto do projeto.
+- Funcionalidades avançadas do Kubernetes (auto-scaling, rolling updates, service mesh) não são necessárias para os objetivos do projeto.
+
+**6. Portabilidade:**
+- Docker Compose funciona igualmente bem em Windows, macOS e Linux.
+- Não requer configuração adicional de cluster ou ferramentas específicas do sistema operativo.
+- Facilita a colaboração entre membros da equipa com diferentes ambientes de desenvolvimento.
+
+**O que está implementado:**
+
+**compose.yaml:**
+- Define todos os serviços de infraestrutura (RabbitMQ, MongoDB, Zipkin, ELK Stack, Prometheus, Grafana)
+- Define todos os microserviços (hap-auth, hap-patients, hap-physicians, hap-appointmentrecords)
+- Configura networking, volumes, health checks e dependências entre serviços
+- Suporta estratégias de deployment como Blue-Green (exemplo: `hap-patients-blue` e `hap-patients-green`)
+
+**Benefício:** Solução simples, eficiente e adequada para desenvolvimento e demonstração do projeto, permitindo que a equipa foque nos aspectos arquiteturais e de negócio sem a sobrecarga de gerir um cluster Kubernetes.
+
+**Nota sobre Produção:**
+Embora Docker Compose seja adequado para desenvolvimento e demonstração, em ambiente de produção real, Kubernetes seria uma escolha mais apropriada devido às suas capacidades de auto-scaling, alta disponibilidade, rolling updates e gestão avançada de recursos. No entanto, para os objetivos deste projeto académico, Docker Compose fornece todas as funcionalidades necessárias de forma mais simples e acessível.
