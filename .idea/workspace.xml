@@ -4,30 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="updated maven version">
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/nginx.conf" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/EventStoreEntry.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/SagaEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/model/SagaStatus.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/repository/EventStoreRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/repository/SagaEventRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/event/EventReplayer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/event/SagaCoordinator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/monitoring/prometheus/alerts.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/switch-appointmentrecords-traffic.ps1" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/workflows/pipeline.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/pipeline.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/compose.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/catalog-info.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/catalog-info.yaml" afterDir="false" />
+    <list default="true" id="012be5c4-eeb0-44f2-9e42-8664a0af6c60" name="Changes" comment="updated">
+      <change beforePath="$PROJECT_DIR$/compose.yaml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/config/HttpClientConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/config/HttpClientConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentRecordService.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/AppointmentRecordService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/event/AppointmentEventsListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/java/leti_sisdis_6/hapappointmentrecords/service/event/AppointmentEventsListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application-instance1.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application-instance1.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application-instance2.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application-instance2.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/hap-appointmentrecords/src/main/resources/application.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hap-appointmentrecords/src/test/java/leti_sisdis_6/hapappointmentrecords/service/event/AppointmentEventsListenerTest.java" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -153,26 +133,11 @@
         <option value="SpringBootApplicationConfigurationType" />
       </set>
     </option>
-    <option name="hiddenConfigurations">
-      <map>
-        <entry key="SpringBootApplicationConfigurationType">
-          <value>
-            <set>
-              <option value="HapAppointmentrecordsApplication" />
-              <option value="HapAuthApplication" />
-              <option value="HapPatientsApplication" />
-              <option value="HapPhysiciansApplication" />
-            </set>
-          </value>
-        </entry>
-      </map>
-    </option>
     <option name="configurationStatuses">
       <map>
         <entry key="SpringBootApplicationConfigurationType">
           <value>
             <map>
-              <entry key="HapAppointmentrecordsApplication" value="STOPPED" />
               <entry key="hap-appointmentrecords-instance1" value="STOPPED" />
               <entry key="hap-appointmentrecords-instance2" value="STOPPED" />
               <entry key="hap-auth-instance1" value="FAILED" />
@@ -464,7 +429,23 @@
       <option name="project" value="LOCAL" />
       <updated>1761755672380</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="updated">
+      <option name="closed" value="true" />
+      <created>1768166031202</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1768166031202</updated>
+    </task>
+    <task id="LOCAL-00003" summary="updated">
+      <option name="closed" value="true" />
+      <created>1768167374669</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1768167374670</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -473,7 +454,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="new modules name" />
     <MESSAGE value="updated maven version" />
-    <option name="LAST_COMMIT_MESSAGE" value="updated maven version" />
+    <MESSAGE value="updated" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
