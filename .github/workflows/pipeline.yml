@@ -46,6 +46,12 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
 
+      # Optional: switch traffic weights (blue/green) after deploy
+      - name: Switch traffic to green (manual trigger)
+        if: success() && matrix.service == 'hap-appointmentrecords' && false
+        run: |
+          pwsh ./scripts/switch-appointmentrecords-traffic.ps1 -BlueWeight 0 -GreenWeight 100
+
     # 4. Login & Push para Docker Hub (Opcional - Requer Secrets no GitHub)
     # Descomenta se quiseres enviar para o Docker Hub real
     # - name: Login to Docker Hub

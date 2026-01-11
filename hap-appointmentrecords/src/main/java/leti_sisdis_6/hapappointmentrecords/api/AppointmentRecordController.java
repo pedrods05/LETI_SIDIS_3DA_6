@@ -38,8 +38,8 @@ public class AppointmentRecordController {
     private final RestTemplate restTemplate;
 
     @PostMapping("/{appointmentId}/record")
-    // MUDANÇA: hasRole procura por 'ROLE_PHYSICIAN'
-    @PreAuthorize("hasRole('PHYSICIAN')")
+    // Permite perfis PHYSICIAN/DOCTOR/ADMIN na criação do registo
+    @PreAuthorize("hasAnyRole('PHYSICIAN','DOCTOR','ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Record appointment details", description = "Record diagnosis, treatment recommendations, and prescriptions for a consultation.")
     @ApiResponse(responseCode = "201", description = "Record created successfully")

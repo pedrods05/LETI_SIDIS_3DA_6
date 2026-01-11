@@ -16,10 +16,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 
 import lombok.extern.slf4j.Slf4j;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.bulkhead.annotation.Bulkhead;
-import io.github.resilience4j.retry.annotation.Retry;
 
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +52,16 @@ public class ExternalServiceClient {
             "http://localhost:8090"
     );
 
+    /**
+     * When running inside Docker, prefer service DNS names (hap-physicians, hap-auth, ...).
+     * If you ever run the service outside Docker, you can opt-in to a docker-host fallback.
+     */
+    @Value("${hap.dockerHostFallback.enabled:false}")
+    private boolean dockerHostFallbackEnabled;
+
+    @Value("${hap.dockerHostFallback.host:host.docker.internal}")
+    private String dockerHostFallbackHost;
+
     @PostConstruct
     void init() {
         log.info("AppointmentRecords peers configurados na porta {}: {}", currentPort, peers);
@@ -83,23 +91,30 @@ public class ExternalServiceClient {
 
     // --- PHYSICIAN SERVICE CALLS ---
 
-    @Retry(name = "externalService")
-    @CircuitBreaker(name = "physicians", fallbackMethod = "fallbackPhysicians")
-    @Bulkhead(name = "physicians")
     public Map<String, Object> getPhysicianById(String physicianId) {
         String url = physiciansServiceUrl + "/physicians/" + physicianId;
         log.debug("Chamando Physicians GET {}", url);
         return performExchange(url, physicianId, "getPhysicianById", "Physicians");
     }
 
-    @Retry(name = "externalService")
-    @CircuitBreaker(name = "physicians", fallbackMethod = "fallbackPhysicians")
-    @Bulkhead(name = "physicians")
     public Map<String, Object> getAppointmentById(String appointmentId) {
         String url = physiciansServiceUrl + "/appointments/" + appointmentId;
         log.debug("Chamando Physicians GET (Appointment) {}", url);
 
-        Map<String, Object> body = performExchange(url, appointmentId, "getAppointmentById", "Physicians");
+        Map<String, Object> body;
+        try {
+            body = performExchange(url, appointmentId, "getAppointmentById", "Physicians");
+        } catch (MicroserviceCommunicationException e) {
+            // If DNS fails (common symptom: UnknownHostException), optionally fall back to docker host.
+            if (dockerHostFallbackEnabled && isCausedByUnknownHost(e)) {
+                String fallbackUrl = replaceHostWithDockerHost(url);
+                log.warn("DNS falhou ao chamar Physicians ({}). Tentando fallback via {} -> {}",
+                        url, dockerHostFallbackHost, fallbackUrl);
+                body = performExchange(fallbackUrl, appointmentId, "getAppointmentById", "Physicians");
+            } else {
+                throw e;
+            }
+        }
 
         // Normalização de dados para o modelo interno
         if (body != null && body.get("physicianId") == null) {
@@ -116,9 +131,6 @@ public class ExternalServiceClient {
 
     // --- PATIENT SERVICE CALLS ---
 
-    @Retry(name = "externalService")
-    @CircuitBreaker(name = "patients", fallbackMethod = "fallbackPatients")
-    @Bulkhead(name = "patients")
     public Map<String, Object> getPatientById(String patientId) {
         String url = patientsServiceUrl + "/patients/" + patientId;
         log.debug("Chamando Patients GET {}", url);
@@ -127,9 +139,6 @@ public class ExternalServiceClient {
 
     // --- AUTH SERVICE CALLS ---
 
-    @Retry(name = "externalService")
-    @CircuitBreaker(name = "auth", fallbackMethod = "fallbackAuth")
-    @Bulkhead(name = "auth")
     public Map<String, Object> validateToken(String token) {
         String url = authServiceUrl + "/api/auth/validate";
         try {
@@ -162,27 +171,6 @@ public class ExternalServiceClient {
         }
     }
 
-    // --- FALLBACKS  ---
-
-    private Map<String, Object> fallbackPhysicians(String id, Throwable t) {
-        log.error("CircuitBreaker 'physicians' ABERTO ou falha crítica. ID={}. Erro: {}", id, t.getMessage());
-        throw handleFallbackException("Physicians", t);
-    }
-
-    private Map<String, Object> fallbackPatients(String id, Throwable t) {
-        log.error("CircuitBreaker 'patients' ABERTO ou falha crítica. ID={}. Erro: {}", id, t.getMessage());
-        throw handleFallbackException("Patients", t);
-    }
-
-    private Map<String, Object> fallbackAuth(String token, Throwable t) {
-        log.error("CircuitBreaker 'auth' ABERTO. Falha ao validar segurança: {}", t.getMessage());
-        throw handleFallbackException("Auth", t);
-    }
-
-    private RuntimeException handleFallbackException(String service, Throwable t) {
-        if (t instanceof NotFoundException) return (NotFoundException) t;
-        return new MicroserviceCommunicationException(service, "CircuitBreaker", "Serviço temporariamente indisponível (Resilience4j)", t);
-    }
 
     // --- PEER FORWARDING LOGIC ---
 
@@ -194,5 +182,26 @@ public class ExternalServiceClient {
 
     private boolean isCurrentInstance(String peerUrl) {
         return peerUrl.contains(":" + currentPort);
+    }
+
+    private boolean isCausedByUnknownHost(Throwable t) {
+        Throwable cur = t;
+        while (cur != null) {
+            if (cur instanceof UnknownHostException) return true;
+            cur = cur.getCause();
+        }
+        return false;
+    }
+
+    private String replaceHostWithDockerHost(String url) {
+        // only replace common docker service host names, keep scheme/port/path
+        // Example: https://hap-physicians:8081/x -> https://host.docker.internal:8081/x
+        return url
+                .replace("https://hap-physicians:", "https://" + dockerHostFallbackHost + ":")
+                .replace("http://hap-physicians:", "http://" + dockerHostFallbackHost + ":")
+                .replace("https://hap-auth:", "https://" + dockerHostFallbackHost + ":")
+                .replace("http://hap-auth:", "http://" + dockerHostFallbackHost + ":")
+                .replace("https://hap-patients-blue:", "https://" + dockerHostFallbackHost + ":")
+                .replace("http://hap-patients-blue:", "http://" + dockerHostFallbackHost + ":");
     }
 }

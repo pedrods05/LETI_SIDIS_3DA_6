@@ -135,3 +135,22 @@ que usem o mesmo header.
 - O Circuit Breaker (Resilience4j) aplicado nas chamadas HTTP via `ExternalServiceClient` previne que o serviço fique bloqueado.
 - Quando o Circuit Breaker está aberto, as chamadas falham rapidamente sem esperar timeouts, permitindo que o serviço continue a funcionar para outras operações.
 - Algumas funcionalidades que dependem de dados do hap-physicians podem estar limitadas, mas o serviço não fica completamente indisponível.
+
+## Segurança, mTLS e Autorização
+- OAuth2/JWT como resource-server com regras por role (DOCTOR/ADMIN para notas, PATIENT/DOCTOR/ADMIN para endpoints de paciente; restante autenticado).
+- mTLS ativável: client auth `need` nos perfis instance1/instance2, truststore/keystore PKCS12 em `src/main/resources/certs` (senha `secretpassword`).
+- Compose monta `/certs` para auth/physicians/appointmentrecords blue/green; cert SANs devem cobrir hostnames dos containers.
+- Para chamadas internas, URLs usam `https://`; clientes devem apresentar certificado.
+
+## Blue-Green e Canary (AppointmentRecords)
+- Serviços: `hap-appointmentrecords-blue` (8083), `hap-appointmentrecords-green` (8090), proxy nginx em 8085.
+- Troca de tráfego via script: `pwsh ./scripts/switch-appointmentrecords-traffic.ps1 -BlueWeight 0 -GreenWeight 100` (ou `-Canary -Step 10 -GreenWeight 30` para rampa). Script edita `hap-appointmentrecords/nginx.conf` e faz reload do proxy.
+
+## Event Sourcing e Saga
+- Eventos consumidos (`appointment.created/updated/canceled`) são guardados em Mongo (`appointment_event_store`) com payload JSON e correlationId.
+- Saga log em `saga_events` com status IN_PROGRESS/COMPLETED/COMPENSATED; cancelamentos disparam `COMPENSATION_TRIGGERED` e marcam estado compensado.
+- Replay: `EventReplayer.rebuildProjections(appointmentId)` reconstrói a projeção em Mongo a partir do stream.
+
+## Considerações de Privacidade (GDPR)
+- Evitar logging de PII (diagnóstico/notas) fora de DEBUG; habilitar mTLS para proteger dados em trânsito.
+- Tracing/CorrelationId ativo; revisar retenção de logs/metrics conforme política da organização.

@@ -6,6 +6,9 @@ metadata:
   annotations:
     # Link para o Swagger (Requisito do Slide 10 [cite: 186])
     prometheus.io/scrape: 'true'
+    hap.sla.latency: 'p95<500ms'
+    hap.sla.uptime: '99.9%'
+    backstage.io/techdocs-ref: dir:.
 spec:
   type: service
   lifecycle: production
@@ -13,3 +16,7 @@ spec:
   system: hap-system
   providesApis:
     - hap-appointmentrecords-api
+  consumesApis:
+    - hap-auth-api
+    - hap-patients-api
+    - hap-physicians-api
