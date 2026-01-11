@@ -279,4 +279,4 @@ Para garantir a sustentabilidade, a qualidade do serviço e a manutenibilidade a
 
 **Funcionamento:**
 - Cada serviço inclui um ficheiro `catalog-info.yaml` que define o seu ownership, dependências e tipo de API.
-- Isto facilita a governação a longo prazo, permitindo que novos membros da equipa percebam rapidamente a árvore de dependências do sistema HAP sem necessidade de analisar o código fonte.
+- Isto facilita a governação a longo prazo, permitindo que novos membros da equipa percebam rapidamente a árvore de dependências do sistema HAP sem necessidade de analisar o código fonte..
