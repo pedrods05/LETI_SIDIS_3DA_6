@@ -1,0 +1,137 @@
+@startuml
+skinparam dpi 150
+skinparam shadowing false
+skinparam linetype ortho
+skinparam roundcorner 15
+
+skinparam nodesep 110
+skinparam ranksep 100
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+
+skinparam rectangle {
+    BackgroundColor<<Service>> #88C0D0
+    BorderColor<<Service>> #5E81AC
+    BackgroundColor<<Infra>> #BF616A
+    BorderColor<<Infra>> #4C566A
+    BackgroundColor<<Auth>> #EBCB8B
+    BorderColor<<Auth>> #D08770
+    BackgroundColor<<Observability>> #B48EAD
+    BorderColor<<Observability>> #5E81AC
+    FontColor #2E3440
+}
+
+skinparam database {
+    BackgroundColor #A3BE8C
+    BorderColor #4C566A
+    FontColor #2E3440
+}
+
+skinparam arrow {
+    Color #4C566A
+    Thickness 1.2
+}
+
+title **C2 — Containers (HAP)**
+
+' -- Camada 1: Segurança --
+rectangle "Auth Service\nPorts: 8084, 8089\nHealth: /actuator/health" as Auth <<Auth>>
+
+' -- Camada 2: Serviços de Negócio --
+rectangle "Physicians Service\nPorts: 8081, 8087\nHealth: /actuator/health\nCircuit Breaker, Retry, Timeout\nEvent Store" as Physicians <<Service>>
+rectangle "Patients Service\nPorts: 8082, 8088\nHealth: /actuator/health" as Patients <<Service>>
+rectangle "Records Service\nPorts: 8083, 8090\nHealth: /actuator/health" as Records <<Service>>
+
+' -- Camada 3: Dados (MongoDB + Event Store) --
+database "Mongo DB\n(Read Model)" as DB_Phys
+database "Mongo DB\n(Read Model)" as DB_Pat
+database "Mongo DB\n(Read Model)" as DB_Rec
+database "Event Store\n(H2 - Immutable Events)" as EventStore
+
+' -- Camada 4: Infraestrutura Partilhada --
+rectangle "Infraestrutura Partilhada" {
+    rectangle "Message Broker\n(RabbitMQ)" as Broker <<Infra>>
+    rectangle "Tracing\n(Zipkin)" as Zipkin <<Observability>>
+    rectangle "Metrics\n(Prometheus)" as Prometheus <<Observability>>
+    rectangle "Visualization\n(Grafana)" as Grafana <<Observability>>
+    rectangle "Logging\n(ELK Stack)" as ELK <<Observability>>
+}
+
+' -- Alinhamentos Horizontais (Hidden) para forçar o layout --
+Physicians -[hidden]r- Patients
+Patients -[hidden]r- Records
+
+DB_Phys -[hidden]r- DB_Pat
+DB_Pat -[hidden]r- DB_Rec
+
+' -- Conexões HTTP (Topo) --
+Physicians -u-> Auth : HTTP\n(mTLS + JWT)
+Patients -u-> Auth : HTTP\n(mTLS + JWT)
+Records -u-> Auth : HTTP\n(mTLS + JWT)
+
+Physicians <--> Patients : HTTP\n(mTLS + Circuit Breaker)
+Physicians <--> Records : HTTP\n(mTLS + Circuit Breaker)
+Records <--> Patients : HTTP\n(mTLS + Circuit Breaker)
+
+' -- Conexões de Base de Dados (Verticais Curtas) --
+Physicians -d-> DB_Phys : Grava/Lê
+Patients -d-> DB_Pat : Grava/Lê
+Records -d-> DB_Rec : Grava/Lê
+Physicians -d-> EventStore : Append Events\n(Event Sourcing)
+
+' -- Conexões Assíncronas (AMQP) --
+' As linhas passam "por trás" ou ao lado das DBs
+Physicians -[#D08770,dashed]d-> Broker : Pub\n(Retry + Circuit Breaker)
+Patients -[#D08770,dashed]d-> Broker : Pub
+Records -[#D08770,dashed]d-> Broker : Pub
+
+Broker -[#D08770,dotted]u-> Physicians : Sub
+Broker -[#D08770,dotted]u-> Patients : Sub
+Broker -[#D08770,dotted]u-> Records : Sub
+
+' -- Observability (Tracing, Metrics, Logs) --
+Physicians -[#B48EAD]d-> Zipkin : Traces\n(Correlation ID)
+Patients -[#B48EAD]d-> Zipkin : Traces
+Auth -[#B48EAD]d-> Zipkin : Traces
+Records -[#B48EAD]d-> Zipkin : Traces
+
+Physicians -[#B48EAD]d-> Prometheus : Metrics\n(Saga, Circuit Breaker, AMQP)
+Patients -[#B48EAD]d-> Prometheus : Metrics
+Auth -[#B48EAD]d-> Prometheus : Metrics
+Records -[#B48EAD]d-> Prometheus : Metrics
+
+Prometheus -[#B48EAD]d-> Grafana : Query Metrics
+
+Physicians -[#B48EAD]d-> ELK : Logs\n(Structured + Trace ID)
+Patients -[#B48EAD]d-> ELK : Logs
+Auth -[#B48EAD]d-> ELK : Logs
+Records -[#B48EAD]d-> ELK : Logs
+
+' -- Health Checks --
+Physicians -[#A3BE8C,thickness=1]r-> Physicians : /actuator/health\n(Liveness/Readiness)
+Patients -[#A3BE8C,thickness=1]r-> Patients : /actuator/health
+Auth -[#A3BE8C,thickness=1]r-> Auth : /actuator/health
+Records -[#A3BE8C,thickness=1]r-> Records : /actuator/health
+
+legend right
+  <color:#4C566A>───</color>  **HTTP** (Síncrono, mTLS, JWT)
+  <color:#4C566A>═══</color>  **Database** (Persistência)
+  <color:#D08770>- - -</color>  **AMQP** (Pub - Escrita)
+  <color:#D08770>......</color>  **AMQP** (Sub - Leitura)
+  <color:#B48EAD>───</color>  **Observability** (Tracing, Metrics, Logs)
+  <color:#A3BE8C>───</color>  **Health Checks**
+
+  **Resilience Patterns:**
+  • Circuit Breaker (Resilience4j)
+  • Retry (Exponential Backoff)
+  • Timeout (TimeLimiter)
+  • Bulkhead (Thread Pool Isolation)
+
+  **Security:**
+  • OAuth2 Resource Server
+  • JWT (Token-based Auth)
+  • mTLS (Mutual TLS)
+  • RBAC (Role-Based Access Control)
+endlegend
+@enduml

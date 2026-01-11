@@ -1,0 +1,77 @@
+@startuml GetAppointmentAuditTrail-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Get Appointment Audit Trail - Sequence Diagram v3\n(With Observability & Event Sourcing)
+
+actor Client
+participant "AppointmentController\n(@PreAuthorize)" as Controller
+participant "EventStoreService" as EventStoreService
+participant "EventStoreRepository\n(Event Store - H2)" as EventStoreRepo
+
+autonumber
+activate Client
+
+note over Client, EventStoreRepo
+  **Assignment 3 Features:**
+  • Security: JWT (@PreAuthorize), RBAC
+  • Observability: Zipkin (tracing), Prometheus (metrics), ELK (logs)
+  • Event Sourcing: Immutable event storage
+  • Correlation ID: End-to-end traceability
+end note
+
+Client -> Controller: GET /appointments/{appointmentId}/audit-trail\nJWT Token
+activate Controller
+
+Controller -> EventStoreService: getEventHistory(appointmentId)\n[Trace ID propagated]
+activate EventStoreService
+
+note right of EventStoreService
+  Event Store Query:
+  • Query by aggregateId
+  • Order by timestamp
+  • Metrics to Prometheus
+  • Trace to Zipkin
+end note
+
+EventStoreService -> EventStoreRepo: findByAggregateIdOrderByTimestampAsc(appointmentId)
+activate EventStoreRepo
+EventStoreRepo --> EventStoreService: List<EventStore>
+deactivate EventStoreRepo
+
+EventStoreService --> Controller: List<EventStore>
+deactivate EventStoreService
+
+Controller -> Controller: Map events to AuditTrailDTO
+loop For each EventStore
+    alt Parsing succeeds
+        Controller -> Controller: Parse JSON to Object\n(using ObjectMapper)
+        Controller -> Controller: Build AuditTrailDTO with parsed data
+    else Parsing fails
+        Controller -> Controller: Build AuditTrailDTO with raw strings
+    end
+end
+
+alt Success
+    Controller --> Client: 200 OK\nList<AuditTrailDTO>
+else Exception
+    Controller --> Client: 500 Internal Server Error
+end
+deactivate Controller
+deactivate Client
+
+note right of Controller
+  **Este diagrama mostra a recuperação do histórico**
+  completo de eventos (audit trail) de uma consulta
+  usando Event Sourcing com todas as implementações
+  do Assignment 3:
+  
+  • **Security:** JWT validation, RBAC
+  • **Observability:** Distributed tracing (Zipkin),
+    Metrics (Prometheus), Structured logging (ELK)
+  • **Event Sourcing:** Immutable event storage
+  • **Correlation ID:** End-to-end traceability
+end note
+
+@enduml

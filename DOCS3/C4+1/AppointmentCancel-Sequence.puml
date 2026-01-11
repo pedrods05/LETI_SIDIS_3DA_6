@@ -1,0 +1,164 @@
+@startuml AppointmentCancel-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Appointment Cancel - Sequence Diagram v3\n(With Resilience, Observability & Event Sourcing)
+
+actor Client
+participant "AppointmentController\n(@PreAuthorize)" as Controller
+participant "AppointmentCommandService\n(@CircuitBreaker, @Retry)" as CommandService
+participant "AppointmentService" as Service
+participant "ExternalServiceClient\n(@CircuitBreaker, @Retry, @TimeLimiter)" as ExternalClient
+participant "AppointmentRepository\n(Write Model - H2)" as WriteRepo
+participant "EventStoreService" as EventStoreService
+participant "RabbitMQ\nExchange" as RabbitMQ
+participant "AppointmentEventHandler" as EventHandler
+participant "AppointmentQueryRepository\n(Read Model - MongoDB)" as ReadRepo
+
+autonumber
+activate Client
+
+note over Client, ReadRepo
+  **Assignment 3 Features:**
+  • Security: JWT (@PreAuthorize), mTLS, RBAC
+  • Resilience: Circuit Breaker, Retry, Timeout
+  • Observability: Zipkin (tracing), Prometheus (metrics), ELK (logs)
+  • Event Sourcing: Immutable event storage
+  • Correlation ID: End-to-end traceability
+end note
+
+Client -> Controller: PUT /appointments/{id}/cancel\nJWT Token
+activate Controller
+
+Controller -> CommandService: cancelAppointment(appointmentId)\n[Trace ID propagated]
+activate CommandService
+
+CommandService -> Service: cancelAppointment(appointmentId)
+activate Service
+
+' External call with Circuit Breaker and Retry
+Service -> ExternalClient: cancelAppointmentInRecords(appointmentId)\n[Circuit Breaker + Retry + mTLS]
+activate ExternalClient
+
+note right of ExternalClient
+  Circuit Breaker checks state
+  Retry with exponential backoff
+  Failures ignored (compensation possible)
+  Metrics sent to Prometheus
+end note
+
+ExternalClient --> Service: Canceled (or exception ignored)
+deactivate ExternalClient
+
+Service -> WriteRepo: findById(appointmentId)
+activate WriteRepo
+WriteRepo --> Service: Optional<Appointment>
+deactivate WriteRepo
+
+Service -> Service: Set status = CANCELED
+Service -> WriteRepo: save(appointment)
+activate WriteRepo
+WriteRepo --> Service: Appointment (status = CANCELED)
+deactivate WriteRepo
+
+Service --> CommandService: Appointment
+deactivate Service
+
+' Event Sourcing - Save event to Event Store
+CommandService -> EventStoreService: saveEvent(appointmentId,\nEventType.APPOINTMENT_CANCELED,\nappointmentData,\ncorrelationId,\nuserId)
+activate EventStoreService
+
+note right of EventStoreService
+  Event Sourcing:
+  • Calculate version
+  • Serialize to JSON
+  • Save immutable event
+  • Metrics to Prometheus
+end note
+
+EventStoreService --> CommandService: EventStore (saved)
+deactivate EventStoreService
+
+' Publish to RabbitMQ with Circuit Breaker and Retry
+CommandService -> RabbitMQ: convertAndSend("appointment.canceled", event)\n[Retry + Circuit Breaker]
+activate RabbitMQ
+
+note right of RabbitMQ
+  AMQP publishing:
+  • Retry on failure
+  • Metrics to Prometheus
+  • Correlation ID in message
+end note
+
+RabbitMQ --> CommandService: Event published
+deactivate RabbitMQ
+
+CommandService --> Controller: Appointment
+deactivate CommandService
+
+Controller --> Client: 200 OK\nAppointment (CANCELED)
+deactivate Controller
+deactivate Client
+
+note right of RabbitMQ
+  **Asynchronous processing:**
+  Events consumed by handlers
+  with correlation ID propagation
+end note
+
+RabbitMQ -> EventHandler: AppointmentCanceledEvent\n[Correlation ID]
+deactivate RabbitMQ
+activate EventHandler
+
+note right of EventHandler
+  Handler processing:
+  • Extract Correlation ID
+  • Trace to Zipkin
+  • Metrics to Prometheus
+end note
+
+EventHandler -> ReadRepo: findById(appointmentId)
+activate ReadRepo
+ReadRepo --> EventHandler: Optional<AppointmentSummary>
+deactivate ReadRepo
+
+alt Summary exists and status is SCHEDULED or COMPLETED
+    EventHandler -> EventHandler: Ignore old cancellation event
+else Summary doesn't exist or status allows cancellation
+    EventHandler -> WriteRepo: findById(appointmentId)
+    activate WriteRepo
+    WriteRepo --> EventHandler: Optional<Appointment>
+    deactivate WriteRepo
+
+    alt Appointment found in write model
+        EventHandler -> EventHandler: Preserve all appointment fields
+        EventHandler -> ReadRepo: save(AppointmentSummary with status CANCELED)
+        activate ReadRepo
+        ReadRepo --> EventHandler: Saved
+        deactivate ReadRepo
+    else Appointment not found
+        EventHandler -> ReadRepo: save(AppointmentSummary from event)
+        activate ReadRepo
+        ReadRepo --> EventHandler: Saved
+        deactivate ReadRepo
+    end
+end
+
+EventHandler -> EventHandler: Update MongoDB read model
+deactivate EventHandler
+
+note right of Controller
+  **Este diagrama mostra o cancelamento de uma consulta**
+  com todas as implementações do Assignment 3:
+  
+  • **Security:** JWT validation, mTLS, RBAC
+  • **Resilience:** Circuit Breaker, Retry, Timeout
+    (Failures em Records Service são ignorados - compensação possível)
+  • **Observability:** Distributed tracing (Zipkin),
+    Metrics (Prometheus), Structured logging (ELK)
+  • **Event Sourcing:** Immutable event storage
+  • **Correlation ID:** End-to-end traceability
+end note
+
+@enduml

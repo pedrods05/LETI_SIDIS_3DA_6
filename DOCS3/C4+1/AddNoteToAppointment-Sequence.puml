@@ -1,0 +1,112 @@
+@startuml AddNoteToAppointment-Sequence
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam sequenceArrowThickness 2
+
+title Add Note to Appointment - Sequence Diagram v3\n(With Observability & Event Sourcing)
+
+actor Client
+participant "AppointmentController\n(@PreAuthorize)" as Controller
+participant "AppointmentCommandService" as CommandService
+participant "AppointmentRepository\n(Write Model - H2)" as WriteRepo
+participant "EventStoreService" as EventStoreService
+participant "EventStoreRepository\n(Event Store - H2)" as EventStoreRepo
+
+autonumber
+activate Client
+
+note over Client, EventStoreRepo
+  **Assignment 3 Features:**
+  • Security: JWT (@PreAuthorize), RBAC
+  • Observability: Zipkin (tracing), Prometheus (metrics), ELK (logs)
+  • Event Sourcing: Immutable event storage
+  • Correlation ID: End-to-end traceability
+end note
+
+Client -> Controller: POST /appointments/{appointmentId}/notes\nJWT Token
+activate Controller
+
+Controller -> Controller: Capture correlationId from header\n(or generate new UUID)
+Controller -> Controller: Put correlationId in MDC context
+Controller -> Controller: Extract note and userId from request
+Controller -> Controller: Validate note is not empty
+
+alt Note is empty
+    Controller --> Client: 400 Bad Request\n{error: "Note is required"}
+else Note is valid
+    Controller -> CommandService: addNoteToAppointment(appointmentId, note, userId)\n[Trace ID + Correlation ID propagated]
+    activate CommandService
+
+    CommandService -> WriteRepo: findById(appointmentId)
+    activate WriteRepo
+    WriteRepo --> CommandService: Optional<Appointment>
+    deactivate WriteRepo
+
+    alt Appointment not found
+        CommandService --> Controller: RuntimeException("Appointment not found")
+        Controller --> Client: 400 Bad Request\n{error: "Appointment not found"}
+    else Appointment found
+        CommandService -> CommandService: Create noteData and metadata Maps
+        CommandService -> CommandService: Get correlationId from MDC
+
+        ' Event Sourcing - Save event to Event Store
+        CommandService -> EventStoreService: saveEvent(appointmentId,\nEventType.NOTE_ADDED,\nnoteData,\ncorrelationId,\nuserId,\nmetadata)
+        activate EventStoreService
+
+        note right of EventStoreService
+          Event Sourcing:
+          • Find last version
+          • Calculate nextVersion
+          • Serialize to JSON
+          • Save immutable event
+          • Metrics to Prometheus
+          • Trace to Zipkin
+        end note
+
+        EventStoreService -> EventStoreRepo: findLastVersionByAggregateId(appointmentId)
+        activate EventStoreRepo
+        EventStoreRepo --> EventStoreService: Long currentVersion
+        deactivate EventStoreRepo
+
+        EventStoreService -> EventStoreService: Calculate nextVersion = currentVersion + 1
+        EventStoreService -> EventStoreService: Serialize to JSON\n(using ObjectMapper)
+        EventStoreService -> EventStoreService: Build EventStore entity
+
+        EventStoreService -> EventStoreRepo: save(eventStore)
+        activate EventStoreRepo
+        EventStoreRepo --> EventStoreService: EventStore (saved)
+        deactivate EventStoreRepo
+
+        EventStoreService --> CommandService: EventStore
+        deactivate EventStoreService
+
+        CommandService --> Controller: void (success)
+        deactivate CommandService
+
+        Controller --> Client: 200 OK\n{message: "Note added successfully"}
+    end
+end
+
+alt RuntimeException
+    Controller --> Client: 400 Bad Request\n{error: exception message}
+else Other Exception
+    Controller --> Client: 500 Internal Server Error
+end
+
+Controller -> Controller: Remove correlationId from MDC\n(always in finally block)
+deactivate Client
+deactivate Controller
+
+note right of Controller
+  **Este diagrama mostra o processo de adicionar**
+  uma nota a uma consulta usando Event Sourcing
+  com todas as implementações do Assignment 3:
+  
+  • **Security:** JWT validation, RBAC
+  • **Observability:** Distributed tracing (Zipkin),
+    Metrics (Prometheus), Structured logging (ELK)
+  • **Event Sourcing:** Immutable event storage
+  • **Correlation ID:** End-to-end traceability
+end note
+
+@enduml
