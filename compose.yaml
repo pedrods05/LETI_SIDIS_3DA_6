@@ -117,45 +117,45 @@ services:
 
 
 
-      # ==========================================
-      # MICROSERVIÇOS (HAP)
-      # ==========================================
+  # ==========================================
+  # MICROSERVIÇOS (HAP)
+  # ==========================================
 
-      # 4. Serviço de Autenticação (Core)
+  # 4. Serviço de Autenticação (Core)
   hap-auth:
-        build: ./hap-auth
-        container_name: hap-auth
-        ports:
-          - "8084:8084"
-        environment:
-          - SPRING_PROFILES_ACTIVE=docker
-          - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/hap_auth_db?authSource=admin
-          - SPRING_RABBITMQ_HOST=hap-rabbitmq
-          - JWT_SECRET_KEY=MinhaChaveSuperSecretaDeDesenvolvimento123!
-          - hap.mtls.enabled=true
-          - hap.mtls.truststore.path=/certs/hap-truststore.p12
-          - hap.mtls.truststore.password=secretpassword
-          - hap.mtls.keystore.path=/certs/hap-keystore.p12
-          - hap.mtls.keystore.password=secretpassword
-        depends_on:
-          mongodb:
-            condition: service_healthy
-          rabbitmq:
-            condition: service_healthy
-        healthcheck:
-          # Verifica se o endpoint do Actuator responde 200 OK
-          test: wget --no-check-certificate --no-verbose --tries=1 --spider https://localhost:8084/actuator/health || exit 1
-          interval: 10s
-          timeout: 5s
-          retries: 5
-          start_period: 180s  # ADICIONA ISTO: Dá 40s de "graça" no início antes de começar a contar falhas
-        restart: unless-stopped
-        networks:
-          - hap-net
-        volumes:
-          - ./hap-auth/src/main/resources/certs:/certs:ro
+    build: ./hap-auth
+    container_name: hap-auth
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATA_MONGODB_URI=mongodb://root:secretpassword@hap-mongo:27017/hap_auth_db?authSource=admin
+      - SPRING_RABBITMQ_HOST=hap-rabbitmq
+      - JWT_SECRET_KEY=MinhaChaveSuperSecretaDeDesenvolvimento123!
+      - hap.mtls.enabled=true
+      - hap.mtls.truststore.path=/certs/hap-truststore.p12
+      - hap.mtls.truststore.password=secretpassword
+      - hap.mtls.keystore.path=/certs/hap-keystore.p12
+      - hap.mtls.keystore.password=secretpassword
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      # Verifica se o endpoint do Actuator responde 200 OK
+      test: wget --no-check-certificate --no-verbose --tries=1 --spider https://localhost:8084/actuator/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 180s  # ADICIONA ISTO: Dá 40s de "graça" no início antes de começar a contar falhas
+    restart: unless-stopped
+    networks:
+      - hap-net
+    volumes:
+      - ./hap-auth/src/main/resources/certs:/certs:ro
 
-      # 5. Serviço de Médicos
+  # 5. Serviço de Médicos
   hap-physicians:
     build: ./hap-physicians
     container_name: hap-physicians

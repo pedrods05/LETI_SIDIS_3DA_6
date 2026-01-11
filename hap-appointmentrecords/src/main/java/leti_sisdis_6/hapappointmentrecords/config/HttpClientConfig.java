@@ -48,6 +48,9 @@ public class HttpClientConfig {
     @Value("${hap.mtls.keystore.password:}")
     private String keystorePassword;
 
+    @Value("${hap.ssl.disable-hostname-verification:false}")
+    private boolean disableHostnameVerification;
+
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         RestTemplate restTemplate = builder
